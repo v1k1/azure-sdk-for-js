@@ -10,3 +10,6 @@ variables:
   Codeql.SkipTaskAutoInjection: true
   # Disable warning until issue 21765 and 21766 are closed
   DisableDockerDetector: true
+  Codeql.Enabled: true
+  Codeql.BuildIdentifier: ${{ parameters.ServiceDirectory }}
+  Codeql.SkipTaskAutoInjection: false

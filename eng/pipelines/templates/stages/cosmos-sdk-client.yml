@@ -15,9 +15,6 @@ parameters:
   type: string
   default: azure-docs-sdk-node
 
-variables:
-  - template: /eng/pipelines/templates/variables/globals.yml
-
 stages:
   - stage: Build
     jobs:
