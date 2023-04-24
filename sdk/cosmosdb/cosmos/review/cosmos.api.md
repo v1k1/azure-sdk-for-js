@@ -87,7 +87,7 @@ export class ChangeFeedResponse<T> {
 export class ClientContext {
     constructor(cosmosClientOptions: CosmosClientOptions, globalEndpointManager: GlobalEndpointManager);
     // (undocumented)
-    batch<T>({ body, path, partitionKey, resourceId, options, diagnosticContext }: {
+    batch<T>({ body, path, partitionKey, resourceId, options, diagnosticContext, }: {
         body: T;
         path: string;
         partitionKey: string;
@@ -96,7 +96,7 @@ export class ClientContext {
         diagnosticContext?: CosmosDiagnosticContext;
     }): Promise<Response_2<any>>;
     // (undocumented)
-    bulk<T>({ body, path, partitionKeyRangeId, resourceId, bulkOptions, options, diagnosticContext }: {
+    bulk<T>({ body, path, partitionKeyRangeId, resourceId, bulkOptions, options, diagnosticContext, }: {
         body: T;
         path: string;
         partitionKeyRangeId: string;
@@ -108,7 +108,7 @@ export class ClientContext {
     // (undocumented)
     clearSessionToken(path: string): void;
     // (undocumented)
-    create<T, U = T>({ body, path, resourceType, resourceId, options, partitionKey, diagnosticContext }: {
+    create<T, U = T>({ body, path, resourceType, resourceId, options, partitionKey, diagnosticContext, }: {
         body: T;
         path: string;
         resourceType: ResourceType;
@@ -118,7 +118,7 @@ export class ClientContext {
         diagnosticContext?: CosmosDiagnosticContext;
     }): Promise<Response_2<T & U & Resource>>;
     // (undocumented)
-    delete<T>({ path, resourceType, resourceId, options, partitionKey, method, diagnosticContext }: {
+    delete<T>({ path, resourceType, resourceId, options, partitionKey, method, diagnosticContext, }: {
         path: string;
         resourceType: ResourceType;
         resourceId: string;
@@ -128,7 +128,7 @@ export class ClientContext {
         diagnosticContext?: CosmosDiagnosticContext;
     }): Promise<Response_2<T & Resource>>;
     // (undocumented)
-    execute<T>({ sprocLink, params, options, partitionKey, diagnosticContext }: {
+    execute<T>({ sprocLink, params, options, partitionKey, diagnosticContext, }: {
         sprocLink: string;
         params?: any[];
         options?: RequestOptions;
@@ -151,7 +151,7 @@ export class ClientContext {
         [containerUrl: string]: any;
     };
     // (undocumented)
-    patch<T>({ body, path, resourceType, resourceId, options, partitionKey, diagnosticContext }: {
+    patch<T>({ body, path, resourceType, resourceId, options, partitionKey, diagnosticContext, }: {
         body: any;
         path: string;
         resourceType: ResourceType;
@@ -161,7 +161,7 @@ export class ClientContext {
         diagnosticContext?: CosmosDiagnosticContext;
     }): Promise<Response_2<T & Resource>>;
     // (undocumented)
-    queryFeed<T>({ path, resourceType, resourceId, resultFn, query, options, partitionKeyRangeId, partitionKey, diagnosticContext }: {
+    queryFeed<T>({ path, resourceType, resourceId, resultFn, query, options, partitionKeyRangeId, partitionKey, diagnosticContext, }: {
         path: string;
         resourceType: ResourceType;
         resourceId: string;
@@ -186,7 +186,7 @@ export class ClientContext {
         diagnosticContext?: CosmosDiagnosticContext;
     }): Promise<Response_2<T & Resource>>;
     // (undocumented)
-    replace<T>({ body, path, resourceType, resourceId, options, partitionKey, diagnosticContext }: {
+    replace<T>({ body, path, resourceType, resourceId, options, partitionKey, diagnosticContext, }: {
         body: any;
         path: string;
         resourceType: ResourceType;
@@ -196,7 +196,7 @@ export class ClientContext {
         diagnosticContext?: CosmosDiagnosticContext;
     }): Promise<Response_2<T & Resource>>;
     // (undocumented)
-    upsert<T, U = T>({ body, path, resourceType, resourceId, options, partitionKey, diagnosticContext }: {
+    upsert<T, U = T>({ body, path, resourceType, resourceId, options, partitionKey, diagnosticContext, }: {
         body: T;
         path: string;
         resourceType: ResourceType;
