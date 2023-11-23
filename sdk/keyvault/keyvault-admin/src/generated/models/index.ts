@@ -162,7 +162,9 @@ export interface SASTokenParameter {
   /** Azure Blob storage container Uri */
   storageResourceUri: string;
   /** The SAS token pointing to an Azure Blob storage container */
-  token: string;
+  token?: string;
+  /** Indicates which authentication method should be used. If set to true, Managed HSM will use the configured user-assigned managed identity to authenticate with Azure Storage. Otherwise, a SAS token has to be specified. */
+  useManagedIdentity?: boolean;
 }
 
 /** Full backup operation */
@@ -227,6 +229,30 @@ export interface SelectiveKeyRestoreOperation {
   endTime?: Date;
 }
 
+/** The update settings request object. */
+export interface UpdateSettingRequest {
+  /** The value of the pool setting. */
+  value: string;
+}
+
+export interface Setting {
+  /** The account setting to be updated */
+  name: string;
+  /** The value of the pool setting. */
+  value: string;
+  /** The type specifier of the value. */
+  type?: SettingTypeEnum;
+}
+
+/** The settings list result. */
+export interface SettingsListResult {
+  /**
+   * A response message containing a list of account settings with their associated value.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly settings?: Setting[];
+}
+
 /** Role Assignments filter */
 export interface RoleAssignmentFilter {
   /** Returns role assignment of the specific principal. */
@@ -263,20 +289,20 @@ export interface KeyVaultClientSelectiveKeyRestoreOperationHeaders {
   azureAsyncOperation?: string;
 }
 
-/** Known values of {@link ApiVersion73} that the service accepts. */
-export enum KnownApiVersion73 {
-  /** Api Version '7.3' */
-  Seven3 = "7.3"
+/** Known values of {@link ApiVersion75Preview1} that the service accepts. */
+export enum KnownApiVersion75Preview1 {
+  /** Api Version '7.5-preview.1' */
+  Seven5Preview1 = "7.5-preview.1"
 }
 
 /**
- * Defines values for ApiVersion73. \
- * {@link KnownApiVersion73} can be used interchangeably with ApiVersion73,
+ * Defines values for ApiVersion75Preview1. \
+ * {@link KnownApiVersion75Preview1} can be used interchangeably with ApiVersion75Preview1,
  *  this enum contains the known values that the service supports.
  * ### Known values supported by the service
- * **7.3**: Api Version '7.3'
+ * **7.5-preview.1**: Api Version '7.5-preview.1'
  */
-export type ApiVersion73 = string;
+export type ApiVersion75Preview1 = string;
 
 /** Known values of {@link RoleType} that the service accepts. */
 export enum KnownRoleType {
@@ -442,6 +468,20 @@ export enum KnownRoleDefinitionType {
  */
 export type RoleDefinitionType = string;
 
+/** Known values of {@link SettingTypeEnum} that the service accepts. */
+export enum KnownSettingTypeEnum {
+  Boolean = "boolean"
+}
+
+/**
+ * Defines values for SettingTypeEnum. \
+ * {@link KnownSettingTypeEnum} can be used interchangeably with SettingTypeEnum,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **boolean**
+ */
+export type SettingTypeEnum = string;
+
 /** Optional parameters. */
 export interface RoleDefinitionsDeleteOptionalParams
   extends coreClient.OperationOptions {}
@@ -563,6 +603,26 @@ export interface SelectiveKeyRestoreOperationOptionalParams
 /** Contains response data for the selectiveKeyRestoreOperation operation. */
 export type SelectiveKeyRestoreOperationResponse = KeyVaultClientSelectiveKeyRestoreOperationHeaders &
   SelectiveKeyRestoreOperation;
+
+/** Optional parameters. */
+export interface UpdateSettingOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the updateSetting operation. */
+export type UpdateSettingResponse = Setting;
+
+/** Optional parameters. */
+export interface GetSettingOptionalParams extends coreClient.OperationOptions {}
+
+/** Contains response data for the getSetting operation. */
+export type GetSettingResponse = Setting;
+
+/** Optional parameters. */
+export interface GetSettingsOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the getSettings operation. */
+export type GetSettingsResponse = SettingsListResult;
 
 /** Optional parameters. */
 export interface KeyVaultClientOptionalParams

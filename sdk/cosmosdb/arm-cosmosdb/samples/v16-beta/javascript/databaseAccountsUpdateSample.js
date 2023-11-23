@@ -10,16 +10,17 @@
 // Licensed under the MIT License.
 const { CosmosDBManagementClient } = require("@azure/arm-cosmosdb");
 const { DefaultAzureCredential } = require("@azure/identity");
+require("dotenv").config();
 
 /**
  * This sample demonstrates how to Updates the properties of an existing Azure Cosmos DB database account.
  *
  * @summary Updates the properties of an existing Azure Cosmos DB database account.
- * x-ms-original-file: specification/cosmos-db/resource-manager/Microsoft.DocumentDB/preview/2022-08-15-preview/examples/CosmosDBDatabaseAccountPatch.json
+ * x-ms-original-file: specification/cosmos-db/resource-manager/Microsoft.DocumentDB/preview/2023-03-15-preview/examples/CosmosDBDatabaseAccountPatch.json
  */
 async function cosmosDbDatabaseAccountPatch() {
-  const subscriptionId = "subid";
-  const resourceGroupName = "rg1";
+  const subscriptionId = process.env["COSMOSDB_SUBSCRIPTION_ID"] || "subid";
+  const resourceGroupName = process.env["COSMOSDB_RESOURCE_GROUP"] || "rg1";
   const accountName = "ddb1";
   const updateParameters = {
     analyticalStorageConfiguration: { schemaType: "WellDefined" },
@@ -40,6 +41,7 @@ async function cosmosDbDatabaseAccountPatch() {
     defaultIdentity: "FirstPartyIdentity",
     diagnosticLogSettings: { enableFullTextQuery: "True" },
     enableAnalyticalStorage: true,
+    enableBurstCapacity: true,
     enableFreeTier: false,
     enablePartitionMerge: true,
     identity: {
@@ -52,6 +54,7 @@ async function cosmosDbDatabaseAccountPatch() {
     ipRules: [{ ipAddressOrRange: "23.43.230.120" }, { ipAddressOrRange: "110.12.240.0/12" }],
     isVirtualNetworkFilterEnabled: true,
     location: "westus",
+    minimalTlsVersion: "Tls",
     networkAclBypass: "AzureServices",
     networkAclBypassResourceIds: [
       "/subscriptions/subId/resourcegroups/rgName/providers/Microsoft.Synapse/workspaces/workspaceName",
@@ -74,4 +77,8 @@ async function cosmosDbDatabaseAccountPatch() {
   console.log(result);
 }
 
-cosmosDbDatabaseAccountPatch().catch(console.error);
+async function main() {
+  cosmosDbDatabaseAccountPatch();
+}
+
+main().catch(console.error);

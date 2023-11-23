@@ -10,16 +10,18 @@
 // Licensed under the MIT License.
 const { TrafficManagerManagementClient } = require("@azure/arm-trafficmanager");
 const { DefaultAzureCredential } = require("@azure/identity");
+require("dotenv").config();
 
 /**
  * This sample demonstrates how to Create or update a Traffic Manager profile.
  *
  * @summary Create or update a Traffic Manager profile.
- * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2018-08-01/examples/Profile-PUT-MultiValue.json
+ * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2022-04-01/examples/Profile-PUT-MultiValue.json
  */
 async function profilePutMultiValue() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "azuresdkfornetautoresttrafficmanager1421";
+  const subscriptionId = process.env["TRAFFICMANAGER_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName =
+    process.env["TRAFFICMANAGER_RESOURCE_GROUP"] || "azuresdkfornetautoresttrafficmanager1421";
   const profileName = "azsmnet6386";
   const parameters = {
     dnsConfig: { relativeName: "azsmnet6386", ttl: 35 },
@@ -36,17 +38,16 @@ async function profilePutMultiValue() {
   console.log(result);
 }
 
-profilePutMultiValue().catch(console.error);
-
 /**
  * This sample demonstrates how to Create or update a Traffic Manager profile.
  *
  * @summary Create or update a Traffic Manager profile.
- * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2018-08-01/examples/Profile-PUT-NoEndpoints.json
+ * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2022-04-01/examples/Profile-PUT-NoEndpoints.json
  */
 async function profilePutNoEndpoints() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "azuresdkfornetautoresttrafficmanager1421";
+  const subscriptionId = process.env["TRAFFICMANAGER_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName =
+    process.env["TRAFFICMANAGER_RESOURCE_GROUP"] || "azuresdkfornetautoresttrafficmanager1421";
   const profileName = "azsmnet6386";
   const parameters = {
     dnsConfig: { relativeName: "azsmnet6386", ttl: 35 },
@@ -61,17 +62,16 @@ async function profilePutNoEndpoints() {
   console.log(result);
 }
 
-profilePutNoEndpoints().catch(console.error);
-
 /**
  * This sample demonstrates how to Create or update a Traffic Manager profile.
  *
  * @summary Create or update a Traffic Manager profile.
- * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2018-08-01/examples/Profile-PUT-WithAliasing.json
+ * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2022-04-01/examples/Profile-PUT-WithAliasing.json
  */
 async function profilePutWithAliasing() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "azuresdkfornetautoresttrafficmanager2583";
+  const subscriptionId = process.env["TRAFFICMANAGER_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName =
+    process.env["TRAFFICMANAGER_RESOURCE_GROUP"] || "azuresdkfornetautoresttrafficmanager2583";
   const profileName = "azuresdkfornetautoresttrafficmanager6192";
   const parameters = {
     allowedEndpointRecordTypes: ["DomainName"],
@@ -106,17 +106,16 @@ async function profilePutWithAliasing() {
   console.log(result);
 }
 
-profilePutWithAliasing().catch(console.error);
-
 /**
  * This sample demonstrates how to Create or update a Traffic Manager profile.
  *
  * @summary Create or update a Traffic Manager profile.
- * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2018-08-01/examples/Profile-PUT-WithCustomHeaders.json
+ * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2022-04-01/examples/Profile-PUT-WithCustomHeaders.json
  */
 async function profilePutWithCustomHeaders() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "azuresdkfornetautoresttrafficmanager2583";
+  const subscriptionId = process.env["TRAFFICMANAGER_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName =
+    process.env["TRAFFICMANAGER_RESOURCE_GROUP"] || "azuresdkfornetautoresttrafficmanager2583";
   const profileName = "azuresdkfornetautoresttrafficmanager6192";
   const parameters = {
     dnsConfig: {
@@ -160,17 +159,16 @@ async function profilePutWithCustomHeaders() {
   console.log(result);
 }
 
-profilePutWithCustomHeaders().catch(console.error);
-
 /**
  * This sample demonstrates how to Create or update a Traffic Manager profile.
  *
  * @summary Create or update a Traffic Manager profile.
- * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2018-08-01/examples/Profile-PUT-WithEndpoints.json
+ * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2022-04-01/examples/Profile-PUT-WithEndpoints.json
  */
 async function profilePutWithEndpoints() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "azuresdkfornetautoresttrafficmanager2583";
+  const subscriptionId = process.env["TRAFFICMANAGER_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName =
+    process.env["TRAFFICMANAGER_RESOURCE_GROUP"] || "azuresdkfornetautoresttrafficmanager2583";
   const profileName = "azuresdkfornetautoresttrafficmanager6192";
   const parameters = {
     dnsConfig: {
@@ -204,17 +202,15 @@ async function profilePutWithEndpoints() {
   console.log(result);
 }
 
-profilePutWithEndpoints().catch(console.error);
-
 /**
  * This sample demonstrates how to Create or update a Traffic Manager profile.
  *
  * @summary Create or update a Traffic Manager profile.
- * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2018-08-01/examples/Profile-PUT-WithNestedEndpoints.json
+ * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2022-04-01/examples/Profile-PUT-WithNestedEndpoints.json
  */
 async function profilePutWithNestedEndpoints() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "myresourcegroup";
+  const subscriptionId = process.env["TRAFFICMANAGER_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName = process.env["TRAFFICMANAGER_RESOURCE_GROUP"] || "myresourcegroup";
   const profileName = "parentprofile";
   const parameters = {
     dnsConfig: { relativeName: "parentprofile", ttl: 35 },
@@ -260,4 +256,13 @@ async function profilePutWithNestedEndpoints() {
   console.log(result);
 }
 
-profilePutWithNestedEndpoints().catch(console.error);
+async function main() {
+  profilePutMultiValue();
+  profilePutNoEndpoints();
+  profilePutWithAliasing();
+  profilePutWithCustomHeaders();
+  profilePutWithEndpoints();
+  profilePutWithNestedEndpoints();
+}
+
+main().catch(console.error);

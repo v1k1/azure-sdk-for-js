@@ -10,24 +10,26 @@
 // Licensed under the MIT License.
 const { DevCenterClient } = require("@azure/arm-devcenter");
 const { DefaultAzureCredential } = require("@azure/identity");
+require("dotenv").config();
 
 /**
  * This sample demonstrates how to Creates or updates a Dev Box definition.
  *
  * @summary Creates or updates a Dev Box definition.
- * x-ms-original-file: specification/devcenter/resource-manager/Microsoft.DevCenter/preview/2022-09-01-preview/examples/DevBoxDefinitions_Create.json
+ * x-ms-original-file: specification/devcenter/resource-manager/Microsoft.DevCenter/preview/2023-10-01-preview/examples/DevBoxDefinitions_Create.json
  */
 async function devBoxDefinitionsCreate() {
-  const subscriptionId = "{subscriptionId}";
-  const resourceGroupName = "rg1";
+  const subscriptionId =
+    process.env["DEVCENTER_SUBSCRIPTION_ID"] || "0ac520ee-14c0-480f-b6c9-0a90c58ffff";
+  const resourceGroupName = process.env["DEVCENTER_RESOURCE_GROUP"] || "rg1";
   const devCenterName = "Contoso";
   const devBoxDefinitionName = "WebDevBox";
   const body = {
+    hibernateSupport: "Enabled",
     imageReference: {
       id: "/subscriptions/0ac520ee-14c0-480f-b6c9-0a90c58ffff/resourceGroups/Example/providers/Microsoft.DevCenter/devcenters/Contoso/galleries/contosogallery/images/exampleImage/version/1.0.0",
     },
     location: "centralus",
-    osStorageType: "SSD_1024",
     sku: { name: "Preview" },
   };
   const credential = new DefaultAzureCredential();
@@ -41,4 +43,8 @@ async function devBoxDefinitionsCreate() {
   console.log(result);
 }
 
-devBoxDefinitionsCreate().catch(console.error);
+async function main() {
+  devBoxDefinitionsCreate();
+}
+
+main().catch(console.error);

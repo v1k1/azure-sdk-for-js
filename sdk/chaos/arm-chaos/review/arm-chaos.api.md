@@ -72,7 +72,6 @@ export type CapabilitiesGetResponse = Capability;
 
 // @public
 export interface CapabilitiesListNextOptionalParams extends coreClient.OperationOptions {
-    continuationToken?: string;
 }
 
 // @public
@@ -104,6 +103,8 @@ export interface CapabilityListResult {
 
 // @public
 export interface CapabilityType extends Resource {
+    azureRbacActions?: string[];
+    azureRbacDataActions?: string[];
     readonly description?: string;
     readonly displayName?: string;
     readonly kind?: string;
@@ -142,7 +143,6 @@ export type CapabilityTypesGetResponse = CapabilityType;
 
 // @public
 export interface CapabilityTypesListNextOptionalParams extends coreClient.OperationOptions {
-    continuationToken?: string;
 }
 
 // @public
@@ -161,6 +161,7 @@ export class ChaosManagementClient extends coreClient.ServiceClient {
     // (undocumented)
     $host: string;
     constructor(credentials: coreAuth.TokenCredential, subscriptionId: string, options?: ChaosManagementClientOptionalParams);
+    constructor(credentials: coreAuth.TokenCredential, options?: ChaosManagementClientOptionalParams);
     // (undocumented)
     apiVersion: string;
     // (undocumented)
@@ -172,7 +173,7 @@ export class ChaosManagementClient extends coreClient.ServiceClient {
     // (undocumented)
     operations: Operations;
     // (undocumented)
-    subscriptionId: string;
+    subscriptionId?: string;
     // (undocumented)
     targets: Targets;
     // (undocumented)
@@ -233,7 +234,7 @@ export interface ErrorResponse {
 // @public
 export interface Experiment extends TrackedResource {
     identity?: ResourceIdentity;
-    selectors: Selector[];
+    selectors: SelectorUnion[];
     startOnCreation?: boolean;
     steps: Step[];
     readonly systemData?: SystemData;
@@ -305,6 +306,7 @@ export interface Experiments {
     listAllStatuses(resourceGroupName: string, experimentName: string, options?: ExperimentsListAllStatusesOptionalParams): PagedAsyncIterableIterator<ExperimentStatus>;
     listExecutionDetails(resourceGroupName: string, experimentName: string, options?: ExperimentsListExecutionDetailsOptionalParams): PagedAsyncIterableIterator<ExperimentExecutionDetails>;
     start(resourceGroupName: string, experimentName: string, options?: ExperimentsStartOptionalParams): Promise<ExperimentsStartResponse>;
+    update(resourceGroupName: string, experimentName: string, experiment: ExperimentUpdate, options?: ExperimentsUpdateOptionalParams): Promise<ExperimentsUpdateResponse>;
 }
 
 // @public
@@ -348,8 +350,6 @@ export type ExperimentsGetStatusResponse = ExperimentStatus;
 
 // @public
 export interface ExperimentsListAllNextOptionalParams extends coreClient.OperationOptions {
-    continuationToken?: string;
-    running?: boolean;
 }
 
 // @public
@@ -394,8 +394,6 @@ export type ExperimentsListExecutionDetailsResponse = ExperimentExecutionDetails
 
 // @public
 export interface ExperimentsListNextOptionalParams extends coreClient.OperationOptions {
-    continuationToken?: string;
-    running?: boolean;
 }
 
 // @public
@@ -440,6 +438,32 @@ export interface ExperimentStatusListResult {
 }
 
 // @public
+export interface ExperimentsUpdateOptionalParams extends coreClient.OperationOptions {
+}
+
+// @public
+export type ExperimentsUpdateResponse = Experiment;
+
+// @public
+export interface ExperimentUpdate {
+    identity?: ResourceIdentity;
+}
+
+// @public
+export interface Filter {
+    type: "Simple";
+}
+
+// @public
+export type FilterType = string;
+
+// @public (undocumented)
+export type FilterUnion = Filter | SimpleFilter;
+
+// @public
+export function getContinuationToken(page: unknown): string | undefined;
+
+// @public
 export interface KeyValuePair {
     key: string;
     value: string;
@@ -459,10 +483,32 @@ export enum KnownCreatedByType {
 }
 
 // @public
+export enum KnownFilterType {
+    Simple = "Simple"
+}
+
+// @public
 export enum KnownOrigin {
     System = "system",
     User = "user",
     UserSystem = "user,system"
+}
+
+// @public
+export enum KnownSelectorType {
+    List = "List",
+    Query = "Query"
+}
+
+// @public
+export enum KnownTargetReferenceType {
+    ChaosTarget = "ChaosTarget"
+}
+
+// @public
+export interface ListSelector extends Selector {
+    targets: TargetReference[];
+    type: "List";
 }
 
 // @public
@@ -511,6 +557,13 @@ export type OperationsListAllResponse = OperationListResult;
 export type Origin = string;
 
 // @public
+export interface QuerySelector extends Selector {
+    queryString: string;
+    subscriptionIds: string[];
+    type: "Query";
+}
+
+// @public
 export interface Resource {
     readonly id?: string;
     readonly name?: string;
@@ -522,20 +575,38 @@ export interface ResourceIdentity {
     readonly principalId?: string;
     readonly tenantId?: string;
     type: ResourceIdentityType;
+    userAssignedIdentities?: {
+        [propertyName: string]: UserAssignedIdentity;
+    };
 }
 
 // @public
-export type ResourceIdentityType = "None" | "SystemAssigned";
+export type ResourceIdentityType = "None" | "SystemAssigned" | "UserAssigned";
 
 // @public
 export interface Selector {
+    [property: string]: any;
+    filter?: FilterUnion;
     id: string;
-    targets: TargetReference[];
-    type: SelectorType;
+    type: "List" | "Query";
 }
 
 // @public
-export type SelectorType = "Percent" | "Random" | "Tag" | "List";
+export type SelectorType = string;
+
+// @public (undocumented)
+export type SelectorUnion = Selector | ListSelector | QuerySelector;
+
+// @public
+export interface SimpleFilter extends Filter {
+    parameters?: SimpleFilterParameters;
+    type: "Simple";
+}
+
+// @public
+export interface SimpleFilterParameters {
+    zones?: string[];
+}
 
 // @public
 export interface Step {
@@ -579,8 +650,11 @@ export interface TargetListResult {
 // @public
 export interface TargetReference {
     id: string;
-    type: "ChaosTarget";
+    type: TargetReferenceType;
 }
+
+// @public
+export type TargetReferenceType = string;
 
 // @public
 export interface Targets {
@@ -610,7 +684,6 @@ export type TargetsGetResponse = Target;
 
 // @public
 export interface TargetsListNextOptionalParams extends coreClient.OperationOptions {
-    continuationToken?: string;
 }
 
 // @public
@@ -655,7 +728,6 @@ export type TargetTypesGetResponse = TargetType;
 
 // @public
 export interface TargetTypesListNextOptionalParams extends coreClient.OperationOptions {
-    continuationToken?: string;
 }
 
 // @public
@@ -675,6 +747,12 @@ export interface TrackedResource extends Resource {
     tags?: {
         [propertyName: string]: string;
     };
+}
+
+// @public
+export interface UserAssignedIdentity {
+    readonly clientId?: string;
+    readonly principalId?: string;
 }
 
 // (No @packageDocumentation comment for this package)

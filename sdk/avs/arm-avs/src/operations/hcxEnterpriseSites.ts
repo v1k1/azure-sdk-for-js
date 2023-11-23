@@ -6,7 +6,8 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { HcxEnterpriseSites } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
@@ -39,7 +40,7 @@ export class HcxEnterpriseSitesImpl implements HcxEnterpriseSites {
   }
 
   /**
-   * List HCX Enterprise Sites in a private cloud
+   * List HCX on-premises key in a private cloud
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param privateCloudName Name of the private cloud
    * @param options The options parameters.
@@ -61,11 +62,15 @@ export class HcxEnterpriseSitesImpl implements HcxEnterpriseSites {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listPagingPage(
           resourceGroupName,
           privateCloudName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -74,11 +79,18 @@ export class HcxEnterpriseSitesImpl implements HcxEnterpriseSites {
   private async *listPagingPage(
     resourceGroupName: string,
     privateCloudName: string,
-    options?: HcxEnterpriseSitesListOptionalParams
+    options?: HcxEnterpriseSitesListOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<HcxEnterpriseSite[]> {
-    let result = await this._list(resourceGroupName, privateCloudName, options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: HcxEnterpriseSitesListResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._list(resourceGroupName, privateCloudName, options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listNext(
         resourceGroupName,
@@ -87,7 +99,9 @@ export class HcxEnterpriseSitesImpl implements HcxEnterpriseSites {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -106,7 +120,7 @@ export class HcxEnterpriseSitesImpl implements HcxEnterpriseSites {
   }
 
   /**
-   * List HCX Enterprise Sites in a private cloud
+   * List HCX on-premises key in a private cloud
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param privateCloudName Name of the private cloud
    * @param options The options parameters.
@@ -123,7 +137,7 @@ export class HcxEnterpriseSitesImpl implements HcxEnterpriseSites {
   }
 
   /**
-   * Get an HCX Enterprise Site by name in a private cloud
+   * Get an HCX on-premises key by name in a private cloud
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param privateCloudName Name of the private cloud
    * @param hcxEnterpriseSiteName Name of the HCX Enterprise Site in the private cloud
@@ -142,7 +156,7 @@ export class HcxEnterpriseSitesImpl implements HcxEnterpriseSites {
   }
 
   /**
-   * Create or update an HCX Enterprise Site in a private cloud
+   * Create or update an activation key for on-premises HCX site
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param privateCloudName The name of the private cloud.
    * @param hcxEnterpriseSiteName Name of the HCX Enterprise Site in the private cloud
@@ -169,7 +183,7 @@ export class HcxEnterpriseSitesImpl implements HcxEnterpriseSites {
   }
 
   /**
-   * Delete an HCX Enterprise Site in a private cloud
+   * Delete HCX on-premises key in a private cloud
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param privateCloudName Name of the private cloud
    * @param hcxEnterpriseSiteName Name of the HCX Enterprise Site in the private cloud
@@ -218,7 +232,7 @@ const listOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.HcxEnterpriseSiteList
     },
     default: {
-      bodyMapper: Mappers.CloudError
+      bodyMapper: Mappers.ErrorResponse
     }
   },
   queryParameters: [Parameters.apiVersion],
@@ -240,7 +254,7 @@ const getOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.HcxEnterpriseSite
     },
     default: {
-      bodyMapper: Mappers.CloudError
+      bodyMapper: Mappers.ErrorResponse
     }
   },
   queryParameters: [Parameters.apiVersion],
@@ -266,7 +280,7 @@ const createOrUpdateOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.HcxEnterpriseSite
     },
     default: {
-      bodyMapper: Mappers.CloudError
+      bodyMapper: Mappers.ErrorResponse
     }
   },
   requestBody: Parameters.hcxEnterpriseSite,
@@ -275,7 +289,7 @@ const createOrUpdateOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.privateCloudName,
+    Parameters.privateCloudName1,
     Parameters.hcxEnterpriseSiteName
   ],
   headerParameters: [Parameters.accept, Parameters.contentType],
@@ -290,7 +304,7 @@ const deleteOperationSpec: coreClient.OperationSpec = {
     200: {},
     204: {},
     default: {
-      bodyMapper: Mappers.CloudError
+      bodyMapper: Mappers.ErrorResponse
     }
   },
   queryParameters: [Parameters.apiVersion],
@@ -312,10 +326,9 @@ const listNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.HcxEnterpriseSiteList
     },
     default: {
-      bodyMapper: Mappers.CloudError
+      bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.nextLink,

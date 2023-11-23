@@ -10,16 +10,20 @@
 // Licensed under the MIT License.
 import { ManagementPolicy, StorageManagementClient } from "@azure/arm-storage";
 import { DefaultAzureCredential } from "@azure/identity";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 /**
  * This sample demonstrates how to Sets the managementpolicy to the specified storage account.
  *
  * @summary Sets the managementpolicy to the specified storage account.
- * x-ms-original-file: specification/storage/resource-manager/Microsoft.Storage/stable/2022-05-01/examples/StorageAccountSetManagementPolicy.json
+ * x-ms-original-file: specification/storage/resource-manager/Microsoft.Storage/stable/2023-01-01/examples/StorageAccountSetManagementPolicy.json
  */
 async function storageAccountSetManagementPolicies() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "res7687";
+  const subscriptionId =
+    process.env["STORAGE_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName = process.env["STORAGE_RESOURCE_GROUP"] || "res7687";
   const accountName = "sto9699";
   const managementPolicyName = "default";
   const properties: ManagementPolicy = {
@@ -80,17 +84,72 @@ async function storageAccountSetManagementPolicies() {
   console.log(result);
 }
 
-storageAccountSetManagementPolicies().catch(console.error);
+/**
+ * This sample demonstrates how to Sets the managementpolicy to the specified storage account.
+ *
+ * @summary Sets the managementpolicy to the specified storage account.
+ * x-ms-original-file: specification/storage/resource-manager/Microsoft.Storage/stable/2023-01-01/examples/StorageAccountSetManagementPolicyColdTierActions.json
+ */
+async function storageAccountSetManagementPolicyColdTierActions() {
+  const subscriptionId =
+    process.env["STORAGE_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName = process.env["STORAGE_RESOURCE_GROUP"] || "res7687";
+  const accountName = "sto9699";
+  const managementPolicyName = "default";
+  const properties: ManagementPolicy = {
+    policy: {
+      rules: [
+        {
+          name: "olcmtest1",
+          type: "Lifecycle",
+          definition: {
+            actions: {
+              baseBlob: {
+                delete: { daysAfterModificationGreaterThan: 1000 },
+                tierToArchive: { daysAfterModificationGreaterThan: 90 },
+                tierToCold: { daysAfterModificationGreaterThan: 30 },
+                tierToCool: { daysAfterModificationGreaterThan: 30 }
+              },
+              snapshot: {
+                delete: { daysAfterCreationGreaterThan: 30 },
+                tierToCold: { daysAfterCreationGreaterThan: 30 }
+              },
+              version: {
+                delete: { daysAfterCreationGreaterThan: 30 },
+                tierToCold: { daysAfterCreationGreaterThan: 30 }
+              }
+            },
+            filters: {
+              blobTypes: ["blockBlob"],
+              prefixMatch: ["olcmtestcontainer1"]
+            }
+          },
+          enabled: true
+        }
+      ]
+    }
+  };
+  const credential = new DefaultAzureCredential();
+  const client = new StorageManagementClient(credential, subscriptionId);
+  const result = await client.managementPolicies.createOrUpdate(
+    resourceGroupName,
+    accountName,
+    managementPolicyName,
+    properties
+  );
+  console.log(result);
+}
 
 /**
  * This sample demonstrates how to Sets the managementpolicy to the specified storage account.
  *
  * @summary Sets the managementpolicy to the specified storage account.
- * x-ms-original-file: specification/storage/resource-manager/Microsoft.Storage/stable/2022-05-01/examples/StorageAccountSetManagementPolicyForBlockAndAppendBlobs.json
+ * x-ms-original-file: specification/storage/resource-manager/Microsoft.Storage/stable/2023-01-01/examples/StorageAccountSetManagementPolicyForBlockAndAppendBlobs.json
  */
 async function storageAccountSetManagementPolicyForBlockAndAppendBlobs() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "res7687";
+  const subscriptionId =
+    process.env["STORAGE_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName = process.env["STORAGE_RESOURCE_GROUP"] || "res7687";
   const accountName = "sto9699";
   const managementPolicyName = "default";
   const properties: ManagementPolicy = {
@@ -126,17 +185,61 @@ async function storageAccountSetManagementPolicyForBlockAndAppendBlobs() {
   console.log(result);
 }
 
-storageAccountSetManagementPolicyForBlockAndAppendBlobs().catch(console.error);
+/**
+ * This sample demonstrates how to Sets the managementpolicy to the specified storage account.
+ *
+ * @summary Sets the managementpolicy to the specified storage account.
+ * x-ms-original-file: specification/storage/resource-manager/Microsoft.Storage/stable/2023-01-01/examples/StorageAccountSetManagementPolicyHotTierActions.json
+ */
+async function storageAccountSetManagementPolicyHotTierActions() {
+  const subscriptionId =
+    process.env["STORAGE_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName = process.env["STORAGE_RESOURCE_GROUP"] || "res7687";
+  const accountName = "sto9699";
+  const managementPolicyName = "default";
+  const properties: ManagementPolicy = {
+    policy: {
+      rules: [
+        {
+          name: "olcmtest1",
+          type: "Lifecycle",
+          definition: {
+            actions: {
+              baseBlob: { tierToHot: { daysAfterModificationGreaterThan: 30 } },
+              snapshot: { tierToHot: { daysAfterCreationGreaterThan: 30 } },
+              version: { tierToHot: { daysAfterCreationGreaterThan: 30 } }
+            },
+            filters: {
+              blobTypes: ["blockBlob"],
+              prefixMatch: ["olcmtestcontainer1"]
+            }
+          },
+          enabled: true
+        }
+      ]
+    }
+  };
+  const credential = new DefaultAzureCredential();
+  const client = new StorageManagementClient(credential, subscriptionId);
+  const result = await client.managementPolicies.createOrUpdate(
+    resourceGroupName,
+    accountName,
+    managementPolicyName,
+    properties
+  );
+  console.log(result);
+}
 
 /**
  * This sample demonstrates how to Sets the managementpolicy to the specified storage account.
  *
  * @summary Sets the managementpolicy to the specified storage account.
- * x-ms-original-file: specification/storage/resource-manager/Microsoft.Storage/stable/2022-05-01/examples/StorageAccountSetManagementPolicyWithSnapshotAndVersion.json
+ * x-ms-original-file: specification/storage/resource-manager/Microsoft.Storage/stable/2023-01-01/examples/StorageAccountSetManagementPolicyWithSnapshotAndVersion.json
  */
 async function storageAccountSetManagementPolicyWithSnapshotAndVersion() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "res7687";
+  const subscriptionId =
+    process.env["STORAGE_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName = process.env["STORAGE_RESOURCE_GROUP"] || "res7687";
   const accountName = "sto9699";
   const managementPolicyName = "default";
   const properties: ManagementPolicy = {
@@ -184,17 +287,16 @@ async function storageAccountSetManagementPolicyWithSnapshotAndVersion() {
   console.log(result);
 }
 
-storageAccountSetManagementPolicyWithSnapshotAndVersion().catch(console.error);
-
 /**
  * This sample demonstrates how to Sets the managementpolicy to the specified storage account.
  *
  * @summary Sets the managementpolicy to the specified storage account.
- * x-ms-original-file: specification/storage/resource-manager/Microsoft.Storage/stable/2022-05-01/examples/StorageAccountSetManagementPolicy_BaseBlobDaysAfterCreationActions.json
+ * x-ms-original-file: specification/storage/resource-manager/Microsoft.Storage/stable/2023-01-01/examples/StorageAccountSetManagementPolicy_BaseBlobDaysAfterCreationActions.json
  */
 async function storageAccountSetManagementPolicyBaseBlobDaysAfterCreationActions() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "res7687";
+  const subscriptionId =
+    process.env["STORAGE_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName = process.env["STORAGE_RESOURCE_GROUP"] || "res7687";
   const accountName = "sto9699";
   const managementPolicyName = "default";
   const properties: ManagementPolicy = {
@@ -232,19 +334,16 @@ async function storageAccountSetManagementPolicyBaseBlobDaysAfterCreationActions
   console.log(result);
 }
 
-storageAccountSetManagementPolicyBaseBlobDaysAfterCreationActions().catch(
-  console.error
-);
-
 /**
  * This sample demonstrates how to Sets the managementpolicy to the specified storage account.
  *
  * @summary Sets the managementpolicy to the specified storage account.
- * x-ms-original-file: specification/storage/resource-manager/Microsoft.Storage/stable/2022-05-01/examples/StorageAccountSetManagementPolicy_LastAccessTimeBasedBlobActions.json
+ * x-ms-original-file: specification/storage/resource-manager/Microsoft.Storage/stable/2023-01-01/examples/StorageAccountSetManagementPolicy_LastAccessTimeBasedBlobActions.json
  */
 async function storageAccountSetManagementPolicyLastAccessTimeBasedBlobActions() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "res7687";
+  const subscriptionId =
+    process.env["STORAGE_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName = process.env["STORAGE_RESOURCE_GROUP"] || "res7687";
   const accountName = "sto9699";
   const managementPolicyName = "default";
   const properties: ManagementPolicy = {
@@ -284,19 +383,16 @@ async function storageAccountSetManagementPolicyLastAccessTimeBasedBlobActions()
   console.log(result);
 }
 
-storageAccountSetManagementPolicyLastAccessTimeBasedBlobActions().catch(
-  console.error
-);
-
 /**
  * This sample demonstrates how to Sets the managementpolicy to the specified storage account.
  *
  * @summary Sets the managementpolicy to the specified storage account.
- * x-ms-original-file: specification/storage/resource-manager/Microsoft.Storage/stable/2022-05-01/examples/StorageAccountSetManagementPolicy_LastTierChangeTimeActions.json
+ * x-ms-original-file: specification/storage/resource-manager/Microsoft.Storage/stable/2023-01-01/examples/StorageAccountSetManagementPolicy_LastTierChangeTimeActions.json
  */
 async function storageAccountSetManagementPolicyLastTierChangeTimeActions() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "res7687";
+  const subscriptionId =
+    process.env["STORAGE_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName = process.env["STORAGE_RESOURCE_GROUP"] || "res7687";
   const accountName = "sto9699";
   const managementPolicyName = "default";
   const properties: ManagementPolicy = {
@@ -349,6 +445,15 @@ async function storageAccountSetManagementPolicyLastTierChangeTimeActions() {
   console.log(result);
 }
 
-storageAccountSetManagementPolicyLastTierChangeTimeActions().catch(
-  console.error
-);
+async function main() {
+  storageAccountSetManagementPolicies();
+  storageAccountSetManagementPolicyColdTierActions();
+  storageAccountSetManagementPolicyForBlockAndAppendBlobs();
+  storageAccountSetManagementPolicyHotTierActions();
+  storageAccountSetManagementPolicyWithSnapshotAndVersion();
+  storageAccountSetManagementPolicyBaseBlobDaysAfterCreationActions();
+  storageAccountSetManagementPolicyLastAccessTimeBasedBlobActions();
+  storageAccountSetManagementPolicyLastTierChangeTimeActions();
+}
+
+main().catch(console.error);

@@ -24,10 +24,10 @@ export interface CommunicationGetTokenOptions {
 }
 
 // @public
-export type CommunicationIdentifier = CommunicationUserIdentifier | PhoneNumberIdentifier | MicrosoftTeamsUserIdentifier | UnknownIdentifier;
+export type CommunicationIdentifier = CommunicationUserIdentifier | PhoneNumberIdentifier | MicrosoftTeamsUserIdentifier | MicrosoftTeamsAppIdentifier | UnknownIdentifier;
 
 // @public
-export type CommunicationIdentifierKind = CommunicationUserKind | PhoneNumberKind | MicrosoftTeamsUserKind | UnknownIdentifierKind;
+export type CommunicationIdentifierKind = CommunicationUserKind | PhoneNumberKind | MicrosoftTeamsUserKind | MicrosoftTeamsAppKind | UnknownIdentifierKind;
 
 // @public
 export interface CommunicationTokenCredential {
@@ -83,6 +83,9 @@ export const isCommunicationUserIdentifier: (identifier: CommunicationIdentifier
 export const isKeyCredential: (credential: unknown) => credential is KeyCredential;
 
 // @public
+export const isMicrosoftTeamsAppIdentifier: (identifier: CommunicationIdentifier) => identifier is MicrosoftTeamsAppIdentifier;
+
+// @public
 export const isMicrosoftTeamsUserIdentifier: (identifier: CommunicationIdentifier) => identifier is MicrosoftTeamsUserIdentifier;
 
 // @public
@@ -90,6 +93,18 @@ export const isPhoneNumberIdentifier: (identifier: CommunicationIdentifier) => i
 
 // @public
 export const isUnknownIdentifier: (identifier: CommunicationIdentifier) => identifier is UnknownIdentifier;
+
+// @public
+export interface MicrosoftTeamsAppIdentifier {
+    cloud?: "public" | "dod" | "gcch";
+    rawId?: string;
+    teamsAppId: string;
+}
+
+// @public
+export interface MicrosoftTeamsAppKind extends MicrosoftTeamsAppIdentifier {
+    kind: "microsoftTeamsApp";
+}
 
 // @public
 export interface MicrosoftTeamsUserIdentifier {
@@ -130,6 +145,8 @@ export type SerializedCommunicationCloudEnvironment = "public" | "dod" | "gcch";
 // @public
 export interface SerializedCommunicationIdentifier {
     communicationUser?: SerializedCommunicationUserIdentifier;
+    kind?: string;
+    microsoftTeamsApp?: SerializedMicrosoftTeamsAppIdentifier;
     microsoftTeamsUser?: SerializedMicrosoftTeamsUserIdentifier;
     phoneNumber?: SerializedPhoneNumberIdentifier;
     rawId?: string;
@@ -138,6 +155,12 @@ export interface SerializedCommunicationIdentifier {
 // @public
 export interface SerializedCommunicationUserIdentifier {
     id: string;
+}
+
+// @public
+export interface SerializedMicrosoftTeamsAppIdentifier {
+    cloud?: SerializedCommunicationCloudEnvironment;
+    teamsAppId: string;
 }
 
 // @public

@@ -14,8 +14,8 @@ stages:
 
     pool:
       # AzureFileCopy requires Windows
-      name: azsdk-pool-mms-win-2019-general
-      vmImage: MMS2019
+      name: azsdk-pool-mms-win-2022-general
+      vmImage: MMS2022
 
     jobs:
       - job: GenerateReports
@@ -23,7 +23,7 @@ stages:
         steps:
           - template: /eng/pipelines/templates/steps/use-node-version.yml
             parameters:
-              NodeVersion: 16.x
+              NodeVersion: 18.x
 
           - task: PowerShell@2
             inputs:
@@ -86,8 +86,8 @@ stages:
 
     pool:
       # Policheck requires Windows
-      name: azsdk-pool-mms-win-2019-general
-      vmImage: MMS2019
+      name: azsdk-pool-mms-win-2022-general
+      vmImage: MMS2022
 
     jobs:
       - job: ComplianceTools

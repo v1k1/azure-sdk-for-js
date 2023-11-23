@@ -14,6 +14,8 @@ import {
   CheckTrafficManagerRelativeDnsNameAvailabilityParameters,
   ProfilesCheckTrafficManagerRelativeDnsNameAvailabilityOptionalParams,
   ProfilesCheckTrafficManagerRelativeDnsNameAvailabilityResponse,
+  ProfilesCheckTrafficManagerNameAvailabilityV2OptionalParams,
+  ProfilesCheckTrafficManagerNameAvailabilityV2Response,
   ProfilesGetOptionalParams,
   ProfilesGetResponse,
   ProfilesCreateOrUpdateOptionalParams,
@@ -29,8 +31,7 @@ import {
 export interface Profiles {
   /**
    * Lists all Traffic Manager profiles within a resource group.
-   * @param resourceGroupName The name of the resource group containing the Traffic Manager profiles to
-   *                          be listed.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param options The options parameters.
    */
   listByResourceGroup(
@@ -55,8 +56,18 @@ export interface Profiles {
     options?: ProfilesCheckTrafficManagerRelativeDnsNameAvailabilityOptionalParams
   ): Promise<ProfilesCheckTrafficManagerRelativeDnsNameAvailabilityResponse>;
   /**
+   * Checks the availability of a Traffic Manager Relative DNS name.
+   * @param parameters The Traffic Manager name parameters supplied to the
+   *                   CheckTrafficManagerNameAvailability operation.
+   * @param options The options parameters.
+   */
+  checkTrafficManagerNameAvailabilityV2(
+    parameters: CheckTrafficManagerRelativeDnsNameAvailabilityParameters,
+    options?: ProfilesCheckTrafficManagerNameAvailabilityV2OptionalParams
+  ): Promise<ProfilesCheckTrafficManagerNameAvailabilityV2Response>;
+  /**
    * Gets a Traffic Manager profile.
-   * @param resourceGroupName The name of the resource group containing the Traffic Manager profile.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param profileName The name of the Traffic Manager profile.
    * @param options The options parameters.
    */
@@ -67,7 +78,7 @@ export interface Profiles {
   ): Promise<ProfilesGetResponse>;
   /**
    * Create or update a Traffic Manager profile.
-   * @param resourceGroupName The name of the resource group containing the Traffic Manager profile.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param profileName The name of the Traffic Manager profile.
    * @param parameters The Traffic Manager profile parameters supplied to the CreateOrUpdate operation.
    * @param options The options parameters.
@@ -80,8 +91,7 @@ export interface Profiles {
   ): Promise<ProfilesCreateOrUpdateResponse>;
   /**
    * Deletes a Traffic Manager profile.
-   * @param resourceGroupName The name of the resource group containing the Traffic Manager profile to be
-   *                          deleted.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param profileName The name of the Traffic Manager profile to be deleted.
    * @param options The options parameters.
    */
@@ -92,7 +102,7 @@ export interface Profiles {
   ): Promise<ProfilesDeleteResponse>;
   /**
    * Update a Traffic Manager profile.
-   * @param resourceGroupName The name of the resource group containing the Traffic Manager profile.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param profileName The name of the Traffic Manager profile.
    * @param parameters The Traffic Manager profile parameters supplied to the Update operation.
    * @param options The options parameters.

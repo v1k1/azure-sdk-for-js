@@ -7,7 +7,7 @@
  */
 
 import { PagedAsyncIterableIterator } from "@azure/core-paging";
-import { PollerLike, PollOperationState } from "@azure/core-lro";
+import { SimplePollerLike, OperationState } from "@azure/core-lro";
 import {
   PacketCoreControlPlane,
   PacketCoreControlPlanesListBySubscriptionOptionalParams,
@@ -17,9 +17,16 @@ import {
   PacketCoreControlPlanesGetResponse,
   PacketCoreControlPlanesCreateOrUpdateOptionalParams,
   PacketCoreControlPlanesCreateOrUpdateResponse,
-  TagsObject,
+  IdentityAndTagsObject,
   PacketCoreControlPlanesUpdateTagsOptionalParams,
-  PacketCoreControlPlanesUpdateTagsResponse
+  PacketCoreControlPlanesUpdateTagsResponse,
+  PacketCoreControlPlanesRollbackOptionalParams,
+  PacketCoreControlPlanesRollbackResponse,
+  PacketCoreControlPlanesReinstallOptionalParams,
+  PacketCoreControlPlanesReinstallResponse,
+  PacketCoreControlPlaneCollectDiagnosticsPackage,
+  PacketCoreControlPlanesCollectDiagnosticsPackageOptionalParams,
+  PacketCoreControlPlanesCollectDiagnosticsPackageResponse
 } from "../models";
 
 /// <reference lib="esnext.asynciterable" />
@@ -51,7 +58,7 @@ export interface PacketCoreControlPlanes {
     resourceGroupName: string,
     packetCoreControlPlaneName: string,
     options?: PacketCoreControlPlanesDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<SimplePollerLike<OperationState<void>, void>>;
   /**
    * Deletes the specified packet core control plane.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
@@ -87,8 +94,8 @@ export interface PacketCoreControlPlanes {
     parameters: PacketCoreControlPlane,
     options?: PacketCoreControlPlanesCreateOrUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<PacketCoreControlPlanesCreateOrUpdateResponse>,
+    SimplePollerLike<
+      OperationState<PacketCoreControlPlanesCreateOrUpdateResponse>,
       PacketCoreControlPlanesCreateOrUpdateResponse
     >
   >;
@@ -106,16 +113,109 @@ export interface PacketCoreControlPlanes {
     options?: PacketCoreControlPlanesCreateOrUpdateOptionalParams
   ): Promise<PacketCoreControlPlanesCreateOrUpdateResponse>;
   /**
-   * Updates packet core control planes tags.
+   * Patch packet core control plane resource.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param packetCoreControlPlaneName The name of the packet core control plane.
-   * @param parameters Parameters supplied to update packet core control plane tags.
+   * @param parameters Parameters supplied to patch packet core control plane resource.
    * @param options The options parameters.
    */
   updateTags(
     resourceGroupName: string,
     packetCoreControlPlaneName: string,
-    parameters: TagsObject,
+    parameters: IdentityAndTagsObject,
     options?: PacketCoreControlPlanesUpdateTagsOptionalParams
   ): Promise<PacketCoreControlPlanesUpdateTagsResponse>;
+  /**
+   * Roll back the specified packet core control plane to the previous version, "rollbackVersion".
+   * Multiple consecutive rollbacks are not possible. This action may cause a service outage.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
+   * @param packetCoreControlPlaneName The name of the packet core control plane.
+   * @param options The options parameters.
+   */
+  beginRollback(
+    resourceGroupName: string,
+    packetCoreControlPlaneName: string,
+    options?: PacketCoreControlPlanesRollbackOptionalParams
+  ): Promise<
+    SimplePollerLike<
+      OperationState<PacketCoreControlPlanesRollbackResponse>,
+      PacketCoreControlPlanesRollbackResponse
+    >
+  >;
+  /**
+   * Roll back the specified packet core control plane to the previous version, "rollbackVersion".
+   * Multiple consecutive rollbacks are not possible. This action may cause a service outage.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
+   * @param packetCoreControlPlaneName The name of the packet core control plane.
+   * @param options The options parameters.
+   */
+  beginRollbackAndWait(
+    resourceGroupName: string,
+    packetCoreControlPlaneName: string,
+    options?: PacketCoreControlPlanesRollbackOptionalParams
+  ): Promise<PacketCoreControlPlanesRollbackResponse>;
+  /**
+   * Reinstall the specified packet core control plane. This action will remove any transaction state
+   * from the packet core to return it to a known state. This action will cause a service outage.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
+   * @param packetCoreControlPlaneName The name of the packet core control plane.
+   * @param options The options parameters.
+   */
+  beginReinstall(
+    resourceGroupName: string,
+    packetCoreControlPlaneName: string,
+    options?: PacketCoreControlPlanesReinstallOptionalParams
+  ): Promise<
+    SimplePollerLike<
+      OperationState<PacketCoreControlPlanesReinstallResponse>,
+      PacketCoreControlPlanesReinstallResponse
+    >
+  >;
+  /**
+   * Reinstall the specified packet core control plane. This action will remove any transaction state
+   * from the packet core to return it to a known state. This action will cause a service outage.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
+   * @param packetCoreControlPlaneName The name of the packet core control plane.
+   * @param options The options parameters.
+   */
+  beginReinstallAndWait(
+    resourceGroupName: string,
+    packetCoreControlPlaneName: string,
+    options?: PacketCoreControlPlanesReinstallOptionalParams
+  ): Promise<PacketCoreControlPlanesReinstallResponse>;
+  /**
+   * Collect a diagnostics package for the specified packet core control plane. This action will upload
+   * the diagnostics to a storage account.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
+   * @param packetCoreControlPlaneName The name of the packet core control plane.
+   * @param parameters Parameters supplied to the packet core control plane collect diagnostics package
+   *                   operation.
+   * @param options The options parameters.
+   */
+  beginCollectDiagnosticsPackage(
+    resourceGroupName: string,
+    packetCoreControlPlaneName: string,
+    parameters: PacketCoreControlPlaneCollectDiagnosticsPackage,
+    options?: PacketCoreControlPlanesCollectDiagnosticsPackageOptionalParams
+  ): Promise<
+    SimplePollerLike<
+      OperationState<PacketCoreControlPlanesCollectDiagnosticsPackageResponse>,
+      PacketCoreControlPlanesCollectDiagnosticsPackageResponse
+    >
+  >;
+  /**
+   * Collect a diagnostics package for the specified packet core control plane. This action will upload
+   * the diagnostics to a storage account.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
+   * @param packetCoreControlPlaneName The name of the packet core control plane.
+   * @param parameters Parameters supplied to the packet core control plane collect diagnostics package
+   *                   operation.
+   * @param options The options parameters.
+   */
+  beginCollectDiagnosticsPackageAndWait(
+    resourceGroupName: string,
+    packetCoreControlPlaneName: string,
+    parameters: PacketCoreControlPlaneCollectDiagnosticsPackage,
+    options?: PacketCoreControlPlanesCollectDiagnosticsPackageOptionalParams
+  ): Promise<PacketCoreControlPlanesCollectDiagnosticsPackageResponse>;
 }

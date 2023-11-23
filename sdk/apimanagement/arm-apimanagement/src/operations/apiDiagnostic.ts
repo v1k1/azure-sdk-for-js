@@ -6,7 +6,8 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { ApiDiagnostic } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
@@ -44,7 +45,7 @@ export class ApiDiagnosticImpl implements ApiDiagnostic {
 
   /**
    * Lists all diagnostics of an API.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param apiId API identifier. Must be unique in the current API Management service instance.
    * @param options The options parameters.
@@ -68,12 +69,16 @@ export class ApiDiagnosticImpl implements ApiDiagnostic {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listByServicePagingPage(
           resourceGroupName,
           serviceName,
           apiId,
-          options
+          options,
+          settings
         );
       }
     };
@@ -83,16 +88,23 @@ export class ApiDiagnosticImpl implements ApiDiagnostic {
     resourceGroupName: string,
     serviceName: string,
     apiId: string,
-    options?: ApiDiagnosticListByServiceOptionalParams
+    options?: ApiDiagnosticListByServiceOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<DiagnosticContract[]> {
-    let result = await this._listByService(
-      resourceGroupName,
-      serviceName,
-      apiId,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: ApiDiagnosticListByServiceResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listByService(
+        resourceGroupName,
+        serviceName,
+        apiId,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listByServiceNext(
         resourceGroupName,
@@ -102,7 +114,9 @@ export class ApiDiagnosticImpl implements ApiDiagnostic {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -124,7 +138,7 @@ export class ApiDiagnosticImpl implements ApiDiagnostic {
 
   /**
    * Lists all diagnostics of an API.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param apiId API identifier. Must be unique in the current API Management service instance.
    * @param options The options parameters.
@@ -143,7 +157,7 @@ export class ApiDiagnosticImpl implements ApiDiagnostic {
 
   /**
    * Gets the entity state (Etag) version of the Diagnostic for an API specified by its identifier.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param apiId API identifier. Must be unique in the current API Management service instance.
    * @param diagnosticId Diagnostic identifier. Must be unique in the current API Management service
@@ -165,7 +179,7 @@ export class ApiDiagnosticImpl implements ApiDiagnostic {
 
   /**
    * Gets the details of the Diagnostic for an API specified by its identifier.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param apiId API identifier. Must be unique in the current API Management service instance.
    * @param diagnosticId Diagnostic identifier. Must be unique in the current API Management service
@@ -187,7 +201,7 @@ export class ApiDiagnosticImpl implements ApiDiagnostic {
 
   /**
    * Creates a new Diagnostic for an API or updates an existing one.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param apiId API identifier. Must be unique in the current API Management service instance.
    * @param diagnosticId Diagnostic identifier. Must be unique in the current API Management service
@@ -218,7 +232,7 @@ export class ApiDiagnosticImpl implements ApiDiagnostic {
 
   /**
    * Updates the details of the Diagnostic for an API specified by its identifier.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param apiId API identifier. Must be unique in the current API Management service instance.
    * @param diagnosticId Diagnostic identifier. Must be unique in the current API Management service
@@ -253,7 +267,7 @@ export class ApiDiagnosticImpl implements ApiDiagnostic {
 
   /**
    * Deletes the specified Diagnostic from an API.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param apiId API identifier. Must be unique in the current API Management service instance.
    * @param diagnosticId Diagnostic identifier. Must be unique in the current API Management service
@@ -278,7 +292,7 @@ export class ApiDiagnosticImpl implements ApiDiagnostic {
 
   /**
    * ListByServiceNext
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param apiId API identifier. Must be unique in the current API Management service instance.
    * @param nextLink The nextLink from the previous successful call to the ListByService method.
@@ -394,7 +408,7 @@ const createOrUpdateOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  requestBody: Parameters.parameters8,
+  requestBody: Parameters.parameters10,
   queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
@@ -425,7 +439,7 @@ const updateOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  requestBody: Parameters.parameters8,
+  requestBody: Parameters.parameters10,
   queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
@@ -477,12 +491,6 @@ const listByServiceNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [
-    Parameters.filter,
-    Parameters.top,
-    Parameters.skip,
-    Parameters.apiVersion
-  ],
   urlParameters: [
     Parameters.$host,
     Parameters.resourceGroupName,

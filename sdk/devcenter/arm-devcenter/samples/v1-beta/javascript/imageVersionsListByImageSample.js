@@ -10,16 +10,18 @@
 // Licensed under the MIT License.
 const { DevCenterClient } = require("@azure/arm-devcenter");
 const { DefaultAzureCredential } = require("@azure/identity");
+require("dotenv").config();
 
 /**
  * This sample demonstrates how to Lists versions for an image.
  *
  * @summary Lists versions for an image.
- * x-ms-original-file: specification/devcenter/resource-manager/Microsoft.DevCenter/preview/2022-09-01-preview/examples/ImageVersions_List.json
+ * x-ms-original-file: specification/devcenter/resource-manager/Microsoft.DevCenter/preview/2023-10-01-preview/examples/ImageVersions_List.json
  */
 async function imageVersionsListByImage() {
-  const subscriptionId = "{subscriptionId}";
-  const resourceGroupName = "rg1";
+  const subscriptionId =
+    process.env["DEVCENTER_SUBSCRIPTION_ID"] || "0ac520ee-14c0-480f-b6c9-0a90c58ffff";
+  const resourceGroupName = process.env["DEVCENTER_RESOURCE_GROUP"] || "rg1";
   const devCenterName = "Contoso";
   const galleryName = "DefaultDevGallery";
   const imageName = "Win11";
@@ -37,4 +39,8 @@ async function imageVersionsListByImage() {
   console.log(resArray);
 }
 
-imageVersionsListByImage().catch(console.error);
+async function main() {
+  imageVersionsListByImage();
+}
+
+main().catch(console.error);

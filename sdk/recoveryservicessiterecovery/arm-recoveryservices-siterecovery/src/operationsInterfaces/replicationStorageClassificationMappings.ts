@@ -7,7 +7,7 @@
  */
 
 import { PagedAsyncIterableIterator } from "@azure/core-paging";
-import { PollerLike, PollOperationState } from "@azure/core-lro";
+import { SimplePollerLike, OperationState } from "@azure/core-lro";
 import {
   StorageClassificationMapping,
   ReplicationStorageClassificationMappingsListByReplicationStorageClassificationsOptionalParams,
@@ -25,30 +25,45 @@ import {
 export interface ReplicationStorageClassificationMappings {
   /**
    * Lists the storage classification mappings for the fabric.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param storageClassificationName Storage classification name.
    * @param options The options parameters.
    */
   listByReplicationStorageClassifications(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     storageClassificationName: string,
     options?: ReplicationStorageClassificationMappingsListByReplicationStorageClassificationsOptionalParams
   ): PagedAsyncIterableIterator<StorageClassificationMapping>;
   /**
    * Lists the storage classification mappings in the vault.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param options The options parameters.
    */
   list(
+    resourceName: string,
+    resourceGroupName: string,
     options?: ReplicationStorageClassificationMappingsListOptionalParams
   ): PagedAsyncIterableIterator<StorageClassificationMapping>;
   /**
    * Gets the details of the specified storage classification mapping.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param storageClassificationName Storage classification name.
    * @param storageClassificationMappingName Storage classification mapping name.
    * @param options The options parameters.
    */
   get(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     storageClassificationName: string,
     storageClassificationMappingName: string,
@@ -56,6 +71,9 @@ export interface ReplicationStorageClassificationMappings {
   ): Promise<ReplicationStorageClassificationMappingsGetResponse>;
   /**
    * The operation to create a storage classification mapping.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param storageClassificationName Storage classification name.
    * @param storageClassificationMappingName Storage classification mapping name.
@@ -63,21 +81,24 @@ export interface ReplicationStorageClassificationMappings {
    * @param options The options parameters.
    */
   beginCreate(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     storageClassificationName: string,
     storageClassificationMappingName: string,
     pairingInput: StorageClassificationMappingInput,
     options?: ReplicationStorageClassificationMappingsCreateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<
-        ReplicationStorageClassificationMappingsCreateResponse
-      >,
+    SimplePollerLike<
+      OperationState<ReplicationStorageClassificationMappingsCreateResponse>,
       ReplicationStorageClassificationMappingsCreateResponse
     >
   >;
   /**
    * The operation to create a storage classification mapping.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param storageClassificationName Storage classification name.
    * @param storageClassificationMappingName Storage classification mapping name.
@@ -85,6 +106,8 @@ export interface ReplicationStorageClassificationMappings {
    * @param options The options parameters.
    */
   beginCreateAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     storageClassificationName: string,
     storageClassificationMappingName: string,
@@ -93,25 +116,35 @@ export interface ReplicationStorageClassificationMappings {
   ): Promise<ReplicationStorageClassificationMappingsCreateResponse>;
   /**
    * The operation to delete a storage classification mapping.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param storageClassificationName Storage classification name.
    * @param storageClassificationMappingName Storage classification mapping name.
    * @param options The options parameters.
    */
   beginDelete(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     storageClassificationName: string,
     storageClassificationMappingName: string,
     options?: ReplicationStorageClassificationMappingsDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<SimplePollerLike<OperationState<void>, void>>;
   /**
    * The operation to delete a storage classification mapping.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param storageClassificationName Storage classification name.
    * @param storageClassificationMappingName Storage classification mapping name.
    * @param options The options parameters.
    */
   beginDeleteAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     storageClassificationName: string,
     storageClassificationMappingName: string,

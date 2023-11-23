@@ -9,9 +9,8 @@
 import {
   OperationParameter,
   OperationURLParameter,
-  OperationQueryParameter,
-  QueryCollectionFormat
-} from "@azure/core-http";
+  OperationQueryParameter
+} from "@azure/core-client";
 
 export const accept: OperationParameter = {
   parameterPath: "accept",
@@ -114,7 +113,7 @@ export const timeout: OperationQueryParameter = {
 export const version: OperationParameter = {
   parameterPath: "version",
   mapper: {
-    defaultValue: "2021-10-04",
+    defaultValue: "2023-08-03",
     isConstant: true,
     serializedName: "x-ms-version",
     type: {
@@ -284,7 +283,7 @@ export const include: OperationQueryParameter = {
       }
     }
   },
-  collectionFormat: QueryCollectionFormat.Csv
+  collectionFormat: "CSV"
 };
 
 export const showonly: OperationQueryParameter = {
@@ -627,6 +626,17 @@ export const expiresOn: OperationParameter = {
   }
 };
 
+export const encryptionContext: OperationParameter = {
+  parameterPath: ["options", "encryptionContext"],
+  mapper: {
+    serializedName: "x-ms-encryption-context",
+    xmlName: "x-ms-encryption-context",
+    type: {
+      name: "String"
+    }
+  }
+};
+
 export const contentType1: OperationParameter = {
   parameterPath: ["options", "contentType"],
   mapper: {
@@ -858,6 +868,17 @@ export const recursive1: OperationQueryParameter = {
   }
 };
 
+export const paginated: OperationQueryParameter = {
+  parameterPath: ["options", "paginated"],
+  mapper: {
+    serializedName: "paginated",
+    xmlName: "paginated",
+    type: {
+      name: "Boolean"
+    }
+  }
+};
+
 export const action2: OperationQueryParameter = {
   parameterPath: "action",
   mapper: {
@@ -890,6 +911,18 @@ export const action4: OperationQueryParameter = {
     serializedName: "action",
     type: {
       name: "String"
+    }
+  }
+};
+
+export const leaseAction: OperationParameter = {
+  parameterPath: ["options", "leaseAction"],
+  mapper: {
+    serializedName: "x-ms-lease-action",
+    xmlName: "x-ms-lease-action",
+    type: {
+      name: "Enum",
+      allowedValues: ["acquire", "auto-renew", "release", "acquire-release"]
     }
   }
 };

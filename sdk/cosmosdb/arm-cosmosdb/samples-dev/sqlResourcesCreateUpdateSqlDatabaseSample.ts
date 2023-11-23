@@ -13,16 +13,19 @@ import {
   CosmosDBManagementClient
 } from "@azure/arm-cosmosdb";
 import { DefaultAzureCredential } from "@azure/identity";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 /**
  * This sample demonstrates how to Create or update an Azure Cosmos DB SQL database
  *
  * @summary Create or update an Azure Cosmos DB SQL database
- * x-ms-original-file: specification/cosmos-db/resource-manager/Microsoft.DocumentDB/preview/2022-08-15-preview/examples/CosmosDBSqlDatabaseCreateUpdate.json
+ * x-ms-original-file: specification/cosmos-db/resource-manager/Microsoft.DocumentDB/preview/2023-03-15-preview/examples/CosmosDBSqlDatabaseCreateUpdate.json
  */
 async function cosmosDbSqlDatabaseCreateUpdate() {
-  const subscriptionId = "subid";
-  const resourceGroupName = "rg1";
+  const subscriptionId = process.env["COSMOSDB_SUBSCRIPTION_ID"] || "subid";
+  const resourceGroupName = process.env["COSMOSDB_RESOURCE_GROUP"] || "rg1";
   const accountName = "ddb1";
   const databaseName = "databaseName";
   const createUpdateSqlDatabaseParameters: SqlDatabaseCreateUpdateParameters = {
@@ -42,17 +45,15 @@ async function cosmosDbSqlDatabaseCreateUpdate() {
   console.log(result);
 }
 
-cosmosDbSqlDatabaseCreateUpdate().catch(console.error);
-
 /**
  * This sample demonstrates how to Create or update an Azure Cosmos DB SQL database
  *
  * @summary Create or update an Azure Cosmos DB SQL database
- * x-ms-original-file: specification/cosmos-db/resource-manager/Microsoft.DocumentDB/preview/2022-08-15-preview/examples/CosmosDBSqlDatabaseRestore.json
+ * x-ms-original-file: specification/cosmos-db/resource-manager/Microsoft.DocumentDB/preview/2023-03-15-preview/examples/CosmosDBSqlDatabaseRestore.json
  */
 async function cosmosDbSqlDatabaseRestore() {
-  const subscriptionId = "subid";
-  const resourceGroupName = "rg1";
+  const subscriptionId = process.env["COSMOSDB_SUBSCRIPTION_ID"] || "subid";
+  const resourceGroupName = process.env["COSMOSDB_RESOURCE_GROUP"] || "rg1";
   const accountName = "ddb1";
   const databaseName = "databaseName";
   const createUpdateSqlDatabaseParameters: SqlDatabaseCreateUpdateParameters = {
@@ -80,4 +81,9 @@ async function cosmosDbSqlDatabaseRestore() {
   console.log(result);
 }
 
-cosmosDbSqlDatabaseRestore().catch(console.error);
+async function main() {
+  cosmosDbSqlDatabaseCreateUpdate();
+  cosmosDbSqlDatabaseRestore();
+}
+
+main().catch(console.error);

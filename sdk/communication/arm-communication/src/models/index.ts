@@ -164,10 +164,44 @@ export interface CommunicationServiceResourceList {
   nextLink?: string;
 }
 
+/** Managed service identity (system assigned and/or user assigned identities) */
+export interface ManagedServiceIdentity {
+  /**
+   * The service principal ID of the system assigned identity. This property will only be provided for a system assigned identity.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly principalId?: string;
+  /**
+   * The tenant ID of the system assigned identity. This property will only be provided for a system assigned identity.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly tenantId?: string;
+  /** Type of managed service identity (where both SystemAssigned and UserAssigned types are allowed). */
+  type: ManagedServiceIdentityType;
+  /** The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests. */
+  userAssignedIdentities?: {
+    [propertyName: string]: UserAssignedIdentity | null;
+  };
+}
+
+/** User assigned identity properties */
+export interface UserAssignedIdentity {
+  /**
+   * The principal ID of the assigned identity.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly principalId?: string;
+  /**
+   * The client ID of the assigned identity.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly clientId?: string;
+}
+
 /** Common fields that are returned in the response for all Azure Resource Manager resources */
 export interface Resource {
   /**
-   * Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}
+   * Fully qualified resource ID for the resource. E.g. "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
   readonly id?: string;
@@ -322,6 +356,14 @@ export interface EmailServiceResourceList {
   nextLink?: string;
 }
 
+/** A class representing a Domains SenderUsernames collection. */
+export interface SenderUsernameResourceCollection {
+  /** List of SenderUsernames */
+  value?: SenderUsernameResource[];
+  /** The URL the client should use to fetch the next page (per server side paging). */
+  nextLink?: string;
+}
+
 /** Data POST-ed to the nameAvailability action */
 export interface NameAvailabilityParameters
   extends CheckNameAvailabilityRequest {}
@@ -334,16 +376,19 @@ export interface TrackedResource extends Resource {
   location: string;
 }
 
+/** The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location */
+export interface ProxyResource extends Resource {}
+
 /** A class representing update parameters for CommunicationService resource. */
 export interface CommunicationServiceResourceUpdate extends TaggedResource {
+  /** Managed service identity (system assigned and/or user assigned identities) */
+  identity?: ManagedServiceIdentity;
   /** List of email Domain resource Ids. */
   linkedDomains?: string[];
 }
 
 /** A class that describes the PATCH request parameters of a Domains resource. */
 export interface UpdateDomainRequestParameters extends TaggedResource {
-  /** Collection of valid sender usernames. This is a key-value pair where key=username and value=display name. */
-  validSenderUsernames?: { [propertyName: string]: string };
   /** Describes whether user engagement tracking is enabled or disabled. */
   userEngagementTracking?: UserEngagementTracking;
 }
@@ -353,6 +398,8 @@ export interface EmailServiceResourceUpdate extends TaggedResource {}
 
 /** A class representing a CommunicationService resource. */
 export interface CommunicationServiceResource extends TrackedResource {
+  /** Managed service identity (system assigned and/or user assigned identities) */
+  identity?: ManagedServiceIdentity;
   /**
    * Provisioning state of the resource.
    * NOTE: This property will not be serialized. It can only be populated by the server.
@@ -418,8 +465,6 @@ export interface DomainResource extends TrackedResource {
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
   readonly verificationRecords?: DomainPropertiesVerificationRecords;
-  /** Collection of valid sender usernames. This is a key-value pair where key=username and value=display name. */
-  validSenderUsernames?: { [propertyName: string]: string };
   /** Describes whether user engagement tracking is enabled or disabled. */
   userEngagementTracking?: UserEngagementTracking;
 }
@@ -435,10 +480,22 @@ export interface EmailServiceResource extends TrackedResource {
   dataLocation?: string;
 }
 
-/** Defines headers for CommunicationServices_update operation. */
-export interface CommunicationServicesUpdateHeaders {
-  /** URL to query for status of the operation. */
-  azureAsyncOperation?: string;
+/** A class representing a SenderUsername resource. */
+export interface SenderUsernameResource extends ProxyResource {
+  /**
+   * The location where the SenderUsername resource data is stored at rest.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly dataLocation?: string;
+  /** A sender senderUsername to be used when sending emails. */
+  username?: string;
+  /** The display name for the senderUsername. */
+  displayName?: string;
+  /**
+   * Provisioning state of the resource. Unknown is the default state for Communication Services.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly provisioningState?: ProvisioningState;
 }
 
 /** Defines headers for CommunicationServices_createOrUpdate operation. */
@@ -593,6 +650,30 @@ export enum KnownCommunicationServicesProvisioningState {
  * **Moving**
  */
 export type CommunicationServicesProvisioningState = string;
+
+/** Known values of {@link ManagedServiceIdentityType} that the service accepts. */
+export enum KnownManagedServiceIdentityType {
+  /** None */
+  None = "None",
+  /** SystemAssigned */
+  SystemAssigned = "SystemAssigned",
+  /** UserAssigned */
+  UserAssigned = "UserAssigned",
+  /** SystemAssignedUserAssigned */
+  SystemAssignedUserAssigned = "SystemAssigned,UserAssigned"
+}
+
+/**
+ * Defines values for ManagedServiceIdentityType. \
+ * {@link KnownManagedServiceIdentityType} can be used interchangeably with ManagedServiceIdentityType,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **None** \
+ * **SystemAssigned** \
+ * **UserAssigned** \
+ * **SystemAssigned,UserAssigned**
+ */
+export type ManagedServiceIdentityType = string;
 
 /** Known values of {@link CreatedByType} that the service accepts. */
 export enum KnownCreatedByType {
@@ -791,6 +872,45 @@ export enum KnownEmailServicesProvisioningState {
  * **Moving**
  */
 export type EmailServicesProvisioningState = string;
+
+/** Known values of {@link ProvisioningState} that the service accepts. */
+export enum KnownProvisioningState {
+  /** Unknown */
+  Unknown = "Unknown",
+  /** Succeeded */
+  Succeeded = "Succeeded",
+  /** Failed */
+  Failed = "Failed",
+  /** Canceled */
+  Canceled = "Canceled",
+  /** Running */
+  Running = "Running",
+  /** Creating */
+  Creating = "Creating",
+  /** Updating */
+  Updating = "Updating",
+  /** Deleting */
+  Deleting = "Deleting",
+  /** Moving */
+  Moving = "Moving"
+}
+
+/**
+ * Defines values for ProvisioningState. \
+ * {@link KnownProvisioningState} can be used interchangeably with ProvisioningState,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **Unknown** \
+ * **Succeeded** \
+ * **Failed** \
+ * **Canceled** \
+ * **Running** \
+ * **Creating** \
+ * **Updating** \
+ * **Deleting** \
+ * **Moving**
+ */
+export type ProvisioningState = string;
 /** Defines values for KeyType. */
 export type KeyType = "Primary" | "Secondary";
 
@@ -841,12 +961,7 @@ export type CommunicationServicesListByResourceGroupResponse = CommunicationServ
 
 /** Optional parameters. */
 export interface CommunicationServicesUpdateOptionalParams
-  extends coreClient.OperationOptions {
-  /** Delay to wait until next poll, in milliseconds. */
-  updateIntervalInMs?: number;
-  /** A serialized poller which can be used to resume an existing paused Long-Running-Operation. */
-  resumeFrom?: string;
-}
+  extends coreClient.OperationOptions {}
 
 /** Contains response data for the update operation. */
 export type CommunicationServicesUpdateResponse = CommunicationServiceResource;
@@ -888,12 +1003,7 @@ export type CommunicationServicesListKeysResponse = CommunicationServiceKeys;
 
 /** Optional parameters. */
 export interface CommunicationServicesRegenerateKeyOptionalParams
-  extends coreClient.OperationOptions {
-  /** Delay to wait until next poll, in milliseconds. */
-  updateIntervalInMs?: number;
-  /** A serialized poller which can be used to resume an existing paused Long-Running-Operation. */
-  resumeFrom?: string;
-}
+  extends coreClient.OperationOptions {}
 
 /** Contains response data for the regenerateKey operation. */
 export type CommunicationServicesRegenerateKeyResponse = CommunicationServiceKeys;
@@ -1066,6 +1176,38 @@ export interface EmailServicesListByResourceGroupNextOptionalParams
 
 /** Contains response data for the listByResourceGroupNext operation. */
 export type EmailServicesListByResourceGroupNextResponse = EmailServiceResourceList;
+
+/** Optional parameters. */
+export interface SenderUsernamesListByDomainsOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the listByDomains operation. */
+export type SenderUsernamesListByDomainsResponse = SenderUsernameResourceCollection;
+
+/** Optional parameters. */
+export interface SenderUsernamesGetOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the get operation. */
+export type SenderUsernamesGetResponse = SenderUsernameResource;
+
+/** Optional parameters. */
+export interface SenderUsernamesCreateOrUpdateOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the createOrUpdate operation. */
+export type SenderUsernamesCreateOrUpdateResponse = SenderUsernameResource;
+
+/** Optional parameters. */
+export interface SenderUsernamesDeleteOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Optional parameters. */
+export interface SenderUsernamesListByDomainsNextOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the listByDomainsNext operation. */
+export type SenderUsernamesListByDomainsNextResponse = SenderUsernameResourceCollection;
 
 /** Optional parameters. */
 export interface CommunicationServiceManagementClientOptionalParams

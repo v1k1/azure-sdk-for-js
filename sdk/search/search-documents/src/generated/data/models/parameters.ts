@@ -53,16 +53,6 @@ export const indexName: OperationURLParameter = {
   }
 };
 
-export const xMsClientRequestId: OperationParameter = {
-  parameterPath: ["options", "requestOptionsParam", "xMsClientRequestId"],
-  mapper: {
-    serializedName: "x-ms-client-request-id",
-    type: {
-      name: "Uuid"
-    }
-  }
-};
-
 export const apiVersion: OperationQueryParameter = {
   parameterPath: "apiVersion",
   mapper: {
@@ -219,10 +209,53 @@ export const scoringProfile: OperationQueryParameter = {
   }
 };
 
+export const semanticQuery: OperationQueryParameter = {
+  parameterPath: ["options", "searchOptions", "semanticQuery"],
+  mapper: {
+    serializedName: "semanticQuery",
+    type: {
+      name: "String"
+    }
+  }
+};
+
 export const semanticConfiguration: OperationQueryParameter = {
   parameterPath: ["options", "searchOptions", "semanticConfiguration"],
   mapper: {
     serializedName: "semanticConfiguration",
+    type: {
+      name: "String"
+    }
+  }
+};
+
+export const semanticErrorHandling: OperationQueryParameter = {
+  parameterPath: ["options", "searchOptions", "semanticErrorHandling"],
+  mapper: {
+    serializedName: "semanticErrorHandling",
+    type: {
+      name: "String"
+    }
+  }
+};
+
+export const semanticMaxWaitInMilliseconds: OperationQueryParameter = {
+  parameterPath: ["options", "searchOptions", "semanticMaxWaitInMilliseconds"],
+  mapper: {
+    constraints: {
+      InclusiveMinimum: 700
+    },
+    serializedName: "semanticMaxWaitInMilliseconds",
+    type: {
+      name: "Number"
+    }
+  }
+};
+
+export const debug: OperationQueryParameter = {
+  parameterPath: ["options", "searchOptions", "debug"],
+  mapper: {
+    serializedName: "debug",
     type: {
       name: "String"
     }

@@ -10,18 +10,23 @@
 // Licensed under the MIT License.
 import { DevCenterClient } from "@azure/arm-devcenter";
 import { DefaultAzureCredential } from "@azure/identity";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 /**
  * This sample demonstrates how to Deletes a catalog resource.
  *
  * @summary Deletes a catalog resource.
- * x-ms-original-file: specification/devcenter/resource-manager/Microsoft.DevCenter/preview/2022-09-01-preview/examples/Catalogs_Delete.json
+ * x-ms-original-file: specification/devcenter/resource-manager/Microsoft.DevCenter/preview/2023-10-01-preview/examples/Catalogs_Delete.json
  */
 async function catalogsDelete() {
-  const subscriptionId = "{subscriptionId}";
-  const resourceGroupName = "rg1";
+  const subscriptionId =
+    process.env["DEVCENTER_SUBSCRIPTION_ID"] ||
+    "0ac520ee-14c0-480f-b6c9-0a90c58ffff";
+  const resourceGroupName = process.env["DEVCENTER_RESOURCE_GROUP"] || "rg1";
   const devCenterName = "Contoso";
-  const catalogName = "{catalogName}";
+  const catalogName = "CentralCatalog";
   const credential = new DefaultAzureCredential();
   const client = new DevCenterClient(credential, subscriptionId);
   const result = await client.catalogs.beginDeleteAndWait(
@@ -32,4 +37,8 @@ async function catalogsDelete() {
   console.log(result);
 }
 
-catalogsDelete().catch(console.error);
+async function main() {
+  catalogsDelete();
+}
+
+main().catch(console.error);

@@ -48,12 +48,13 @@ export interface Attributes {
   readonly updated?: Date;
 }
 
+/** The policy rules under which the key can be exported. */
 export interface KeyReleasePolicy {
   /** Content type and version of key release policy */
   contentType?: string;
   /** Defines the mutability state of the policy. Once marked immutable, this flag cannot be reset and the policy cannot be changed under any circumstances. */
   immutable?: boolean;
-  /** Blob encoding the policy rules under which the key can be released. */
+  /** Blob encoding the policy rules under which the key can be released. Blob must be base64 URL encoded. */
   encodedPolicy?: Uint8Array;
 }
 
@@ -212,7 +213,7 @@ export interface KeyOperationsParameters {
   /** algorithm identifier */
   algorithm: JsonWebKeyEncryptionAlgorithm;
   value: Uint8Array;
-  /** Initialization vector for symmetric algorithms. */
+  /** Cryptographically random, non-repeating initialization vector for symmetric algorithms. */
   iv?: Uint8Array;
   /** Additional data to authenticate but not encrypt/decrypt when using authenticated crypto algorithms. */
   additionalAuthenticatedData?: Uint8Array;
@@ -319,7 +320,7 @@ export interface LifetimeActions {
 
 /** A condition to be satisfied for an action to be executed. */
 export interface LifetimeActionsTrigger {
-  /** Time after creation to attempt to rotate. It only applies to rotate. It will be in ISO 8601 duration format. Example: 90 days : "P90D" */
+  /** Time after creation to attempt to rotate. It only applies to rotate. It will be in ISO 8601 duration format. Example: 90 days : "P90D"  */
   timeAfterCreate?: string;
   /** Time before expiry to attempt to rotate or notify. It will be in ISO 8601 duration format. Example: 90 days : "P90D" */
   timeBeforeExpiry?: string;
@@ -327,7 +328,7 @@ export interface LifetimeActionsTrigger {
 
 /** The action that will be executed. */
 export interface LifetimeActionsType {
-  /** The type of the action. */
+  /** The type of the action. The value should be compared case-insensitively. */
   type?: ActionType;
 }
 
@@ -361,7 +362,7 @@ export interface RandomBytes {
 
 /** Properties of the key pair backing a certificate. */
 export interface KeyProperties {
-  /** Indicates if the private key can be exported. */
+  /** Indicates if the private key can be exported. Release policy must be provided when creating the first version of an exportable key. */
   exportable?: boolean;
   /** The type of key pair to be used for the certificate. */
   keyType?: JsonWebKeyType;
@@ -395,8 +396,13 @@ export type KeyAttributes = Attributes & {
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
   readonly recoveryLevel?: DeletionRecoveryLevel;
-  /** Indicates if the private key can be exported. */
+  /** Indicates if the private key can be exported. Release policy must be provided when creating the first version of an exportable key. */
   exportable?: boolean;
+  /**
+   * The underlying HSM Platform.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly hsmPlatform?: string;
 };
 
 /** A DeletedKeyBundle consisting of a WebKey plus its Attributes and deletion info */
@@ -431,20 +437,20 @@ export type DeletedKeyItem = KeyItem & {
   readonly deletedDate?: Date;
 };
 
-/** Known values of {@link ApiVersion73} that the service accepts. */
-export enum KnownApiVersion73 {
-  /** Api Version '7.3' */
-  Seven3 = "7.3"
+/** Known values of {@link ApiVersion75Preview1} that the service accepts. */
+export enum KnownApiVersion75Preview1 {
+  /** Api Version '7.5-preview.1' */
+  Seven5Preview1 = "7.5-preview.1"
 }
 
 /**
- * Defines values for ApiVersion73. \
- * {@link KnownApiVersion73} can be used interchangeably with ApiVersion73,
+ * Defines values for ApiVersion75Preview1. \
+ * {@link KnownApiVersion75Preview1} can be used interchangeably with ApiVersion75Preview1,
  *  this enum contains the known values that the service supports.
  * ### Known values supported by the service
- * **7.3**: Api Version '7.3'
+ * **7.5-preview.1**: Api Version '7.5-preview.1'
  */
-export type ApiVersion73 = string;
+export type ApiVersion75Preview1 = string;
 
 /** Known values of {@link JsonWebKeyType} that the service accepts. */
 export enum KnownJsonWebKeyType {
@@ -770,7 +776,7 @@ export type RestoreKeyResponse = KeyBundle;
 
 /** Optional parameters. */
 export interface EncryptOptionalParams extends coreClient.OperationOptions {
-  /** Initialization vector for symmetric algorithms. */
+  /** Cryptographically random, non-repeating initialization vector for symmetric algorithms. */
   iv?: Uint8Array;
   /** Additional data to authenticate but not encrypt/decrypt when using authenticated crypto algorithms. */
   additionalAuthenticatedData?: Uint8Array;
@@ -783,7 +789,7 @@ export type EncryptResponse = KeyOperationResult;
 
 /** Optional parameters. */
 export interface DecryptOptionalParams extends coreClient.OperationOptions {
-  /** Initialization vector for symmetric algorithms. */
+  /** Cryptographically random, non-repeating initialization vector for symmetric algorithms. */
   iv?: Uint8Array;
   /** Additional data to authenticate but not encrypt/decrypt when using authenticated crypto algorithms. */
   additionalAuthenticatedData?: Uint8Array;
@@ -808,7 +814,7 @@ export type VerifyResponse = KeyVerifyResult;
 
 /** Optional parameters. */
 export interface WrapKeyOptionalParams extends coreClient.OperationOptions {
-  /** Initialization vector for symmetric algorithms. */
+  /** Cryptographically random, non-repeating initialization vector for symmetric algorithms. */
   iv?: Uint8Array;
   /** Additional data to authenticate but not encrypt/decrypt when using authenticated crypto algorithms. */
   additionalAuthenticatedData?: Uint8Array;
@@ -821,7 +827,7 @@ export type WrapKeyResponse = KeyOperationResult;
 
 /** Optional parameters. */
 export interface UnwrapKeyOptionalParams extends coreClient.OperationOptions {
-  /** Initialization vector for symmetric algorithms. */
+  /** Cryptographically random, non-repeating initialization vector for symmetric algorithms. */
   iv?: Uint8Array;
   /** Additional data to authenticate but not encrypt/decrypt when using authenticated crypto algorithms. */
   additionalAuthenticatedData?: Uint8Array;

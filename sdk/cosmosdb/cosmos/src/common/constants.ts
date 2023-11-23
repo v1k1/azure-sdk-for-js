@@ -70,6 +70,7 @@ export const Constants = {
 
     // Our custom Azure Cosmos DB headers
     Continuation: "x-ms-continuation",
+    ContinuationToken: "x-ms-continuation-token",
     PageSize: "x-ms-max-item-count",
     ItemCount: "x-ms-item-count",
 
@@ -102,6 +103,11 @@ export const Constants = {
     // Response header that holds the serialized version of query metrics.
     QueryMetrics: "x-ms-documentdb-query-metrics",
 
+    // IndexMetrics
+    // Request header to tell backend to give you index metrics.
+    PopulateIndexMetrics: "x-ms-cosmos-populateindexmetrics",
+    // Response header that holds the serialized version of index metrics.
+    IndexUtilization: "x-ms-cosmos-index-utilization",
     // Version headers and values
     Version: "x-ms-version",
 
@@ -114,6 +120,13 @@ export const Constants = {
     // Partition Key
     PartitionKey: "x-ms-documentdb-partitionkey",
     PartitionKeyRangeID: "x-ms-documentdb-partitionkeyrangeid",
+
+    // Epk Range headers
+    StartEpk: "x-ms-start-epk",
+    EndEpk: "x-ms-end-epk",
+
+    // Read Feed Type
+    ReadFeedKeyType: "x-ms-read-key-type",
 
     // Quota Info
     MaxEntityCount: "x-ms-root-entity-max-count",
@@ -163,11 +176,15 @@ export const Constants = {
 
     // Cache Refresh header
     ForceRefresh: "x-ms-force-refresh",
+
+    // Priority Based throttling header
+    PriorityLevel: "x-ms-cosmos-priority-level",
   },
 
   // GlobalDB related constants
   WritableLocations: "writableLocations",
   ReadableLocations: "readableLocations",
+  LocationUnavailableExpirationTimeInMs: 5 * 60 * 1000, // 5 minutes
 
   // ServiceDocument Resource
   ENABLE_MULTIPLE_WRITABLE_LOCATIONS: "enableMultipleWriteLocations",
@@ -184,7 +201,13 @@ export const Constants = {
   AzureNamespace: "Azure.Cosmos",
   AzurePackageName: "@azure/cosmos",
   SDKName: "azure-cosmos-js",
-  SDKVersion: "3.17.1",
+  SDKVersion: "4.0.1",
+
+  // Diagnostics
+  CosmosDbDiagnosticLevelEnvVarName: "AZURE_COSMOSDB_DIAGNOSTICS_LEVEL",
+
+  // Bulk Operations
+  DefaultMaxBulkRequestBodySizeInBytes: 220201,
 
   Quota: {
     CollectionSize: "collectionSize",
@@ -253,6 +276,7 @@ export enum ResourceType {
   trigger = "triggers",
   item = "docs",
   pkranges = "pkranges",
+  partitionkey = "partitionKey",
 }
 
 /**

@@ -3,13 +3,14 @@
 
 import { AccessToken, GetTokenOptions, TokenCredential } from "@azure/core-auth";
 import { credentialLogger, formatError, formatSuccess } from "../util/logging";
-import { ensureValidScope, getScopeResource } from "../util/scopeUtils";
+import { ensureValidScopeForDevTimeCreds, getScopeResource } from "../util/scopeUtils";
 import { AzureCliCredentialOptions } from "./azureCliCredentialOptions";
 import { CredentialUnavailableError } from "../errors";
 import child_process from "child_process";
 import {
+  checkTenantId,
   processMultiTenantRequest,
-  resolveAddionallyAllowedTenantIds,
+  resolveAdditionallyAllowedTenantIds,
 } from "../util/tenantIdUtils";
 import { tracingClient } from "../util/tracing";
 
@@ -39,7 +40,8 @@ export const cliCredentialInternals = {
    */
   async getAzureCliAccessToken(
     resource: string,
-    tenantId?: string
+    tenantId?: string,
+    timeout?: number
   ): Promise<{ stdout: string; stderr: string; error: Error | null }> {
     let tenantSection: string[] = [];
     if (tenantId) {
@@ -58,7 +60,7 @@ export const cliCredentialInternals = {
             resource,
             ...tenantSection,
           ],
-          { cwd: cliCredentialInternals.getSafeWorkingDir(), shell: true },
+          { cwd: cliCredentialInternals.getSafeWorkingDir(), shell: true, timeout },
           (error, stdout, stderr) => {
             resolve({ stdout: stdout, stderr: stderr, error });
           }
@@ -81,6 +83,7 @@ const logger = credentialLogger("AzureCliCredential");
 export class AzureCliCredential implements TokenCredential {
   private tenantId?: string;
   private additionallyAllowedTenantIds: string[];
+  private timeout?: number;
 
   /**
    * Creates an instance of the {@link AzureCliCredential}.
@@ -91,14 +94,18 @@ export class AzureCliCredential implements TokenCredential {
    * @param options - Options, to optionally allow multi-tenant requests.
    */
   constructor(options?: AzureCliCredentialOptions) {
-    this.tenantId = options?.tenantId;
-    this.additionallyAllowedTenantIds = resolveAddionallyAllowedTenantIds(
+    if (options?.tenantId) {
+      checkTenantId(logger, options?.tenantId);
+      this.tenantId = options?.tenantId;
+    }
+    this.additionallyAllowedTenantIds = resolveAdditionallyAllowedTenantIds(
       options?.additionallyAllowedTenants
     );
+    this.timeout = options?.processTimeoutInMs;
   }
 
   /**
-   * Authenticates with Azure Active Directory and returns an access token if successful.
+   * Authenticates with Microsoft Entra ID and returns an access token if successful.
    * If authentication fails, a {@link CredentialUnavailableError} will be thrown with the details of the failure.
    *
    * @param scopes - The list of scopes for which the token will have access.
@@ -115,14 +122,21 @@ export class AzureCliCredential implements TokenCredential {
       this.additionallyAllowedTenantIds
     );
 
+    if (tenantId) {
+      checkTenantId(logger, tenantId);
+    }
     const scope = typeof scopes === "string" ? scopes : scopes[0];
     logger.getToken.info(`Using the scope ${scope}`);
-    ensureValidScope(scope, logger);
-    const resource = getScopeResource(scope);
 
     return tracingClient.withSpan(`${this.constructor.name}.getToken`, options, async () => {
       try {
-        const obj = await cliCredentialInternals.getAzureCliAccessToken(resource, tenantId);
+        ensureValidScopeForDevTimeCreds(scope, logger);
+        const resource = getScopeResource(scope);
+        const obj = await cliCredentialInternals.getAzureCliAccessToken(
+          resource,
+          tenantId,
+          this.timeout
+        );
         const specificScope = obj.stderr?.match("(.*)az login --scope(.*)");
         const isLoginError = obj.stderr?.match("(.*)az login(.*)") && !specificScope;
         const isNotInstallError =

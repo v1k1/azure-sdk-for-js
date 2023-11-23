@@ -10,16 +10,18 @@
 // Licensed under the MIT License.
 const { DevCenterClient } = require("@azure/arm-devcenter");
 const { DefaultAzureCredential } = require("@azure/identity");
+require("dotenv").config();
 
 /**
  * This sample demonstrates how to Creates or updates a Schedule.
  *
  * @summary Creates or updates a Schedule.
- * x-ms-original-file: specification/devcenter/resource-manager/Microsoft.DevCenter/preview/2022-09-01-preview/examples/Schedules_CreateDailyShutdownPoolSchedule.json
+ * x-ms-original-file: specification/devcenter/resource-manager/Microsoft.DevCenter/preview/2023-10-01-preview/examples/Schedules_CreateDailyShutdownPoolSchedule.json
  */
 async function schedulesCreateDailyShutdownPoolSchedule() {
-  const subscriptionId = "{subscriptionId}";
-  const resourceGroupName = "rg1";
+  const subscriptionId =
+    process.env["DEVCENTER_SUBSCRIPTION_ID"] || "0ac520ee-14c0-480f-b6c9-0a90c58ffff";
+  const resourceGroupName = process.env["DEVCENTER_RESOURCE_GROUP"] || "rg1";
   const projectName = "DevProject";
   const poolName = "DevPool";
   const scheduleName = "autoShutdown";
@@ -42,4 +44,8 @@ async function schedulesCreateDailyShutdownPoolSchedule() {
   console.log(result);
 }
 
-schedulesCreateDailyShutdownPoolSchedule().catch(console.error);
+async function main() {
+  schedulesCreateDailyShutdownPoolSchedule();
+}
+
+main().catch(console.error);

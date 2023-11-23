@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import * as msalCommon from "@azure/msal-common";
-
+import * as msalCommon from "@azure/msal-node";
 import { AccessToken, GetTokenOptions } from "@azure/core-auth";
 import { AuthenticationRecord, MsalAccountInfo, MsalResult, MsalToken } from "./types";
 import { AuthenticationRequiredError, CredentialUnavailableError } from "../errors";
@@ -10,8 +9,12 @@ import { CredentialLogger, formatError, formatSuccess } from "../util/logging";
 import { DefaultAuthorityHost, DefaultTenantId } from "../constants";
 import { AbortError } from "@azure/abort-controller";
 import { MsalFlowOptions } from "./flows";
-import { isNode } from "@azure/core-util";
-import { v4 as uuidv4 } from "uuid";
+import { isNode, randomUUID } from "@azure/core-util";
+import { AzureLogLevel } from "@azure/logger";
+
+export interface ILoggerCallback {
+  (level: msalCommon.LogLevel, message: string, containsPii: boolean): void;
+}
 
 /**
  * Latest AuthenticationRecord version
@@ -73,8 +76,12 @@ export function getAuthority(tenantId: string, host?: string): string {
  * by sending it within the known authorities in the MSAL configuration.
  * @internal
  */
-export function getKnownAuthorities(tenantId: string, authorityHost: string): string[] {
-  if (tenantId === "adfs" && authorityHost) {
+export function getKnownAuthorities(
+  tenantId: string,
+  authorityHost: string,
+  disableInstanceDiscovery?: boolean
+): string[] {
+  if ((tenantId === "adfs" && authorityHost) || disableInstanceDiscovery) {
     return [authorityHost];
   }
   return [];
@@ -88,7 +95,7 @@ export function getKnownAuthorities(tenantId: string, authorityHost: string): st
 export const defaultLoggerCallback: (
   logger: CredentialLogger,
   platform?: "Node" | "Browser"
-) => msalCommon.ILoggerCallback =
+) => ILoggerCallback =
   (logger: CredentialLogger, platform: "Node" | "Browser" = isNode ? "Node" : "Browser") =>
   (level, message, containsPii): void => {
     if (containsPii) {
@@ -111,6 +118,25 @@ export const defaultLoggerCallback: (
   };
 
 /**
+ * @internal
+ */
+export function getMSALLogLevel(logLevel: AzureLogLevel | undefined): msalCommon.LogLevel {
+  switch (logLevel) {
+    case "error":
+      return msalCommon.LogLevel.Error;
+    case "info":
+      return msalCommon.LogLevel.Info;
+    case "verbose":
+      return msalCommon.LogLevel.Verbose;
+    case "warning":
+      return msalCommon.LogLevel.Warning;
+    default:
+      // default msal logging level should be Info
+      return msalCommon.LogLevel.Info;
+  }
+}
+
+/**
  * The common utility functions for the MSAL clients.
  * Defined as a class so that the classes extending this one can have access to its methods and protected properties.
  *
@@ -131,7 +157,7 @@ export class MsalBaseUtilities {
    * Generates a UUID
    */
   generateUuid(): string {
-    return uuidv4();
+    return randomUUID();
   }
 
   /**
@@ -191,6 +217,17 @@ export class MsalBaseUtilities {
     ) {
       return error;
     }
+    if (error.name === "NativeAuthError") {
+      this.logger.info(
+        formatError(
+          scopes,
+          `Error from the native broker: ${error.message} with status code: ${
+            (error as any).statusCode
+          }`
+        )
+      );
+      return error;
+    }
     return new AuthenticationRequiredError({ scopes, getTokenOptions, message: error.message });
   }
 }
@@ -198,7 +235,7 @@ export class MsalBaseUtilities {
 // transformations.ts
 
 export function publicToMsal(account: AuthenticationRecord): msalCommon.AccountInfo {
-  const [environment] = account.authority.match(/([a-z]*\.[a-z]*\.[a-z]*)/) || [];
+  const [environment] = account.authority.match(/([a-z]*\.[a-z]*\.[a-z]*)/) || [""];
   return {
     ...account,
     localAccountId: account.homeAccountId,

@@ -7,7 +7,7 @@
  */
 
 import { PagedAsyncIterableIterator } from "@azure/core-paging";
-import { PollerLike, PollOperationState } from "@azure/core-lro";
+import { SimplePollerLike, OperationState } from "@azure/core-lro";
 import {
   ProtectionContainer,
   ReplicationProtectionContainersListByReplicationFabricsOptionalParams,
@@ -31,57 +31,82 @@ import {
 export interface ReplicationProtectionContainers {
   /**
    * Lists the protection containers in the specified fabric.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param options The options parameters.
    */
   listByReplicationFabrics(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     options?: ReplicationProtectionContainersListByReplicationFabricsOptionalParams
   ): PagedAsyncIterableIterator<ProtectionContainer>;
   /**
    * Lists the protection containers in a vault.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param options The options parameters.
    */
   list(
+    resourceName: string,
+    resourceGroupName: string,
     options?: ReplicationProtectionContainersListOptionalParams
   ): PagedAsyncIterableIterator<ProtectionContainer>;
   /**
    * Gets the details of a protection container.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param options The options parameters.
    */
   get(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     options?: ReplicationProtectionContainersGetOptionalParams
   ): Promise<ReplicationProtectionContainersGetResponse>;
   /**
    * Operation to create a protection container.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric ARM name.
    * @param protectionContainerName Unique protection container ARM name.
    * @param creationInput Creation input.
    * @param options The options parameters.
    */
   beginCreate(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     creationInput: CreateProtectionContainerInput,
     options?: ReplicationProtectionContainersCreateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationProtectionContainersCreateResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationProtectionContainersCreateResponse>,
       ReplicationProtectionContainersCreateResponse
     >
   >;
   /**
    * Operation to create a protection container.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric ARM name.
    * @param protectionContainerName Unique protection container ARM name.
    * @param creationInput Creation input.
    * @param options The options parameters.
    */
   beginCreateAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     creationInput: CreateProtectionContainerInput,
@@ -89,19 +114,24 @@ export interface ReplicationProtectionContainers {
   ): Promise<ReplicationProtectionContainersCreateResponse>;
   /**
    * The operation to a add a protectable item to a protection container(Add physical server).
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName The name of the fabric.
    * @param protectionContainerName The name of the protection container.
    * @param discoverProtectableItemRequest The request object to add a protectable item.
    * @param options The options parameters.
    */
   beginDiscoverProtectableItem(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     discoverProtectableItemRequest: DiscoverProtectableItemRequest,
     options?: ReplicationProtectionContainersDiscoverProtectableItemOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<
+    SimplePollerLike<
+      OperationState<
         ReplicationProtectionContainersDiscoverProtectableItemResponse
       >,
       ReplicationProtectionContainersDiscoverProtectableItemResponse
@@ -109,12 +139,17 @@ export interface ReplicationProtectionContainers {
   >;
   /**
    * The operation to a add a protectable item to a protection container(Add physical server).
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName The name of the fabric.
    * @param protectionContainerName The name of the protection container.
    * @param discoverProtectableItemRequest The request object to add a protectable item.
    * @param options The options parameters.
    */
   beginDiscoverProtectableItemAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     discoverProtectableItemRequest: DiscoverProtectableItemRequest,
@@ -122,54 +157,72 @@ export interface ReplicationProtectionContainers {
   ): Promise<ReplicationProtectionContainersDiscoverProtectableItemResponse>;
   /**
    * Operation to remove a protection container.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric ARM name.
    * @param protectionContainerName Unique protection container ARM name.
    * @param options The options parameters.
    */
   beginDelete(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     options?: ReplicationProtectionContainersDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<SimplePollerLike<OperationState<void>, void>>;
   /**
    * Operation to remove a protection container.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric ARM name.
    * @param protectionContainerName Unique protection container ARM name.
    * @param options The options parameters.
    */
   beginDeleteAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     options?: ReplicationProtectionContainersDeleteOptionalParams
   ): Promise<void>;
   /**
    * Operation to switch protection from one container to another or one replication provider to another.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param switchInput Switch protection input.
    * @param options The options parameters.
    */
   beginSwitchProtection(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     switchInput: SwitchProtectionInput,
     options?: ReplicationProtectionContainersSwitchProtectionOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<
-        ReplicationProtectionContainersSwitchProtectionResponse
-      >,
+    SimplePollerLike<
+      OperationState<ReplicationProtectionContainersSwitchProtectionResponse>,
       ReplicationProtectionContainersSwitchProtectionResponse
     >
   >;
   /**
    * Operation to switch protection from one container to another or one replication provider to another.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param switchInput Switch protection input.
    * @param options The options parameters.
    */
   beginSwitchProtectionAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     switchInput: SwitchProtectionInput,

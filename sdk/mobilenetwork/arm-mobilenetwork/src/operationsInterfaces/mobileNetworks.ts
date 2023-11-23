@@ -7,7 +7,7 @@
  */
 
 import { PagedAsyncIterableIterator } from "@azure/core-paging";
-import { PollerLike, PollOperationState } from "@azure/core-lro";
+import { SimplePollerLike, OperationState } from "@azure/core-lro";
 import {
   MobileNetwork,
   MobileNetworksListBySubscriptionOptionalParams,
@@ -19,9 +19,7 @@ import {
   MobileNetworksCreateOrUpdateResponse,
   TagsObject,
   MobileNetworksUpdateTagsOptionalParams,
-  MobileNetworksUpdateTagsResponse,
-  MobileNetworksListSimIdsOptionalParams,
-  MobileNetworksListSimIdsResponse
+  MobileNetworksUpdateTagsResponse
 } from "../models";
 
 /// <reference lib="esnext.asynciterable" />
@@ -53,7 +51,7 @@ export interface MobileNetworks {
     resourceGroupName: string,
     mobileNetworkName: string,
     options?: MobileNetworksDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<SimplePollerLike<OperationState<void>, void>>;
   /**
    * Deletes the specified mobile network.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
@@ -89,8 +87,8 @@ export interface MobileNetworks {
     parameters: MobileNetwork,
     options?: MobileNetworksCreateOrUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<MobileNetworksCreateOrUpdateResponse>,
+    SimplePollerLike<
+      OperationState<MobileNetworksCreateOrUpdateResponse>,
       MobileNetworksCreateOrUpdateResponse
     >
   >;
@@ -120,31 +118,4 @@ export interface MobileNetworks {
     parameters: TagsObject,
     options?: MobileNetworksUpdateTagsOptionalParams
   ): Promise<MobileNetworksUpdateTagsResponse>;
-  /**
-   * Lists the IDs of all provisioned SIMs in a mobile network
-   * @param resourceGroupName The name of the resource group. The name is case insensitive.
-   * @param mobileNetworkName The name of the mobile network.
-   * @param options The options parameters.
-   */
-  beginListSimIds(
-    resourceGroupName: string,
-    mobileNetworkName: string,
-    options?: MobileNetworksListSimIdsOptionalParams
-  ): Promise<
-    PollerLike<
-      PollOperationState<MobileNetworksListSimIdsResponse>,
-      MobileNetworksListSimIdsResponse
-    >
-  >;
-  /**
-   * Lists the IDs of all provisioned SIMs in a mobile network
-   * @param resourceGroupName The name of the resource group. The name is case insensitive.
-   * @param mobileNetworkName The name of the mobile network.
-   * @param options The options parameters.
-   */
-  beginListSimIdsAndWait(
-    resourceGroupName: string,
-    mobileNetworkName: string,
-    options?: MobileNetworksListSimIdsOptionalParams
-  ): Promise<MobileNetworksListSimIdsResponse>;
 }

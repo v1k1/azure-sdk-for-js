@@ -4,7 +4,7 @@
 import { ServiceClient } from "@azure/core-client";
 import { env, isPlaybackMode, Recorder } from "../src";
 import { TestMode } from "../src/utils/utils";
-import { getTestServerUrl, makeRequestAndVerifyResponse, setTestMode } from "./utils/utils";
+import { TEST_SERVER_URL, makeRequestAndVerifyResponse, setTestMode } from "./utils/utils";
 import { v4 as generateUuid } from "uuid";
 
 // These tests require the following to be running in parallel
@@ -23,9 +23,39 @@ import { v4 as generateUuid } from "uuid";
     });
 
     beforeEach(async function () {
+      env.TEST_VARIABLE_1 = "the answer!";
+      env.TEST_VARIABLE_2 = "answer!";
       recorder = new Recorder(this.currentTest);
-      client = new ServiceClient(recorder.configureClientOptions({ baseUri: getTestServerUrl() }));
+      client = new ServiceClient(recorder.configureClientOptions({ baseUri: TEST_SERVER_URL }));
       currentValue = isPlaybackMode() ? fakeSecretValue : secretValue;
+    });
+
+    describe("envSetupForPlayback", () => {
+      afterEach(async () => {
+        await recorder.stop();
+      });
+
+      it("Handles overlapping environment variables", async () => {
+        const envSetupForPlayback = {
+          TEST_VARIABLE_2: "Variable2",
+          TEST_VARIABLE_1: "Variable1",
+        };
+
+        await recorder.start({ envSetupForPlayback });
+
+        await makeRequestAndVerifyResponse(
+          client,
+          {
+            path: `/sample_response/aaa`,
+            body: "aaaaa",
+            method: "POST",
+            headers: [{ headerName: "Content-Type", value: "text/plain" }],
+          },
+          {
+            val: isPlaybackMode() ? "I am Variable1" : "I am the answer!",
+          }
+        );
+      });
     });
 
     describe("Sanitizers - functionalities", () => {
@@ -181,7 +211,7 @@ import { v4 as generateUuid } from "uuid";
           client,
           {
             url: isPlaybackMode()
-              ? getTestServerUrl().replace(secretEndpoint, fakeEndpoint) + pathToHit
+              ? TEST_SERVER_URL.replace(secretEndpoint, fakeEndpoint) + pathToHit
               : undefined,
             path: pathToHit,
             method: "POST",

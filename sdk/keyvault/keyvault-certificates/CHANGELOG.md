@@ -1,14 +1,24 @@
 # Release History
 
-## 4.6.1 (Unreleased)
+## 4.8.0-beta.1 (Unreleased)
 
 ### Features Added
+
+- Added property `x509ThumbprintString` to `CertificateProperties`. This property is a hex string representation of the existing `x509Thumbprint` property added for convenience.
 
 ### Breaking Changes
 
 ### Bugs Fixed
 
 ### Other Changes
+
+- The default service version is now `7.5-preview.1`.
+
+## 4.7.0 (2023-03-09)
+
+### Other Changes
+
+- Updated `CertificateClient` to support service version 7.4 by default.
 
 ## 4.6.0 (2022-09-20)
 

@@ -7,14 +7,19 @@
  */
 
 import { tracingClient } from "../tracing";
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { SparkJobDefinitionOperations } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { ArtifactsClient } from "../artifactsClient";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   SparkJobDefinitionResource,
   SparkJobDefinitionGetSparkJobDefinitionsByWorkspaceNextOptionalParams,
@@ -63,25 +68,40 @@ export class SparkJobDefinitionOperationsImpl
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.getSparkJobDefinitionsByWorkspacePagingPage(options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.getSparkJobDefinitionsByWorkspacePagingPage(
+          options,
+          settings
+        );
       }
     };
   }
 
   private async *getSparkJobDefinitionsByWorkspacePagingPage(
-    options?: SparkJobDefinitionGetSparkJobDefinitionsByWorkspaceOptionalParams
+    options?: SparkJobDefinitionGetSparkJobDefinitionsByWorkspaceOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<SparkJobDefinitionResource[]> {
-    let result = await this._getSparkJobDefinitionsByWorkspace(options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: SparkJobDefinitionGetSparkJobDefinitionsByWorkspaceResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._getSparkJobDefinitionsByWorkspace(options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._getSparkJobDefinitionsByWorkspaceNext(
         continuationToken,
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -127,8 +147,8 @@ export class SparkJobDefinitionOperationsImpl
     sparkJobDefinition: SparkJobDefinitionResource,
     options?: SparkJobDefinitionCreateOrUpdateSparkJobDefinitionOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<
+    SimplePollerLike<
+      OperationState<
         SparkJobDefinitionCreateOrUpdateSparkJobDefinitionResponse
       >,
       SparkJobDefinitionCreateOrUpdateSparkJobDefinitionResponse
@@ -148,7 +168,7 @@ export class SparkJobDefinitionOperationsImpl
         }
       );
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -181,13 +201,16 @@ export class SparkJobDefinitionOperationsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { sparkJobDefinitionName, sparkJobDefinition, options },
-      createOrUpdateSparkJobDefinitionOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { sparkJobDefinitionName, sparkJobDefinition, options },
+      spec: createOrUpdateSparkJobDefinitionOperationSpec
+    });
+    const poller = await createHttpPoller<
+      SparkJobDefinitionCreateOrUpdateSparkJobDefinitionResponse,
+      OperationState<SparkJobDefinitionCreateOrUpdateSparkJobDefinitionResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -242,7 +265,7 @@ export class SparkJobDefinitionOperationsImpl
   async beginDeleteSparkJobDefinition(
     sparkJobDefinitionName: string,
     options?: SparkJobDefinitionDeleteSparkJobDefinitionOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
@@ -255,7 +278,7 @@ export class SparkJobDefinitionOperationsImpl
         }
       );
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -288,13 +311,13 @@ export class SparkJobDefinitionOperationsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { sparkJobDefinitionName, options },
-      deleteSparkJobDefinitionOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { sparkJobDefinitionName, options },
+      spec: deleteSparkJobDefinitionOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -326,8 +349,8 @@ export class SparkJobDefinitionOperationsImpl
     sparkJobDefinitionName: string,
     options?: SparkJobDefinitionExecuteSparkJobDefinitionOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<SparkJobDefinitionExecuteSparkJobDefinitionResponse>,
+    SimplePollerLike<
+      OperationState<SparkJobDefinitionExecuteSparkJobDefinitionResponse>,
       SparkJobDefinitionExecuteSparkJobDefinitionResponse
     >
   > {
@@ -345,7 +368,7 @@ export class SparkJobDefinitionOperationsImpl
         }
       );
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -378,15 +401,18 @@ export class SparkJobDefinitionOperationsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { sparkJobDefinitionName, options },
-      executeSparkJobDefinitionOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { sparkJobDefinitionName, options },
+      spec: executeSparkJobDefinitionOperationSpec
+    });
+    const poller = await createHttpPoller<
+      SparkJobDefinitionExecuteSparkJobDefinitionResponse,
+      OperationState<SparkJobDefinitionExecuteSparkJobDefinitionResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "location"
+      resourceLocationConfig: "location"
     });
     await poller.poll();
     return poller;
@@ -418,7 +444,7 @@ export class SparkJobDefinitionOperationsImpl
     sparkJobDefinitionName: string,
     request: ArtifactRenameRequest,
     options?: SparkJobDefinitionRenameSparkJobDefinitionOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
@@ -431,7 +457,7 @@ export class SparkJobDefinitionOperationsImpl
         }
       );
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -464,13 +490,13 @@ export class SparkJobDefinitionOperationsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { sparkJobDefinitionName, request, options },
-      renameSparkJobDefinitionOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { sparkJobDefinitionName, request, options },
+      spec: renameSparkJobDefinitionOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -505,8 +531,8 @@ export class SparkJobDefinitionOperationsImpl
     sparkJobDefinitionAzureResource: SparkJobDefinitionResource,
     options?: SparkJobDefinitionDebugSparkJobDefinitionOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<SparkJobDefinitionDebugSparkJobDefinitionResponse>,
+    SimplePollerLike<
+      OperationState<SparkJobDefinitionDebugSparkJobDefinitionResponse>,
       SparkJobDefinitionDebugSparkJobDefinitionResponse
     >
   > {
@@ -524,7 +550,7 @@ export class SparkJobDefinitionOperationsImpl
         }
       );
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -557,15 +583,18 @@ export class SparkJobDefinitionOperationsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { sparkJobDefinitionAzureResource, options },
-      debugSparkJobDefinitionOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { sparkJobDefinitionAzureResource, options },
+      spec: debugSparkJobDefinitionOperationSpec
+    });
+    const poller = await createHttpPoller<
+      SparkJobDefinitionDebugSparkJobDefinitionResponse,
+      OperationState<SparkJobDefinitionDebugSparkJobDefinitionResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "location"
+      resourceLocationConfig: "location"
     });
     await poller.poll();
     return poller;
@@ -625,7 +654,7 @@ const getSparkJobDefinitionsByWorkspaceOperationSpec: coreClient.OperationSpec =
       bodyMapper: Mappers.CloudError
     }
   },
-  queryParameters: [Parameters.apiVersion4],
+  queryParameters: [Parameters.apiVersion5],
   urlParameters: [Parameters.endpoint],
   headerParameters: [Parameters.accept],
   serializer
@@ -651,7 +680,7 @@ const createOrUpdateSparkJobDefinitionOperationSpec: coreClient.OperationSpec = 
     }
   },
   requestBody: Parameters.sparkJobDefinition,
-  queryParameters: [Parameters.apiVersion4],
+  queryParameters: [Parameters.apiVersion5],
   urlParameters: [Parameters.endpoint, Parameters.sparkJobDefinitionName],
   headerParameters: [
     Parameters.accept,
@@ -673,7 +702,7 @@ const getSparkJobDefinitionOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.CloudError
     }
   },
-  queryParameters: [Parameters.apiVersion4],
+  queryParameters: [Parameters.apiVersion5],
   urlParameters: [Parameters.endpoint, Parameters.sparkJobDefinitionName],
   headerParameters: [Parameters.accept, Parameters.ifNoneMatch],
   serializer
@@ -690,7 +719,7 @@ const deleteSparkJobDefinitionOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.CloudError
     }
   },
-  queryParameters: [Parameters.apiVersion4],
+  queryParameters: [Parameters.apiVersion5],
   urlParameters: [Parameters.endpoint, Parameters.sparkJobDefinitionName],
   headerParameters: [Parameters.accept],
   serializer
@@ -715,7 +744,7 @@ const executeSparkJobDefinitionOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.CloudError
     }
   },
-  queryParameters: [Parameters.apiVersion4],
+  queryParameters: [Parameters.apiVersion5],
   urlParameters: [Parameters.endpoint, Parameters.sparkJobDefinitionName],
   headerParameters: [Parameters.accept],
   serializer
@@ -733,7 +762,7 @@ const renameSparkJobDefinitionOperationSpec: coreClient.OperationSpec = {
     }
   },
   requestBody: Parameters.request,
-  queryParameters: [Parameters.apiVersion4],
+  queryParameters: [Parameters.apiVersion5],
   urlParameters: [Parameters.endpoint, Parameters.sparkJobDefinitionName],
   headerParameters: [Parameters.accept, Parameters.contentType],
   mediaType: "json",
@@ -760,7 +789,7 @@ const debugSparkJobDefinitionOperationSpec: coreClient.OperationSpec = {
     }
   },
   requestBody: Parameters.sparkJobDefinitionAzureResource,
-  queryParameters: [Parameters.apiVersion4],
+  queryParameters: [Parameters.apiVersion5],
   urlParameters: [Parameters.endpoint],
   headerParameters: [Parameters.accept, Parameters.contentType],
   mediaType: "json",
@@ -777,7 +806,6 @@ const getSparkJobDefinitionsByWorkspaceNextOperationSpec: coreClient.OperationSp
       bodyMapper: Mappers.CloudError
     }
   },
-  queryParameters: [Parameters.apiVersion4],
   urlParameters: [Parameters.endpoint, Parameters.nextLink],
   headerParameters: [Parameters.accept],
   serializer

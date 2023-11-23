@@ -1,6 +1,6 @@
 # Release History
 
-## 2.1.2 (Unreleased)
+## 2.2.1 (Unreleased)
 
 ### Features Added
 
@@ -10,6 +10,28 @@
 
 ### Other Changes
 
+## 2.2.0 (2022-11-25)
+    
+**Features**
+
+  - Added Interface DicomService
+  - Added Interface DicomServicePatchResource
+  - Added Interface FhirService
+  - Added Interface FhirServicePatchResource
+  - Added Interface IotConnector
+  - Added Interface IotConnectorPatchResource
+  - Added Interface IotFhirDestination
+  - Added Interface IotFhirDestinationProperties
+  - Added Interface LocationBasedResource
+  - Added Interface PrivateEndpointConnection
+  - Added Interface PrivateEndpointConnectionDescription
+  - Added Interface PrivateLinkResource
+  - Added Interface PrivateLinkResourceDescription
+  - Added Interface ServicesDescription
+  - Added Interface TaggedResource
+  - Added Interface Workspace
+  - Added Interface WorkspacePatchResource
+    
 ## 2.1.1 (2022-04-26)
 
 **Features**
@@ -175,4 +197,4 @@ To understand the detail of the change, please refer to [Changelog](https://aka.
 
 To migrate the existing applications to the latest version, please refer to [Migration Guide](https://aka.ms/js-track2-migration-guide).
 
-To learn more, please refer to our documentation [Quick Start](https://aka.ms/js-track2-quickstart).
+To learn more, please refer to our documentation [Quick Start](https://aka.ms/azsdk/js/mgmt/quickstart ).

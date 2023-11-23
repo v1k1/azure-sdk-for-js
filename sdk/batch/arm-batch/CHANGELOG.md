@@ -1,6 +1,6 @@
 # Release History
 
-## 7.2.1 (Unreleased)
+## 9.0.1 (Unreleased)
 
 ### Features Added
 
@@ -10,6 +10,52 @@
 
 ### Other Changes
 
+## 9.0.0 (2023-06-30)
+    
+**Features**
+
+  - Added Type Alias ContainerType
+  - Interface NetworkConfiguration has a new optional parameter enableAcceleratedNetworking
+  - Interface VMExtension has a new optional parameter enableAutomaticUpgrade
+  - Added Enum KnownContainerType
+  - Interface ApplicationListNextOptionalParams no longer has parameter maxresults
+  - Interface ApplicationPackageListNextOptionalParams no longer has parameter maxresults
+  - Interface CertificateListByBatchAccountNextOptionalParams no longer has parameter filter
+  - Interface CertificateListByBatchAccountNextOptionalParams no longer has parameter maxresults
+  - Interface CertificateListByBatchAccountNextOptionalParams no longer has parameter select
+  - Interface LocationListSupportedCloudServiceSkusNextOptionalParams no longer has parameter filter
+  - Interface LocationListSupportedCloudServiceSkusNextOptionalParams no longer has parameter maxresults
+  - Interface LocationListSupportedVirtualMachineSkusNextOptionalParams no longer has parameter filter
+  - Interface LocationListSupportedVirtualMachineSkusNextOptionalParams no longer has parameter maxresults
+  - Interface PoolListByBatchAccountNextOptionalParams no longer has parameter filter
+  - Interface PoolListByBatchAccountNextOptionalParams no longer has parameter maxresults
+  - Interface PoolListByBatchAccountNextOptionalParams no longer has parameter select
+  - Interface PrivateEndpointConnectionListByBatchAccountNextOptionalParams no longer has parameter maxresults
+  - Interface PrivateLinkResourceListByBatchAccountNextOptionalParams no longer has parameter maxresults
+
+**Breaking Changes**
+
+  - Type of parameter type of interface ContainerConfiguration is changed from "DockerCompatible" to ContainerType
+
+   
+## 8.0.0 (2022-11-10)
+    
+**Features**
+
+  - Added Type Alias NodeCommunicationMode
+  - Interface NetworkConfiguration has a new optional parameter dynamicVnetAssignmentScope
+  - Interface Pool has a new optional parameter currentNodeCommunicationMode
+  - Interface Pool has a new optional parameter targetNodeCommunicationMode
+  - Interface PrivateLinkServiceConnectionState has a new optional parameter actionsRequired
+
+**Breaking Changes**
+
+  - Interface CifsMountConfiguration no longer has parameter username
+  - Interface NetworkConfiguration no longer has parameter dynamicVNetAssignmentScope
+  - Interface PrivateLinkServiceConnectionState no longer has parameter actionRequired
+  - Interface CifsMountConfiguration has a new required parameter userName
+    
+    
 ## 7.2.0 (2022-07-19)
     
 **Features**
@@ -71,4 +117,4 @@ To understand the detail of the change, please refer to [Changelog](https://aka.
 
 To migrate the existing applications to the latest version, please refer to [Migration Guide](https://aka.ms/js-track2-migration-guide).
 
-To learn more, please refer to our documentation [Quick Start](https://aka.ms/js-track2-quickstart).
+To learn more, please refer to our documentation [Quick Start](https://aka.ms/azsdk/js/mgmt/quickstart ).

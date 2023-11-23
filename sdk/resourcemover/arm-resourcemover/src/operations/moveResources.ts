@@ -6,14 +6,19 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { MoveResources } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { ResourceMoverServiceAPI } from "../resourceMoverServiceAPI";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   MoveResource,
   MoveResourcesListNextOptionalParams,
@@ -64,11 +69,15 @@ export class MoveResourcesImpl implements MoveResources {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listPagingPage(
           resourceGroupName,
           moveCollectionName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -77,15 +86,18 @@ export class MoveResourcesImpl implements MoveResources {
   private async *listPagingPage(
     resourceGroupName: string,
     moveCollectionName: string,
-    options?: MoveResourcesListOptionalParams
+    options?: MoveResourcesListOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<MoveResource[]> {
-    let result = await this._list(
-      resourceGroupName,
-      moveCollectionName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: MoveResourcesListResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._list(resourceGroupName, moveCollectionName, options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listNext(
         resourceGroupName,
@@ -94,7 +106,9 @@ export class MoveResourcesImpl implements MoveResources {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -142,8 +156,8 @@ export class MoveResourcesImpl implements MoveResources {
     moveResourceName: string,
     options?: MoveResourcesCreateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<MoveResourcesCreateResponse>,
+    SimplePollerLike<
+      OperationState<MoveResourcesCreateResponse>,
       MoveResourcesCreateResponse
     >
   > {
@@ -153,7 +167,7 @@ export class MoveResourcesImpl implements MoveResources {
     ): Promise<MoveResourcesCreateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -186,15 +200,23 @@ export class MoveResourcesImpl implements MoveResources {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, moveCollectionName, moveResourceName, options },
-      createOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceGroupName,
+        moveCollectionName,
+        moveResourceName,
+        options
+      },
+      spec: createOperationSpec
+    });
+    const poller = await createHttpPoller<
+      MoveResourcesCreateResponse,
+      OperationState<MoveResourcesCreateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -235,8 +257,8 @@ export class MoveResourcesImpl implements MoveResources {
     moveResourceName: string,
     options?: MoveResourcesDeleteOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<MoveResourcesDeleteResponse>,
+    SimplePollerLike<
+      OperationState<MoveResourcesDeleteResponse>,
       MoveResourcesDeleteResponse
     >
   > {
@@ -246,7 +268,7 @@ export class MoveResourcesImpl implements MoveResources {
     ): Promise<MoveResourcesDeleteResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -279,15 +301,23 @@ export class MoveResourcesImpl implements MoveResources {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, moveCollectionName, moveResourceName, options },
-      deleteOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceGroupName,
+        moveCollectionName,
+        moveResourceName,
+        options
+      },
+      spec: deleteOperationSpec
+    });
+    const poller = await createHttpPoller<
+      MoveResourcesDeleteResponse,
+      OperationState<MoveResourcesDeleteResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -478,7 +508,6 @@ const listNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.CloudError
     }
   },
-  queryParameters: [Parameters.apiVersion, Parameters.filter],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,

@@ -7,7 +7,7 @@
  */
 
 import { PagedAsyncIterableIterator } from "@azure/core-paging";
-import { PollerLike, PollOperationState } from "@azure/core-lro";
+import { SimplePollerLike, OperationState } from "@azure/core-lro";
 import {
   Cluster,
   ClustersListOptionalParams,
@@ -18,7 +18,9 @@ import {
   ClusterUpdate,
   ClustersUpdateOptionalParams,
   ClustersUpdateResponse,
-  ClustersDeleteOptionalParams
+  ClustersDeleteOptionalParams,
+  ClustersListZonesOptionalParams,
+  ClustersListZonesResponse
 } from "../models";
 
 /// <reference lib="esnext.asynciterable" />
@@ -63,8 +65,8 @@ export interface Clusters {
     cluster: Cluster,
     options?: ClustersCreateOrUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ClustersCreateOrUpdateResponse>,
+    SimplePollerLike<
+      OperationState<ClustersCreateOrUpdateResponse>,
       ClustersCreateOrUpdateResponse
     >
   >;
@@ -98,8 +100,8 @@ export interface Clusters {
     clusterUpdate: ClusterUpdate,
     options?: ClustersUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ClustersUpdateResponse>,
+    SimplePollerLike<
+      OperationState<ClustersUpdateResponse>,
       ClustersUpdateResponse
     >
   >;
@@ -130,7 +132,7 @@ export interface Clusters {
     privateCloudName: string,
     clusterName: string,
     options?: ClustersDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<SimplePollerLike<OperationState<void>, void>>;
   /**
    * Delete a cluster in a private cloud
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
@@ -144,4 +146,17 @@ export interface Clusters {
     clusterName: string,
     options?: ClustersDeleteOptionalParams
   ): Promise<void>;
+  /**
+   * List hosts by zone in a cluster
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
+   * @param privateCloudName Name of the private cloud
+   * @param clusterName Name of the cluster in the private cloud
+   * @param options The options parameters.
+   */
+  listZones(
+    resourceGroupName: string,
+    privateCloudName: string,
+    clusterName: string,
+    options?: ClustersListZonesOptionalParams
+  ): Promise<ClustersListZonesResponse>;
 }

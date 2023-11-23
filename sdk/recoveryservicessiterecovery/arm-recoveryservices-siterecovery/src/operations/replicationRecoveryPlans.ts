@@ -6,14 +6,19 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { ReplicationRecoveryPlans } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { SiteRecoveryManagementClient } from "../siteRecoveryManagementClient";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   RecoveryPlan,
   ReplicationRecoveryPlansListNextOptionalParams,
@@ -64,12 +69,17 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
 
   /**
    * Lists the recovery plans in the vault.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param options The options parameters.
    */
   public list(
+    resourceName: string,
+    resourceGroupName: string,
     options?: ReplicationRecoveryPlansListOptionalParams
   ): PagedAsyncIterableIterator<RecoveryPlan> {
-    const iter = this.listPagingAll(options);
+    const iter = this.listPagingAll(resourceName, resourceGroupName, options);
     return {
       next() {
         return iter.next();
@@ -77,71 +87,119 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listPagingPage(options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listPagingPage(
+          resourceName,
+          resourceGroupName,
+          options,
+          settings
+        );
       }
     };
   }
 
   private async *listPagingPage(
-    options?: ReplicationRecoveryPlansListOptionalParams
+    resourceName: string,
+    resourceGroupName: string,
+    options?: ReplicationRecoveryPlansListOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<RecoveryPlan[]> {
-    let result = await this._list(options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
-    while (continuationToken) {
-      result = await this._listNext(continuationToken, options);
+    let result: ReplicationRecoveryPlansListResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._list(resourceName, resourceGroupName, options);
+      let page = result.value || [];
       continuationToken = result.nextLink;
-      yield result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
+    while (continuationToken) {
+      result = await this._listNext(
+        resourceName,
+        resourceGroupName,
+        continuationToken,
+        options
+      );
+      continuationToken = result.nextLink;
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
   private async *listPagingAll(
+    resourceName: string,
+    resourceGroupName: string,
     options?: ReplicationRecoveryPlansListOptionalParams
   ): AsyncIterableIterator<RecoveryPlan> {
-    for await (const page of this.listPagingPage(options)) {
+    for await (const page of this.listPagingPage(
+      resourceName,
+      resourceGroupName,
+      options
+    )) {
       yield* page;
     }
   }
 
   /**
    * Lists the recovery plans in the vault.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param options The options parameters.
    */
   private _list(
+    resourceName: string,
+    resourceGroupName: string,
     options?: ReplicationRecoveryPlansListOptionalParams
   ): Promise<ReplicationRecoveryPlansListResponse> {
-    return this.client.sendOperationRequest({ options }, listOperationSpec);
+    return this.client.sendOperationRequest(
+      { resourceName, resourceGroupName, options },
+      listOperationSpec
+    );
   }
 
   /**
    * Gets the details of the recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Name of the recovery plan.
    * @param options The options parameters.
    */
   get(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     options?: ReplicationRecoveryPlansGetOptionalParams
   ): Promise<ReplicationRecoveryPlansGetResponse> {
     return this.client.sendOperationRequest(
-      { recoveryPlanName, options },
+      { resourceName, resourceGroupName, recoveryPlanName, options },
       getOperationSpec
     );
   }
 
   /**
    * The operation to create a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param input Recovery Plan creation input.
    * @param options The options parameters.
    */
   async beginCreate(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     input: CreateRecoveryPlanInput,
     options?: ReplicationRecoveryPlansCreateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationRecoveryPlansCreateResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationRecoveryPlansCreateResponse>,
       ReplicationRecoveryPlansCreateResponse
     >
   > {
@@ -151,7 +209,7 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
     ): Promise<ReplicationRecoveryPlansCreateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -184,48 +242,75 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { recoveryPlanName, input, options },
-      createOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
+        recoveryPlanName,
+        input,
+        options
+      },
+      spec: createOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationRecoveryPlansCreateResponse,
+      OperationState<ReplicationRecoveryPlansCreateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to create a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param input Recovery Plan creation input.
    * @param options The options parameters.
    */
   async beginCreateAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     input: CreateRecoveryPlanInput,
     options?: ReplicationRecoveryPlansCreateOptionalParams
   ): Promise<ReplicationRecoveryPlansCreateResponse> {
-    const poller = await this.beginCreate(recoveryPlanName, input, options);
+    const poller = await this.beginCreate(
+      resourceName,
+      resourceGroupName,
+      recoveryPlanName,
+      input,
+      options
+    );
     return poller.pollUntilDone();
   }
 
   /**
    * Delete a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param options The options parameters.
    */
   async beginDelete(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     options?: ReplicationRecoveryPlansDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -258,43 +343,60 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { recoveryPlanName, options },
-      deleteOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceName, resourceGroupName, recoveryPlanName, options },
+      spec: deleteOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * Delete a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param options The options parameters.
    */
   async beginDeleteAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     options?: ReplicationRecoveryPlansDeleteOptionalParams
   ): Promise<void> {
-    const poller = await this.beginDelete(recoveryPlanName, options);
+    const poller = await this.beginDelete(
+      resourceName,
+      resourceGroupName,
+      recoveryPlanName,
+      options
+    );
     return poller.pollUntilDone();
   }
 
   /**
    * The operation to update a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param input Update recovery plan input.
    * @param options The options parameters.
    */
   async beginUpdate(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     input: UpdateRecoveryPlanInput,
     options?: ReplicationRecoveryPlansUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationRecoveryPlansUpdateResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationRecoveryPlansUpdateResponse>,
       ReplicationRecoveryPlansUpdateResponse
     >
   > {
@@ -304,7 +406,7 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
     ): Promise<ReplicationRecoveryPlansUpdateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -337,43 +439,70 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { recoveryPlanName, input, options },
-      updateOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
+        recoveryPlanName,
+        input,
+        options
+      },
+      spec: updateOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationRecoveryPlansUpdateResponse,
+      OperationState<ReplicationRecoveryPlansUpdateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to update a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param input Update recovery plan input.
    * @param options The options parameters.
    */
   async beginUpdateAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     input: UpdateRecoveryPlanInput,
     options?: ReplicationRecoveryPlansUpdateOptionalParams
   ): Promise<ReplicationRecoveryPlansUpdateResponse> {
-    const poller = await this.beginUpdate(recoveryPlanName, input, options);
+    const poller = await this.beginUpdate(
+      resourceName,
+      resourceGroupName,
+      recoveryPlanName,
+      input,
+      options
+    );
     return poller.pollUntilDone();
   }
 
   /**
    * The operation to cancel the failover of a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param options The options parameters.
    */
   async beginFailoverCancel(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     options?: ReplicationRecoveryPlansFailoverCancelOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationRecoveryPlansFailoverCancelResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationRecoveryPlansFailoverCancelResponse>,
       ReplicationRecoveryPlansFailoverCancelResponse
     >
   > {
@@ -383,7 +512,7 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
     ): Promise<ReplicationRecoveryPlansFailoverCancelResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -416,41 +545,61 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { recoveryPlanName, options },
-      failoverCancelOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceName, resourceGroupName, recoveryPlanName, options },
+      spec: failoverCancelOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationRecoveryPlansFailoverCancelResponse,
+      OperationState<ReplicationRecoveryPlansFailoverCancelResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to cancel the failover of a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param options The options parameters.
    */
   async beginFailoverCancelAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     options?: ReplicationRecoveryPlansFailoverCancelOptionalParams
   ): Promise<ReplicationRecoveryPlansFailoverCancelResponse> {
-    const poller = await this.beginFailoverCancel(recoveryPlanName, options);
+    const poller = await this.beginFailoverCancel(
+      resourceName,
+      resourceGroupName,
+      recoveryPlanName,
+      options
+    );
     return poller.pollUntilDone();
   }
 
   /**
    * The operation to commit the failover of a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param options The options parameters.
    */
   async beginFailoverCommit(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     options?: ReplicationRecoveryPlansFailoverCommitOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationRecoveryPlansFailoverCommitResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationRecoveryPlansFailoverCommitResponse>,
       ReplicationRecoveryPlansFailoverCommitResponse
     >
   > {
@@ -460,7 +609,7 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
     ): Promise<ReplicationRecoveryPlansFailoverCommitResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -493,43 +642,63 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { recoveryPlanName, options },
-      failoverCommitOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceName, resourceGroupName, recoveryPlanName, options },
+      spec: failoverCommitOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationRecoveryPlansFailoverCommitResponse,
+      OperationState<ReplicationRecoveryPlansFailoverCommitResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to commit the failover of a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param options The options parameters.
    */
   async beginFailoverCommitAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     options?: ReplicationRecoveryPlansFailoverCommitOptionalParams
   ): Promise<ReplicationRecoveryPlansFailoverCommitResponse> {
-    const poller = await this.beginFailoverCommit(recoveryPlanName, options);
+    const poller = await this.beginFailoverCommit(
+      resourceName,
+      resourceGroupName,
+      recoveryPlanName,
+      options
+    );
     return poller.pollUntilDone();
   }
 
   /**
    * The operation to start the planned failover of a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param input Failover input.
    * @param options The options parameters.
    */
   async beginPlannedFailover(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     input: RecoveryPlanPlannedFailoverInput,
     options?: ReplicationRecoveryPlansPlannedFailoverOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationRecoveryPlansPlannedFailoverResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationRecoveryPlansPlannedFailoverResponse>,
       ReplicationRecoveryPlansPlannedFailoverResponse
     >
   > {
@@ -539,7 +708,7 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
     ): Promise<ReplicationRecoveryPlansPlannedFailoverResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -572,29 +741,47 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { recoveryPlanName, input, options },
-      plannedFailoverOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
+        recoveryPlanName,
+        input,
+        options
+      },
+      spec: plannedFailoverOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationRecoveryPlansPlannedFailoverResponse,
+      OperationState<ReplicationRecoveryPlansPlannedFailoverResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to start the planned failover of a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param input Failover input.
    * @param options The options parameters.
    */
   async beginPlannedFailoverAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     input: RecoveryPlanPlannedFailoverInput,
     options?: ReplicationRecoveryPlansPlannedFailoverOptionalParams
   ): Promise<ReplicationRecoveryPlansPlannedFailoverResponse> {
     const poller = await this.beginPlannedFailover(
+      resourceName,
+      resourceGroupName,
       recoveryPlanName,
       input,
       options
@@ -604,15 +791,20 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
 
   /**
    * The operation to reprotect(reverse replicate) a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param options The options parameters.
    */
   async beginReprotect(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     options?: ReplicationRecoveryPlansReprotectOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationRecoveryPlansReprotectResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationRecoveryPlansReprotectResponse>,
       ReplicationRecoveryPlansReprotectResponse
     >
   > {
@@ -622,7 +814,7 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
     ): Promise<ReplicationRecoveryPlansReprotectResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -655,43 +847,63 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { recoveryPlanName, options },
-      reprotectOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceName, resourceGroupName, recoveryPlanName, options },
+      spec: reprotectOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationRecoveryPlansReprotectResponse,
+      OperationState<ReplicationRecoveryPlansReprotectResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to reprotect(reverse replicate) a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param options The options parameters.
    */
   async beginReprotectAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     options?: ReplicationRecoveryPlansReprotectOptionalParams
   ): Promise<ReplicationRecoveryPlansReprotectResponse> {
-    const poller = await this.beginReprotect(recoveryPlanName, options);
+    const poller = await this.beginReprotect(
+      resourceName,
+      resourceGroupName,
+      recoveryPlanName,
+      options
+    );
     return poller.pollUntilDone();
   }
 
   /**
    * The operation to start the test failover of a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param input Recovery plan test failover input.
    * @param options The options parameters.
    */
   async beginTestFailover(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     input: RecoveryPlanTestFailoverInput,
     options?: ReplicationRecoveryPlansTestFailoverOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationRecoveryPlansTestFailoverResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationRecoveryPlansTestFailoverResponse>,
       ReplicationRecoveryPlansTestFailoverResponse
     >
   > {
@@ -701,7 +913,7 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
     ): Promise<ReplicationRecoveryPlansTestFailoverResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -734,29 +946,47 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { recoveryPlanName, input, options },
-      testFailoverOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
+        recoveryPlanName,
+        input,
+        options
+      },
+      spec: testFailoverOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationRecoveryPlansTestFailoverResponse,
+      OperationState<ReplicationRecoveryPlansTestFailoverResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to start the test failover of a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param input Recovery plan test failover input.
    * @param options The options parameters.
    */
   async beginTestFailoverAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     input: RecoveryPlanTestFailoverInput,
     options?: ReplicationRecoveryPlansTestFailoverOptionalParams
   ): Promise<ReplicationRecoveryPlansTestFailoverResponse> {
     const poller = await this.beginTestFailover(
+      resourceName,
+      resourceGroupName,
       recoveryPlanName,
       input,
       options
@@ -766,17 +996,22 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
 
   /**
    * The operation to cleanup test failover of a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param input Recovery plan test failover cleanup input.
    * @param options The options parameters.
    */
   async beginTestFailoverCleanup(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     input: RecoveryPlanTestFailoverCleanupInput,
     options?: ReplicationRecoveryPlansTestFailoverCleanupOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationRecoveryPlansTestFailoverCleanupResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationRecoveryPlansTestFailoverCleanupResponse>,
       ReplicationRecoveryPlansTestFailoverCleanupResponse
     >
   > {
@@ -786,7 +1021,7 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
     ): Promise<ReplicationRecoveryPlansTestFailoverCleanupResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -819,29 +1054,47 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { recoveryPlanName, input, options },
-      testFailoverCleanupOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
+        recoveryPlanName,
+        input,
+        options
+      },
+      spec: testFailoverCleanupOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationRecoveryPlansTestFailoverCleanupResponse,
+      OperationState<ReplicationRecoveryPlansTestFailoverCleanupResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to cleanup test failover of a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param input Recovery plan test failover cleanup input.
    * @param options The options parameters.
    */
   async beginTestFailoverCleanupAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     input: RecoveryPlanTestFailoverCleanupInput,
     options?: ReplicationRecoveryPlansTestFailoverCleanupOptionalParams
   ): Promise<ReplicationRecoveryPlansTestFailoverCleanupResponse> {
     const poller = await this.beginTestFailoverCleanup(
+      resourceName,
+      resourceGroupName,
       recoveryPlanName,
       input,
       options
@@ -851,17 +1104,22 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
 
   /**
    * The operation to start the unplanned failover of a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param input Recovery plan unplanned failover input.
    * @param options The options parameters.
    */
   async beginUnplannedFailover(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     input: RecoveryPlanUnplannedFailoverInput,
     options?: ReplicationRecoveryPlansUnplannedFailoverOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationRecoveryPlansUnplannedFailoverResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationRecoveryPlansUnplannedFailoverResponse>,
       ReplicationRecoveryPlansUnplannedFailoverResponse
     >
   > {
@@ -871,7 +1129,7 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
     ): Promise<ReplicationRecoveryPlansUnplannedFailoverResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -904,29 +1162,47 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { recoveryPlanName, input, options },
-      unplannedFailoverOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
+        recoveryPlanName,
+        input,
+        options
+      },
+      spec: unplannedFailoverOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationRecoveryPlansUnplannedFailoverResponse,
+      OperationState<ReplicationRecoveryPlansUnplannedFailoverResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to start the unplanned failover of a recovery plan.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param recoveryPlanName Recovery plan name.
    * @param input Recovery plan unplanned failover input.
    * @param options The options parameters.
    */
   async beginUnplannedFailoverAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     recoveryPlanName: string,
     input: RecoveryPlanUnplannedFailoverInput,
     options?: ReplicationRecoveryPlansUnplannedFailoverOptionalParams
   ): Promise<ReplicationRecoveryPlansUnplannedFailoverResponse> {
     const poller = await this.beginUnplannedFailover(
+      resourceName,
+      resourceGroupName,
       recoveryPlanName,
       input,
       options
@@ -936,15 +1212,20 @@ export class ReplicationRecoveryPlansImpl implements ReplicationRecoveryPlans {
 
   /**
    * ListNext
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param nextLink The nextLink from the previous successful call to the List method.
    * @param options The options parameters.
    */
   private _listNext(
+    resourceName: string,
+    resourceGroupName: string,
     nextLink: string,
     options?: ReplicationRecoveryPlansListNextOptionalParams
   ): Promise<ReplicationRecoveryPlansListNextResponse> {
     return this.client.sendOperationRequest(
-      { nextLink, options },
+      { resourceName, resourceGroupName, nextLink, options },
       listNextOperationSpec
     );
   }
@@ -1287,7 +1568,6 @@ const listNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.RecoveryPlanCollection
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.resourceGroupName,

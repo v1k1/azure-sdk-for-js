@@ -6,7 +6,8 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { ProductApi } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
@@ -40,7 +41,7 @@ export class ProductApiImpl implements ProductApi {
 
   /**
    * Lists a collection of the APIs associated with a product.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param productId Product identifier. Must be unique in the current API Management service instance.
    * @param options The options parameters.
@@ -64,12 +65,16 @@ export class ProductApiImpl implements ProductApi {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listByProductPagingPage(
           resourceGroupName,
           serviceName,
           productId,
-          options
+          options,
+          settings
         );
       }
     };
@@ -79,16 +84,23 @@ export class ProductApiImpl implements ProductApi {
     resourceGroupName: string,
     serviceName: string,
     productId: string,
-    options?: ProductApiListByProductOptionalParams
+    options?: ProductApiListByProductOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<ApiContract[]> {
-    let result = await this._listByProduct(
-      resourceGroupName,
-      serviceName,
-      productId,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: ProductApiListByProductResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listByProduct(
+        resourceGroupName,
+        serviceName,
+        productId,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listByProductNext(
         resourceGroupName,
@@ -98,7 +110,9 @@ export class ProductApiImpl implements ProductApi {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -120,7 +134,7 @@ export class ProductApiImpl implements ProductApi {
 
   /**
    * Lists a collection of the APIs associated with a product.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param productId Product identifier. Must be unique in the current API Management service instance.
    * @param options The options parameters.
@@ -139,7 +153,7 @@ export class ProductApiImpl implements ProductApi {
 
   /**
    * Checks that API entity specified by identifier is associated with the Product entity.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param productId Product identifier. Must be unique in the current API Management service instance.
    * @param apiId API revision identifier. Must be unique in the current API Management service instance.
@@ -161,7 +175,7 @@ export class ProductApiImpl implements ProductApi {
 
   /**
    * Adds an API to the specified product.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param productId Product identifier. Must be unique in the current API Management service instance.
    * @param apiId API revision identifier. Must be unique in the current API Management service instance.
@@ -183,7 +197,7 @@ export class ProductApiImpl implements ProductApi {
 
   /**
    * Deletes the specified API from the specified product.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param productId Product identifier. Must be unique in the current API Management service instance.
    * @param apiId API revision identifier. Must be unique in the current API Management service instance.
@@ -205,7 +219,7 @@ export class ProductApiImpl implements ProductApi {
 
   /**
    * ListByProductNext
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param productId Product identifier. Must be unique in the current API Management service instance.
    * @param nextLink The nextLink from the previous successful call to the ListByProduct method.
@@ -338,12 +352,6 @@ const listByProductNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [
-    Parameters.filter,
-    Parameters.top,
-    Parameters.skip,
-    Parameters.apiVersion
-  ],
   urlParameters: [
     Parameters.$host,
     Parameters.resourceGroupName,

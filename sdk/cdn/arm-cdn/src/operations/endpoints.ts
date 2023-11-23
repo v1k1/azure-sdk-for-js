@@ -6,22 +6,28 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { Endpoints } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { CdnManagementClient } from "../cdnManagementClient";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   Endpoint,
   EndpointsListByProfileNextOptionalParams,
   EndpointsListByProfileOptionalParams,
+  EndpointsListByProfileResponse,
   ResourceUsage,
   EndpointsListResourceUsageNextOptionalParams,
   EndpointsListResourceUsageOptionalParams,
-  EndpointsListByProfileResponse,
+  EndpointsListResourceUsageResponse,
   EndpointsGetOptionalParams,
   EndpointsGetResponse,
   EndpointsCreateOptionalParams,
@@ -41,7 +47,6 @@ import {
   ValidateCustomDomainInput,
   EndpointsValidateCustomDomainOptionalParams,
   EndpointsValidateCustomDomainResponse,
-  EndpointsListResourceUsageResponse,
   EndpointsListByProfileNextResponse,
   EndpointsListResourceUsageNextResponse
 } from "../models";
@@ -82,11 +87,15 @@ export class EndpointsImpl implements Endpoints {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listByProfilePagingPage(
           resourceGroupName,
           profileName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -95,15 +104,22 @@ export class EndpointsImpl implements Endpoints {
   private async *listByProfilePagingPage(
     resourceGroupName: string,
     profileName: string,
-    options?: EndpointsListByProfileOptionalParams
+    options?: EndpointsListByProfileOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<Endpoint[]> {
-    let result = await this._listByProfile(
-      resourceGroupName,
-      profileName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: EndpointsListByProfileResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listByProfile(
+        resourceGroupName,
+        profileName,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listByProfileNext(
         resourceGroupName,
@@ -112,7 +128,9 @@ export class EndpointsImpl implements Endpoints {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -156,12 +174,16 @@ export class EndpointsImpl implements Endpoints {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listResourceUsagePagingPage(
           resourceGroupName,
           profileName,
           endpointName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -171,16 +193,23 @@ export class EndpointsImpl implements Endpoints {
     resourceGroupName: string,
     profileName: string,
     endpointName: string,
-    options?: EndpointsListResourceUsageOptionalParams
+    options?: EndpointsListResourceUsageOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<ResourceUsage[]> {
-    let result = await this._listResourceUsage(
-      resourceGroupName,
-      profileName,
-      endpointName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: EndpointsListResourceUsageResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listResourceUsage(
+        resourceGroupName,
+        profileName,
+        endpointName,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listResourceUsageNext(
         resourceGroupName,
@@ -190,7 +219,9 @@ export class EndpointsImpl implements Endpoints {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -263,8 +294,8 @@ export class EndpointsImpl implements Endpoints {
     endpoint: Endpoint,
     options?: EndpointsCreateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<EndpointsCreateResponse>,
+    SimplePollerLike<
+      OperationState<EndpointsCreateResponse>,
       EndpointsCreateResponse
     >
   > {
@@ -274,7 +305,7 @@ export class EndpointsImpl implements Endpoints {
     ): Promise<EndpointsCreateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -307,13 +338,16 @@ export class EndpointsImpl implements Endpoints {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, profileName, endpointName, endpoint, options },
-      createOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, profileName, endpointName, endpoint, options },
+      spec: createOperationSpec
+    });
+    const poller = await createHttpPoller<
+      EndpointsCreateResponse,
+      OperationState<EndpointsCreateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -364,8 +398,8 @@ export class EndpointsImpl implements Endpoints {
     endpointUpdateProperties: EndpointUpdateParameters,
     options?: EndpointsUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<EndpointsUpdateResponse>,
+    SimplePollerLike<
+      OperationState<EndpointsUpdateResponse>,
       EndpointsUpdateResponse
     >
   > {
@@ -375,7 +409,7 @@ export class EndpointsImpl implements Endpoints {
     ): Promise<EndpointsUpdateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -408,19 +442,22 @@ export class EndpointsImpl implements Endpoints {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
         resourceGroupName,
         profileName,
         endpointName,
         endpointUpdateProperties,
         options
       },
-      updateOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: updateOperationSpec
+    });
+    const poller = await createHttpPoller<
+      EndpointsUpdateResponse,
+      OperationState<EndpointsUpdateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -468,14 +505,14 @@ export class EndpointsImpl implements Endpoints {
     profileName: string,
     endpointName: string,
     options?: EndpointsDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -508,13 +545,13 @@ export class EndpointsImpl implements Endpoints {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, profileName, endpointName, options },
-      deleteOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, profileName, endpointName, options },
+      spec: deleteOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -557,8 +594,8 @@ export class EndpointsImpl implements Endpoints {
     endpointName: string,
     options?: EndpointsStartOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<EndpointsStartResponse>,
+    SimplePollerLike<
+      OperationState<EndpointsStartResponse>,
       EndpointsStartResponse
     >
   > {
@@ -568,7 +605,7 @@ export class EndpointsImpl implements Endpoints {
     ): Promise<EndpointsStartResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -601,13 +638,16 @@ export class EndpointsImpl implements Endpoints {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, profileName, endpointName, options },
-      startOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, profileName, endpointName, options },
+      spec: startOperationSpec
+    });
+    const poller = await createHttpPoller<
+      EndpointsStartResponse,
+      OperationState<EndpointsStartResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -649,7 +689,10 @@ export class EndpointsImpl implements Endpoints {
     endpointName: string,
     options?: EndpointsStopOptionalParams
   ): Promise<
-    PollerLike<PollOperationState<EndpointsStopResponse>, EndpointsStopResponse>
+    SimplePollerLike<
+      OperationState<EndpointsStopResponse>,
+      EndpointsStopResponse
+    >
   > {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
@@ -657,7 +700,7 @@ export class EndpointsImpl implements Endpoints {
     ): Promise<EndpointsStopResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -690,13 +733,16 @@ export class EndpointsImpl implements Endpoints {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, profileName, endpointName, options },
-      stopOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, profileName, endpointName, options },
+      spec: stopOperationSpec
+    });
+    const poller = await createHttpPoller<
+      EndpointsStopResponse,
+      OperationState<EndpointsStopResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -741,14 +787,14 @@ export class EndpointsImpl implements Endpoints {
     endpointName: string,
     contentFilePaths: PurgeParameters,
     options?: EndpointsPurgeContentOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -781,19 +827,19 @@ export class EndpointsImpl implements Endpoints {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
         resourceGroupName,
         profileName,
         endpointName,
         contentFilePaths,
         options
       },
-      purgeContentOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: purgeContentOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -842,14 +888,14 @@ export class EndpointsImpl implements Endpoints {
     endpointName: string,
     contentFilePaths: LoadParameters,
     options?: EndpointsLoadContentOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -882,19 +928,19 @@ export class EndpointsImpl implements Endpoints {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
         resourceGroupName,
         profileName,
         endpointName,
         contentFilePaths,
         options
       },
-      loadContentOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: loadContentOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -1033,7 +1079,7 @@ const listByProfileOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName
+    Parameters.profileName1
   ],
   headerParameters: [Parameters.accept],
   serializer
@@ -1055,7 +1101,7 @@ const getOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.endpointName
   ],
   headerParameters: [Parameters.accept],
@@ -1088,7 +1134,7 @@ const createOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.endpointName
   ],
   headerParameters: [Parameters.contentType, Parameters.accept],
@@ -1122,7 +1168,7 @@ const updateOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.endpointName
   ],
   headerParameters: [Parameters.contentType, Parameters.accept],
@@ -1147,7 +1193,7 @@ const deleteOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.endpointName
   ],
   headerParameters: [Parameters.accept],
@@ -1179,7 +1225,7 @@ const startOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.endpointName
   ],
   headerParameters: [Parameters.accept],
@@ -1211,7 +1257,7 @@ const stopOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.endpointName
   ],
   headerParameters: [Parameters.accept],
@@ -1236,7 +1282,7 @@ const purgeContentOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.endpointName
   ],
   headerParameters: [Parameters.contentType, Parameters.accept],
@@ -1262,7 +1308,7 @@ const loadContentOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.endpointName
   ],
   headerParameters: [Parameters.contentType, Parameters.accept],
@@ -1287,7 +1333,7 @@ const validateCustomDomainOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.endpointName
   ],
   headerParameters: [Parameters.contentType, Parameters.accept],
@@ -1311,7 +1357,7 @@ const listResourceUsageOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.endpointName
   ],
   headerParameters: [Parameters.accept],
@@ -1328,12 +1374,11 @@ const listByProfileNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.nextLink
   ],
   headerParameters: [Parameters.accept],
@@ -1350,12 +1395,11 @@ const listResourceUsageNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.nextLink,
     Parameters.endpointName
   ],

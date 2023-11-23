@@ -1,16 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { AppConfigurationClient } from "../../src";
+import { Recorder, testPollingOptions } from "@azure-tools/test-recorder";
 import {
   assertThrowsRestError,
   createAppConfigurationClientForTests,
   deleteKeyCompletely,
   startRecorder,
 } from "./utils/testHelpers";
-import { assert } from "chai";
-import { Recorder } from "@azure-tools/test-recorder";
+import { AppConfigurationClient } from "../../src";
 import { Context } from "mocha";
+import { assert } from "chai";
 
 describe("etags", () => {
   let client: AppConfigurationClient;
@@ -18,9 +18,9 @@ describe("etags", () => {
   let key: string;
 
   beforeEach(async function (this: Context) {
-    recorder = startRecorder(this);
-    key = recorder.getUniqueName("etags");
-    client = createAppConfigurationClientForTests() || this.skip();
+    recorder = await startRecorder(this);
+    key = recorder.variable("etags", `etags${Math.floor(Math.random() * 1000)}`);
+    client = createAppConfigurationClientForTests(recorder.configureClientOptions({}));
     await client.addConfigurationSetting({
       key: key,
       value: "some value",
@@ -208,5 +208,24 @@ describe("etags", () => {
 
     // and now the setting isn't found
     await assertThrowsRestError(() => client.getConfigurationSetting({ key }), 404);
+  });
+
+  it("archive and recover using etags", async () => {
+    const snapshot1 = {
+      name: recorder.variable("snapshot", `snapshot${Math.floor(Math.random() * 1000)}`),
+      retentionPeriodInSeconds: 2592000,
+      filters: [{ keyFilter: key, valueFilter: "some value" }],
+    };
+    const newSnapshot = await client.beginCreateSnapshotAndWait(snapshot1, testPollingOptions);
+    await assertThrowsRestError(
+      () => client.archiveSnapshot(newSnapshot.name, { etag: "badEtag" }),
+      412
+    );
+    await client.archiveSnapshot(newSnapshot.name, { etag: newSnapshot.etag });
+
+    await assertThrowsRestError(
+      () => client.recoverSnapshot(newSnapshot.name, { etag: "badEtag" }),
+      412
+    );
   });
 });

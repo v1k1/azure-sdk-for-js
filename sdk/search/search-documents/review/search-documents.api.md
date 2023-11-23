@@ -56,6 +56,15 @@ export interface AnswerResult {
 export type Answers = string;
 
 // @public
+export type AnswersOptions = {
+    answers: "extractive";
+    count?: number;
+    threshold?: number;
+} | {
+    answers: "none";
+};
+
+// @public
 export type AsciiFoldingTokenFilter = BaseTokenFilter & {
     odatatype: "#Microsoft.Azure.Search.AsciiFoldingTokenFilter";
     preserveOriginal?: boolean;
@@ -71,16 +80,16 @@ export interface AutocompleteItem {
 export type AutocompleteMode = "oneTerm" | "twoTerms" | "oneTermWithContext";
 
 // @public
-export type AutocompleteOptions<Fields> = OperationOptions & AutocompleteRequest<Fields>;
+export type AutocompleteOptions<TModel extends object> = OperationOptions & AutocompleteRequest<TModel>;
 
 // @public
-export interface AutocompleteRequest<Fields> {
+export interface AutocompleteRequest<TModel extends object> {
     autocompleteMode?: AutocompleteMode;
     filter?: string;
     highlightPostTag?: string;
     highlightPreTag?: string;
     minimumCoverage?: number;
-    searchFields?: Fields[];
+    searchFields?: SearchFieldArray<TModel>;
     top?: number;
     useFuzzyMatching?: boolean;
 }
@@ -111,6 +120,29 @@ export type AzureMachineLearningSkill = BaseSearchIndexerSkill & {
 };
 
 // @public
+export interface AzureOpenAIEmbeddingSkill extends BaseSearchIndexerSkill {
+    apiKey?: string;
+    authIdentity?: SearchIndexerDataIdentity;
+    deploymentId?: string;
+    odatatype: "#Microsoft.Skills.Text.AzureOpenAIEmbeddingSkill";
+    resourceUri?: string;
+}
+
+// @public
+export interface AzureOpenAIParameters {
+    apiKey?: string;
+    authIdentity?: SearchIndexerDataIdentity;
+    deploymentId?: string;
+    resourceUri?: string;
+}
+
+// @public
+export type AzureOpenAIVectorizer = BaseVectorSearchVectorizer & {
+    kind: "azureOpenAI";
+    azureOpenAIParameters?: AzureOpenAIParameters;
+};
+
+// @public
 export interface BaseCharFilter {
     name: string;
     odatatype: "#Microsoft.Azure.Search.MappingCharFilter" | "#Microsoft.Azure.Search.PatternReplaceCharFilter";
@@ -129,7 +161,7 @@ export interface BaseDataChangeDetectionPolicy {
 
 // @public
 export interface BaseDataDeletionDetectionPolicy {
-    odatatype: "#Microsoft.Azure.Search.SoftDeleteColumnDeletionDetectionPolicy";
+    odatatype: "#Microsoft.Azure.Search.SoftDeleteColumnDeletionDetectionPolicy" | "#Microsoft.Azure.Search.NativeBlobSoftDeleteDeletionDetectionPolicy";
 }
 
 // @public
@@ -160,7 +192,7 @@ export interface BaseScoringFunction {
 
 // @public
 export interface BaseSearchIndexerDataIdentity {
-    odatatype: "#Microsoft.Azure.Search.SearchIndexerDataNoneIdentity" | "#Microsoft.Azure.Search.SearchIndexerDataUserAssignedIdentity";
+    odatatype: "#Microsoft.Azure.Search.DataNoneIdentity" | "#Microsoft.Azure.Search.DataUserAssignedIdentity";
 }
 
 // @public
@@ -169,7 +201,7 @@ export interface BaseSearchIndexerSkill {
     description?: string;
     inputs: InputFieldMappingEntry[];
     name?: string;
-    odatatype: "#Microsoft.Skills.Util.ConditionalSkill" | "#Microsoft.Skills.Text.KeyPhraseExtractionSkill" | "#Microsoft.Skills.Vision.OcrSkill" | "#Microsoft.Skills.Vision.ImageAnalysisSkill" | "#Microsoft.Skills.Text.LanguageDetectionSkill" | "#Microsoft.Skills.Util.ShaperSkill" | "#Microsoft.Skills.Text.MergeSkill" | "#Microsoft.Skills.Text.EntityRecognitionSkill" | "#Microsoft.Skills.Text.SentimentSkill" | "#Microsoft.Skills.Text.V3.SentimentSkill" | "#Microsoft.Skills.Text.V3.EntityLinkingSkill" | "#Microsoft.Skills.Text.V3.EntityRecognitionSkill" | "#Microsoft.Skills.Text.PIIDetectionSkill" | "#Microsoft.Skills.Text.SplitSkill" | "#Microsoft.Skills.Text.CustomEntityLookupSkill" | "#Microsoft.Skills.Text.TranslationSkill" | "#Microsoft.Skills.Util.DocumentExtractionSkill" | "#Microsoft.Skills.Custom.WebApiSkill" | "#Microsoft.Skills.Custom.AmlSkill";
+    odatatype: "#Microsoft.Skills.Util.ConditionalSkill" | "#Microsoft.Skills.Text.KeyPhraseExtractionSkill" | "#Microsoft.Skills.Vision.OcrSkill" | "#Microsoft.Skills.Vision.ImageAnalysisSkill" | "#Microsoft.Skills.Text.LanguageDetectionSkill" | "#Microsoft.Skills.Util.ShaperSkill" | "#Microsoft.Skills.Text.MergeSkill" | "#Microsoft.Skills.Text.EntityRecognitionSkill" | "#Microsoft.Skills.Text.SentimentSkill" | "#Microsoft.Skills.Text.V3.SentimentSkill" | "#Microsoft.Skills.Text.V3.EntityLinkingSkill" | "#Microsoft.Skills.Text.V3.EntityRecognitionSkill" | "#Microsoft.Skills.Text.PIIDetectionSkill" | "#Microsoft.Skills.Text.SplitSkill" | "#Microsoft.Skills.Text.CustomEntityLookupSkill" | "#Microsoft.Skills.Text.TranslationSkill" | "#Microsoft.Skills.Util.DocumentExtractionSkill" | "#Microsoft.Skills.Custom.WebApiSkill" | "#Microsoft.Skills.Custom.AmlSkill" | "#Microsoft.Skills.Text.AzureOpenAIEmbeddingSkill";
     outputs: OutputFieldMappingEntry[];
 }
 
@@ -177,6 +209,26 @@ export interface BaseSearchIndexerSkill {
 export interface BaseTokenFilter {
     name: string;
     odatatype: "#Microsoft.Azure.Search.AsciiFoldingTokenFilter" | "#Microsoft.Azure.Search.CjkBigramTokenFilter" | "#Microsoft.Azure.Search.CommonGramTokenFilter" | "#Microsoft.Azure.Search.DictionaryDecompounderTokenFilter" | "#Microsoft.Azure.Search.EdgeNGramTokenFilter" | "#Microsoft.Azure.Search.EdgeNGramTokenFilterV2" | "#Microsoft.Azure.Search.ElisionTokenFilter" | "#Microsoft.Azure.Search.KeepTokenFilter" | "#Microsoft.Azure.Search.KeywordMarkerTokenFilter" | "#Microsoft.Azure.Search.LengthTokenFilter" | "#Microsoft.Azure.Search.LimitTokenFilter" | "#Microsoft.Azure.Search.NGramTokenFilter" | "#Microsoft.Azure.Search.NGramTokenFilterV2" | "#Microsoft.Azure.Search.PatternCaptureTokenFilter" | "#Microsoft.Azure.Search.PatternReplaceTokenFilter" | "#Microsoft.Azure.Search.PhoneticTokenFilter" | "#Microsoft.Azure.Search.ShingleTokenFilter" | "#Microsoft.Azure.Search.SnowballTokenFilter" | "#Microsoft.Azure.Search.StemmerTokenFilter" | "#Microsoft.Azure.Search.StemmerOverrideTokenFilter" | "#Microsoft.Azure.Search.StopwordsTokenFilter" | "#Microsoft.Azure.Search.SynonymTokenFilter" | "#Microsoft.Azure.Search.TruncateTokenFilter" | "#Microsoft.Azure.Search.UniqueTokenFilter" | "#Microsoft.Azure.Search.WordDelimiterTokenFilter";
+}
+
+// @public
+export interface BaseVectorQuery<TModel extends object> {
+    exhaustive?: boolean;
+    fields?: SearchFieldArray<TModel>;
+    kind: VectorQueryKind;
+    kNearestNeighborsCount?: number;
+}
+
+// @public
+export interface BaseVectorSearchAlgorithmConfiguration {
+    kind: VectorSearchAlgorithmKind;
+    name: string;
+}
+
+// @public
+export interface BaseVectorSearchVectorizer {
+    kind: VectorSearchVectorizerKind;
+    name: string;
 }
 
 // @public
@@ -388,10 +440,26 @@ export type CustomNormalizer = BaseLexicalNormalizer & {
 };
 
 // @public
+export type CustomVectorizer = BaseVectorSearchVectorizer & {
+    kind: "customWebApi";
+    customVectorizerParameters?: CustomVectorizerParameters;
+};
+
+// @public
+export interface CustomVectorizerParameters {
+    authIdentity?: SearchIndexerDataIdentity;
+    authResourceId?: string;
+    httpHeaders?: Record<string, string>;
+    httpMethod?: string;
+    timeout?: string;
+    uri?: string;
+}
+
+// @public
 export type DataChangeDetectionPolicy = HighWaterMarkChangeDetectionPolicy | SqlIntegratedChangeTrackingPolicy;
 
 // @public
-export type DataDeletionDetectionPolicy = SoftDeleteColumnDeletionDetectionPolicy;
+export type DataDeletionDetectionPolicy = SoftDeleteColumnDeletionDetectionPolicy | NativeBlobSoftDeleteDeletionDetectionPolicy;
 
 // @public
 export const DEFAULT_BATCH_SIZE: number;
@@ -463,12 +531,17 @@ export interface DistanceScoringParameters {
 }
 
 // @public
+export interface DocumentDebugInfo {
+    readonly semantic?: SemanticDebugInfo;
+}
+
+// @public
 export type DocumentExtractionSkill = BaseSearchIndexerSkill & {
     odatatype: "#Microsoft.Skills.Util.DocumentExtractionSkill";
     parsingMode?: string;
     dataToExtract?: string;
     configuration?: {
-        [propertyName: string]: Record<string, unknown>;
+        [propertyName: string]: any;
     };
 };
 
@@ -509,7 +582,7 @@ export type EntityLinkingSkill = BaseSearchIndexerSkill & {
     modelVersion?: string;
 };
 
-// @public
+// @public @deprecated
 export type EntityRecognitionSkill = BaseSearchIndexerSkill & {
     odatatype: "#Microsoft.Skills.Text.EntityRecognitionSkill";
     categories?: EntityCategory[];
@@ -530,6 +603,25 @@ export type EntityRecognitionSkillV3 = BaseSearchIndexerSkill & {
     modelVersion?: string;
 };
 
+// @public (undocumented)
+export type ExcludedODataTypes = Date | GeographyPoint;
+
+// @public
+export interface ExhaustiveKnnParameters {
+    metric?: VectorSearchAlgorithmMetric;
+}
+
+// @public
+export type ExhaustiveKnnVectorSearchAlgorithmConfiguration = BaseVectorSearchAlgorithmConfiguration & {
+    kind: "exhaustiveKnn";
+    parameters?: ExhaustiveKnnParameters;
+};
+
+// @public (undocumented)
+export type ExtractDocumentKey<TModel> = {
+    [K in keyof TModel as TModel[K] extends string | undefined ? K : never]: TModel[K];
+};
+
 // @public
 export interface FacetResult {
     [property: string]: any;
@@ -547,7 +639,7 @@ export interface FieldMapping {
 export interface FieldMappingFunction {
     name: string;
     parameters?: {
-        [propertyName: string]: Record<string, unknown>;
+        [propertyName: string]: any;
     };
 }
 
@@ -580,8 +672,8 @@ export type GetAliasOptions = OperationOptions;
 export type GetDataSourceConnectionOptions = OperationOptions;
 
 // @public
-export interface GetDocumentOptions<Fields> extends OperationOptions {
-    selectedFields?: Fields[];
+export interface GetDocumentOptions<TModel extends object, TFields extends SelectFields<TModel> = SelectFields<TModel>> extends OperationOptions {
+    selectedFields?: SelectArray<TFields>;
 }
 
 // @public
@@ -609,6 +701,20 @@ export type GetSynonymMapsOptions = OperationOptions;
 export type HighWaterMarkChangeDetectionPolicy = BaseDataChangeDetectionPolicy & {
     odatatype: "#Microsoft.Azure.Search.HighWaterMarkChangeDetectionPolicy";
     highWaterMarkColumnName: string;
+};
+
+// @public
+export interface HnswParameters {
+    efConstruction?: number;
+    efSearch?: number;
+    m?: number;
+    metric?: VectorSearchAlgorithmMetric;
+}
+
+// @public
+export type HnswVectorSearchAlgorithmConfiguration = BaseVectorSearchAlgorithmConfiguration & {
+    kind: "hnsw";
+    parameters?: HnswParameters;
 };
 
 // @public
@@ -645,7 +751,7 @@ export class IndexDocumentsBatch<T> {
 }
 
 // @public
-export interface IndexDocumentsClient<T> {
+export interface IndexDocumentsClient<T extends object> {
     indexDocuments(batch: IndexDocumentsBatch<T>, options: IndexDocumentsOptions): Promise<IndexDocumentsResult>;
 }
 
@@ -749,6 +855,9 @@ export type IndexIterator = PagedAsyncIterableIterator<SearchIndex, SearchIndex[
 
 // @public
 export type IndexNameIterator = PagedAsyncIterableIterator<string, string[], {}>;
+
+// @public
+export type IndexProjectionMode = "skipIndexingParentDocuments" | "includeIndexingParentDocuments";
 
 // @public
 export interface InputFieldMappingEntry {
@@ -986,11 +1095,58 @@ export enum KnownEntityRecognitionSkillLanguage {
 
 // @public
 export enum KnownImageAnalysisSkillLanguage {
+    Ar = "ar",
+    Az = "az",
+    Bg = "bg",
+    Bs = "bs",
+    Ca = "ca",
+    Cs = "cs",
+    Cy = "cy",
+    Da = "da",
+    De = "de",
+    El = "el",
     En = "en",
     Es = "es",
+    Et = "et",
+    Eu = "eu",
+    Fi = "fi",
+    Fr = "fr",
+    Ga = "ga",
+    Gl = "gl",
+    He = "he",
+    Hi = "hi",
+    Hr = "hr",
+    Hu = "hu",
+    Id = "id",
+    It = "it",
     Ja = "ja",
+    Kk = "kk",
+    Ko = "ko",
+    Lt = "lt",
+    Lv = "lv",
+    Mk = "mk",
+    Ms = "ms",
+    Nb = "nb",
+    Nl = "nl",
+    Pl = "pl",
+    Prs = "prs",
     Pt = "pt",
-    Zh = "zh"
+    PtBR = "pt-BR",
+    PtPT = "pt-PT",
+    Ro = "ro",
+    Ru = "ru",
+    Sk = "sk",
+    Sl = "sl",
+    SrCyrl = "sr-Cyrl",
+    SrLatn = "sr-Latn",
+    Sv = "sv",
+    Th = "th",
+    Tr = "tr",
+    Uk = "uk",
+    Vi = "vi",
+    Zh = "zh",
+    ZhHans = "zh-Hans",
+    ZhHant = "zh-Hant"
 }
 
 // @public
@@ -1146,33 +1302,176 @@ export enum KnownLineEnding {
 
 // @public
 export enum KnownOcrSkillLanguage {
+    Af = "af",
+    Anp = "anp",
     Ar = "ar",
+    Ast = "ast",
+    Awa = "awa",
+    Az = "az",
+    Be = "be",
+    BeCyrl = "be-cyrl",
+    BeLatn = "be-latn",
+    Bfy = "bfy",
+    Bfz = "bfz",
+    Bg = "bg",
+    Bgc = "bgc",
+    Bho = "bho",
+    Bi = "bi",
+    Bns = "bns",
+    Br = "br",
+    Bra = "bra",
+    Brx = "brx",
+    Bs = "bs",
+    Bua = "bua",
+    Ca = "ca",
+    Ceb = "ceb",
+    Ch = "ch",
+    CnrCyrl = "cnr-cyrl",
+    CnrLatn = "cnr-latn",
+    Co = "co",
+    Crh = "crh",
     Cs = "cs",
+    Csb = "csb",
+    Cy = "cy",
     Da = "da",
     De = "de",
+    Dhi = "dhi",
+    Doi = "doi",
+    Dsb = "dsb",
     El = "el",
     En = "en",
     Es = "es",
+    Et = "et",
+    Eu = "eu",
+    Fa = "fa",
     Fi = "fi",
+    Fil = "fil",
+    Fj = "fj",
+    Fo = "fo",
     Fr = "fr",
+    Fur = "fur",
+    Fy = "fy",
+    Ga = "ga",
+    Gag = "gag",
+    Gd = "gd",
+    Gil = "gil",
+    Gl = "gl",
+    Gon = "gon",
+    Gv = "gv",
+    Gvr = "gvr",
+    Haw = "haw",
+    Hi = "hi",
+    Hlb = "hlb",
+    Hne = "hne",
+    Hni = "hni",
+    Hoc = "hoc",
+    Hr = "hr",
+    Hsb = "hsb",
+    Ht = "ht",
     Hu = "hu",
+    Ia = "ia",
+    Id = "id",
+    Is = "is",
     It = "it",
+    Iu = "iu",
     Ja = "ja",
+    Jns = "Jns",
+    Jv = "jv",
+    Kaa = "kaa",
+    KaaCyrl = "kaa-cyrl",
+    Kac = "kac",
+    Kea = "kea",
+    Kfq = "kfq",
+    Kha = "kha",
+    KkCyrl = "kk-cyrl",
+    KkLatn = "kk-latn",
+    Kl = "kl",
+    Klr = "klr",
+    Kmj = "kmj",
     Ko = "ko",
+    Kos = "kos",
+    Kpy = "kpy",
+    Krc = "krc",
+    Kru = "kru",
+    Ksh = "ksh",
+    KuArab = "ku-arab",
+    KuLatn = "ku-latn",
+    Kum = "kum",
+    Kw = "kw",
+    Ky = "ky",
+    La = "la",
+    Lb = "lb",
+    Lkt = "lkt",
+    Lt = "lt",
+    Mi = "mi",
+    Mn = "mn",
+    Mr = "mr",
+    Ms = "ms",
+    Mt = "mt",
+    Mww = "mww",
+    Myv = "myv",
+    Nap = "nap",
     Nb = "nb",
+    Ne = "ne",
+    Niu = "niu",
     Nl = "nl",
+    No = "no",
+    Nog = "nog",
+    Oc = "oc",
+    Os = "os",
+    Pa = "pa",
     Pl = "pl",
+    Prs = "prs",
+    Ps = "ps",
     Pt = "pt",
+    Quc = "quc",
+    Rab = "rab",
+    Rm = "rm",
     Ro = "ro",
     Ru = "ru",
+    Sa = "sa",
+    Sat = "sat",
+    Sck = "sck",
+    Sco = "sco",
     Sk = "sk",
+    Sl = "sl",
+    Sm = "sm",
+    Sma = "sma",
+    Sme = "sme",
+    Smj = "smj",
+    Smn = "smn",
+    Sms = "sms",
+    So = "so",
+    Sq = "sq",
+    Sr = "sr",
     SrCyrl = "sr-Cyrl",
     SrLatn = "sr-Latn",
+    Srx = "srx",
     Sv = "sv",
+    Sw = "sw",
+    Tet = "tet",
+    Tg = "tg",
+    Thf = "thf",
+    Tk = "tk",
+    To = "to",
     Tr = "tr",
+    Tt = "tt",
+    Tyv = "tyv",
+    Ug = "ug",
     Unk = "unk",
+    Ur = "ur",
+    Uz = "uz",
+    UzArab = "uz-arab",
+    UzCyrl = "uz-cyrl",
+    Vo = "vo",
+    Wae = "wae",
+    Xnr = "xnr",
+    Xsr = "xsr",
+    Yua = "yua",
+    Za = "za",
     ZhHans = "zh-Hans",
-    ZhHant = "zh-Hant"
+    ZhHant = "zh-Hant",
+    Zu = "zu"
 }
 
 // @public
@@ -1659,6 +1958,14 @@ export type MicrosoftStemmingTokenizerLanguage = "arabic" | "bangla" | "bulgaria
 export type MicrosoftTokenizerLanguage = "bangla" | "bulgarian" | "catalan" | "chineseSimplified" | "chineseTraditional" | "croatian" | "czech" | "danish" | "dutch" | "english" | "french" | "german" | "greek" | "gujarati" | "hindi" | "icelandic" | "indonesian" | "italian" | "japanese" | "kannada" | "korean" | "malay" | "malayalam" | "marathi" | "norwegianBokmaal" | "polish" | "portuguese" | "portugueseBrazilian" | "punjabi" | "romanian" | "russian" | "serbianCyrillic" | "serbianLatin" | "slovenian" | "spanish" | "swedish" | "tamil" | "telugu" | "thai" | "ukrainian" | "urdu" | "vietnamese";
 
 // @public
+export type NarrowedModel<TModel extends object, TFields extends SelectFields<TModel> = SelectFields<TModel>> = (<T>() => T extends TModel ? true : false) extends <T>() => T extends never ? true : false ? TModel : (<T>() => T extends TModel ? true : false) extends <T>() => T extends object ? true : false ? TModel : (<T>() => T extends TModel ? true : false) extends <T>() => T extends any ? true : false ? TModel : (<T>() => T extends TModel ? true : false) extends <T>() => T extends unknown ? true : false ? TModel : (<T>() => T extends TFields ? true : false) extends <T>() => T extends never ? true : false ? never : (<T>() => T extends TFields ? true : false) extends <T>() => T extends SelectFields<TModel> ? true : false ? TModel : SearchPick<TModel, TFields>;
+
+// @public
+export type NativeBlobSoftDeleteDeletionDetectionPolicy = BaseDataDeletionDetectionPolicy & {
+    odatatype: "#Microsoft.Azure.Search.NativeBlobSoftDeleteDeletionDetectionPolicy";
+};
+
+// @public
 export interface NGramTokenFilter {
     maxGram?: number;
     minGram?: number;
@@ -1783,13 +2090,35 @@ export type QueryAnswerType = string;
 export type QueryCaptionType = string;
 
 // @public
+export type QueryDebugMode = "disabled" | "semantic";
+
+// @public
 export type QueryLanguage = string;
+
+// @public
+export interface QueryResultDocumentRerankerInput {
+    readonly content?: string;
+    readonly keywords?: string;
+    readonly title?: string;
+}
+
+// @public
+export interface QueryResultDocumentSemanticField {
+    readonly name?: string;
+    readonly state?: SemanticFieldState;
+}
 
 // @public
 export type QuerySpellerType = string;
 
 // @public
 export type QueryType = "simple" | "full" | "semantic";
+
+// @public
+export interface RawVectorQuery<TModel extends object> extends BaseVectorQuery<TModel> {
+    kind: "vector";
+    vector?: number[];
+}
 
 // @public
 export type RegexFlags = string;
@@ -1846,24 +2175,24 @@ export interface SearchAlias {
 }
 
 // @public
-export class SearchClient<T> implements IndexDocumentsClient<T> {
+export class SearchClient<TModel extends object> implements IndexDocumentsClient<TModel> {
     constructor(endpoint: string, indexName: string, credential: KeyCredential | TokenCredential, options?: SearchClientOptions);
     // @deprecated
     readonly apiVersion: string;
-    autocomplete<Fields extends keyof T>(searchText: string, suggesterName: string, options?: AutocompleteOptions<Fields>): Promise<AutocompleteResult>;
-    deleteDocuments(documents: T[], options?: DeleteDocumentsOptions): Promise<IndexDocumentsResult>;
-    deleteDocuments(keyName: keyof T, keyValues: string[], options?: DeleteDocumentsOptions): Promise<IndexDocumentsResult>;
+    autocomplete(searchText: string, suggesterName: string, options?: AutocompleteOptions<TModel>): Promise<AutocompleteResult>;
+    deleteDocuments(documents: TModel[], options?: DeleteDocumentsOptions): Promise<IndexDocumentsResult>;
+    deleteDocuments(keyName: keyof TModel, keyValues: string[], options?: DeleteDocumentsOptions): Promise<IndexDocumentsResult>;
     readonly endpoint: string;
-    getDocument<Fields extends Extract<keyof T, string>>(key: string, options?: GetDocumentOptions<Fields>): Promise<T>;
+    getDocument<TFields extends SelectFields<TModel>>(key: string, options?: GetDocumentOptions<TModel, TFields>): Promise<NarrowedModel<TModel, TFields>>;
     getDocumentsCount(options?: CountDocumentsOptions): Promise<number>;
-    indexDocuments(batch: IndexDocumentsBatch<T>, options?: IndexDocumentsOptions): Promise<IndexDocumentsResult>;
+    indexDocuments(batch: IndexDocumentsBatch<TModel>, options?: IndexDocumentsOptions): Promise<IndexDocumentsResult>;
     readonly indexName: string;
-    mergeDocuments(documents: T[], options?: MergeDocumentsOptions): Promise<IndexDocumentsResult>;
-    mergeOrUploadDocuments(documents: T[], options?: MergeOrUploadDocumentsOptions): Promise<IndexDocumentsResult>;
-    search<Fields extends keyof T>(searchText?: string, options?: SearchOptions<Fields>): Promise<SearchDocumentsResult<Pick<T, Fields>>>;
+    mergeDocuments(documents: TModel[], options?: MergeDocumentsOptions): Promise<IndexDocumentsResult>;
+    mergeOrUploadDocuments(documents: TModel[], options?: MergeOrUploadDocumentsOptions): Promise<IndexDocumentsResult>;
+    search<TFields extends SelectFields<TModel>>(searchText?: string, options?: SearchOptions<TModel, TFields>): Promise<SearchDocumentsResult<TModel, TFields>>;
     readonly serviceVersion: string;
-    suggest<Fields extends keyof T = never>(searchText: string, suggesterName: string, options?: SuggestOptions<Fields>): Promise<SuggestDocumentsResult<Pick<T, Fields>>>;
-    uploadDocuments(documents: T[], options?: UploadDocumentsOptions): Promise<IndexDocumentsResult>;
+    suggest<TFields extends SelectFields<TModel> = never>(searchText: string, suggesterName: string, options?: SuggestOptions<TModel, TFields>): Promise<SuggestDocumentsResult<TModel, TFields>>;
+    uploadDocuments(documents: TModel[], options?: UploadDocumentsOptions): Promise<IndexDocumentsResult>;
 }
 
 // @public
@@ -1875,14 +2204,14 @@ export interface SearchClientOptions extends ExtendedCommonClientOptions {
 }
 
 // @public
-export interface SearchDocumentsPageResult<T> extends SearchDocumentsResultBase {
+export interface SearchDocumentsPageResult<TModel extends object, TFields extends SelectFields<TModel> = SelectFields<TModel>> extends SearchDocumentsResultBase {
     continuationToken?: string;
-    readonly results: SearchResult<T>[];
+    readonly results: SearchResult<TModel, TFields>[];
 }
 
 // @public
-export interface SearchDocumentsResult<T> extends SearchDocumentsResultBase {
-    readonly results: SearchIterator<T>;
+export interface SearchDocumentsResult<TModel extends object, TFields extends SelectFields<TModel> = SelectFields<TModel>> extends SearchDocumentsResultBase {
+    readonly results: SearchIterator<TModel, TFields>;
 }
 
 // @public
@@ -1893,13 +2222,18 @@ export interface SearchDocumentsResultBase {
     readonly facets?: {
         [propertyName: string]: FacetResult[];
     };
+    readonly semanticPartialResponseReason?: SemanticPartialResponseReason;
+    readonly semanticPartialResponseType?: SemanticPartialResponseType;
 }
 
 // @public
 export type SearchField = SimpleField | ComplexField;
 
 // @public
-export type SearchFieldDataType = "Edm.String" | "Edm.Int32" | "Edm.Int64" | "Edm.Double" | "Edm.Boolean" | "Edm.DateTimeOffset" | "Edm.GeographyPoint" | "Collection(Edm.String)" | "Collection(Edm.Int32)" | "Collection(Edm.Int64)" | "Collection(Edm.Double)" | "Collection(Edm.Boolean)" | "Collection(Edm.DateTimeOffset)" | "Collection(Edm.GeographyPoint)";
+export type SearchFieldArray<TModel extends object = object> = (<T>() => T extends TModel ? true : false) extends <T>() => T extends object ? true : false ? readonly string[] : readonly SelectFields<TModel>[];
+
+// @public
+export type SearchFieldDataType = "Edm.String" | "Edm.Int32" | "Edm.Int64" | "Edm.Double" | "Edm.Boolean" | "Edm.DateTimeOffset" | "Edm.GeographyPoint" | "Collection(Edm.String)" | "Collection(Edm.Int32)" | "Collection(Edm.Int64)" | "Collection(Edm.Double)" | "Collection(Edm.Boolean)" | "Collection(Edm.DateTimeOffset)" | "Collection(Edm.GeographyPoint)" | "Collection(Edm.Single)";
 
 // @public
 export interface SearchIndex {
@@ -1918,6 +2252,7 @@ export interface SearchIndex {
     suggesters?: SearchSuggester[];
     tokenFilters?: TokenFilter[];
     tokenizers?: LexicalTokenizer[];
+    vectorSearch?: VectorSearch;
 }
 
 // @public
@@ -1942,7 +2277,7 @@ export class SearchIndexClient {
     getAlias(aliasName: string, options?: GetAliasOptions): Promise<SearchIndexAlias>;
     getIndex(indexName: string, options?: GetIndexOptions): Promise<SearchIndex>;
     getIndexStatistics(indexName: string, options?: GetIndexStatisticsOptions): Promise<SearchIndexStatistics>;
-    getSearchClient<T>(indexName: string, options?: SearchClientOptions): SearchClient<T>;
+    getSearchClient<TModel extends object>(indexName: string, options?: SearchClientOptions): SearchClient<TModel>;
     getServiceStatistics(options?: GetServiceStatisticsOptions): Promise<SearchServiceStatistics>;
     getSynonymMap(synonymMapName: string, options?: GetSynonymMapsOptions): Promise<SynonymMap>;
     listAliases(options?: ListAliasesOptions): AliasIterator;
@@ -1981,6 +2316,7 @@ export interface SearchIndexer {
 // @public (undocumented)
 export interface SearchIndexerCache {
     enableReprocessing?: boolean;
+    identity?: SearchIndexerDataIdentity;
     storageConnectionString?: string;
 }
 
@@ -2035,7 +2371,7 @@ export type SearchIndexerDataIdentity = SearchIndexerDataNoneIdentity | SearchIn
 
 // @public
 export type SearchIndexerDataNoneIdentity = BaseSearchIndexerDataIdentity & {
-    odatatype: "#Microsoft.Azure.Search.SearchIndexerDataNoneIdentity";
+    odatatype: "#Microsoft.Azure.Search.DataNoneIdentity";
 };
 
 // @public
@@ -2057,7 +2393,7 @@ export type SearchIndexerDataSourceType = string;
 
 // @public
 export type SearchIndexerDataUserAssignedIdentity = BaseSearchIndexerDataIdentity & {
-    odatatype: "#Microsoft.Azure.Search.SearchIndexerDataUserAssignedIdentity";
+    odatatype: "#Microsoft.Azure.Search.DataUserAssignedIdentity";
     userAssignedIdentity: string;
 };
 
@@ -2072,7 +2408,28 @@ export interface SearchIndexerError {
 }
 
 // @public
+export interface SearchIndexerIndexProjections {
+    parameters?: SearchIndexerIndexProjectionsParameters;
+    selectors: SearchIndexerIndexProjectionSelector[];
+}
+
+// @public
+export interface SearchIndexerIndexProjectionSelector {
+    mappings: InputFieldMappingEntry[];
+    parentKeyFieldName: string;
+    sourceContext: string;
+    targetIndexName: string;
+}
+
+// @public
+export interface SearchIndexerIndexProjectionsParameters {
+    [property: string]: unknown;
+    projectionMode?: IndexProjectionMode;
+}
+
+// @public
 export interface SearchIndexerKnowledgeStore {
+    identity?: SearchIndexerDataIdentity;
     projections: SearchIndexerKnowledgeStoreProjection[];
     storageConnectionString: string;
 }
@@ -2087,6 +2444,12 @@ export type SearchIndexerKnowledgeStoreFileProjectionSelector = SearchIndexerKno
 
 // @public
 export type SearchIndexerKnowledgeStoreObjectProjectionSelector = SearchIndexerKnowledgeStoreBlobProjectionSelector & {};
+
+// @public
+export interface SearchIndexerKnowledgeStoreParameters {
+    [property: string]: unknown;
+    synthesizeGeneratedKeyName?: boolean;
+}
 
 // @public
 export interface SearchIndexerKnowledgeStoreProjection {
@@ -2117,7 +2480,7 @@ export interface SearchIndexerLimits {
 }
 
 // @public
-export type SearchIndexerSkill = ConditionalSkill | KeyPhraseExtractionSkill | OcrSkill | ImageAnalysisSkill | LanguageDetectionSkill | ShaperSkill | MergeSkill | EntityRecognitionSkill | SentimentSkill | SplitSkill | PIIDetectionSkill | EntityRecognitionSkillV3 | EntityLinkingSkill | SentimentSkillV3 | CustomEntityLookupSkill | TextTranslationSkill | DocumentExtractionSkill | WebApiSkill | AzureMachineLearningSkill;
+export type SearchIndexerSkill = ConditionalSkill | KeyPhraseExtractionSkill | OcrSkill | ImageAnalysisSkill | LanguageDetectionSkill | ShaperSkill | MergeSkill | EntityRecognitionSkill | SentimentSkill | SplitSkill | PIIDetectionSkill | EntityRecognitionSkillV3 | EntityLinkingSkill | SentimentSkillV3 | CustomEntityLookupSkill | TextTranslationSkill | DocumentExtractionSkill | WebApiSkill | AzureMachineLearningSkill | AzureOpenAIEmbeddingSkill;
 
 // @public
 export interface SearchIndexerSkillset {
@@ -2125,6 +2488,7 @@ export interface SearchIndexerSkillset {
     description?: string;
     encryptionKey?: SearchResourceEncryptionKey;
     etag?: string;
+    indexProjections?: SearchIndexerIndexProjections;
     knowledgeStore?: SearchIndexerKnowledgeStore;
     name: string;
     skills: SearchIndexerSkill[];
@@ -2148,28 +2512,28 @@ export interface SearchIndexerWarning {
 }
 
 // @public
-export class SearchIndexingBufferedSender<T> {
-    constructor(client: IndexDocumentsClient<T>, documentKeyRetriever: (document: T) => string, options?: SearchIndexingBufferedSenderOptions);
-    deleteDocuments(documents: T[], options?: SearchIndexingBufferedSenderDeleteDocumentsOptions): Promise<void>;
+export class SearchIndexingBufferedSender<TModel extends object> {
+    constructor(client: IndexDocumentsClient<TModel>, documentKeyRetriever: (document: TModel) => string, options?: SearchIndexingBufferedSenderOptions);
+    deleteDocuments(documents: TModel[], options?: SearchIndexingBufferedSenderDeleteDocumentsOptions): Promise<void>;
     dispose(): Promise<void>;
     flush(options?: SearchIndexingBufferedSenderFlushDocumentsOptions): Promise<void>;
-    mergeDocuments(documents: T[], options?: SearchIndexingBufferedSenderMergeDocumentsOptions): Promise<void>;
-    mergeOrUploadDocuments(documents: T[], options?: SearchIndexingBufferedSenderMergeOrUploadDocumentsOptions): Promise<void>;
+    mergeDocuments(documents: TModel[], options?: SearchIndexingBufferedSenderMergeDocumentsOptions): Promise<void>;
+    mergeOrUploadDocuments(documents: TModel[], options?: SearchIndexingBufferedSenderMergeOrUploadDocumentsOptions): Promise<void>;
     off(event: "batchAdded", listener: (e: {
         action: string;
-        documents: T[];
+        documents: TModel[];
     }) => void): void;
-    off(event: "beforeDocumentSent", listener: (e: IndexDocumentsAction<T>) => void): void;
+    off(event: "beforeDocumentSent", listener: (e: IndexDocumentsAction<TModel>) => void): void;
     off(event: "batchSucceeded", listener: (e: IndexDocumentsResult) => void): void;
     off(event: "batchFailed", listener: (e: RestError) => void): void;
     on(event: "batchAdded", listener: (e: {
         action: string;
-        documents: T[];
+        documents: TModel[];
     }) => void): void;
-    on(event: "beforeDocumentSent", listener: (e: IndexDocumentsAction<T>) => void): void;
+    on(event: "beforeDocumentSent", listener: (e: IndexDocumentsAction<TModel>) => void): void;
     on(event: "batchSucceeded", listener: (e: IndexDocumentsResult) => void): void;
     on(event: "batchFailed", listener: (e: RestError) => void): void;
-    uploadDocuments(documents: T[], options?: SearchIndexingBufferedSenderUploadDocumentsOptions): Promise<void>;
+    uploadDocuments(documents: TModel[], options?: SearchIndexingBufferedSenderUploadDocumentsOptions): Promise<void>;
 }
 
 // @public
@@ -2201,21 +2565,31 @@ export type SearchIndexingBufferedSenderUploadDocumentsOptions = OperationOption
 export interface SearchIndexStatistics {
     readonly documentCount: number;
     readonly storageSize: number;
+    readonly vectorIndexSize?: number;
 }
 
 // @public
-export type SearchIterator<Fields> = PagedAsyncIterableIterator<SearchResult<Fields>, SearchDocumentsPageResult<Fields>, ListSearchResultsPageSettings>;
+export type SearchIterator<TModel extends object, TFields extends SelectFields<TModel> = SelectFields<TModel>> = PagedAsyncIterableIterator<SearchResult<TModel, TFields>, SearchDocumentsPageResult<TModel, TFields>, ListSearchResultsPageSettings>;
 
 // @public
 export type SearchMode = "any" | "all";
 
 // @public
-export type SearchOptions<Fields> = OperationOptions & SearchRequestOptions<Fields>;
+export type SearchOptions<TModel extends object, TFields extends SelectFields<TModel> = SelectFields<TModel>> = OperationOptions & SearchRequestOptions<TModel, TFields>;
 
 // @public
-export interface SearchRequest {
+export type SearchPick<TModel extends object, TFields extends SelectFields<TModel>> = (<T>() => T extends TModel ? true : false) extends <T>() => T extends object ? true : false ? TModel : (<T>() => T extends TFields ? true : false) extends <T>() => T extends any ? true : false ? TModel : (<T>() => T extends TFields ? true : false) extends <T>() => T extends never ? true : false ? TModel : // We're going to get a union of individual interfaces for each field in T that's selected, so convert that to an intersection.
+UnionToIntersection<TFields extends `${infer FieldName}/${infer RestPaths}` ? FieldName extends keyof TModel & string ? NonNullable<TModel[FieldName]> extends Array<infer Elem> ? Elem extends object ? RestPaths extends SelectFields<Elem> ? {
+    [Key in keyof TModel as Key & FieldName]: Array<SearchPick<Elem, RestPaths>>;
+} : never : never : NonNullable<TModel[FieldName]> extends object ? {
+    [Key in keyof TModel as Key & FieldName]: RestPaths extends SelectFields<TModel[Key] & {}> ? SearchPick<TModel[Key] & {}, RestPaths> | Extract<TModel[Key], null> : never;
+} : never : never : TFields extends keyof TModel ? Pick<TModel, TFields> | Extract<TModel, null> : never> & {};
+
+// @public
+export interface SearchRequest<TModel extends object = never> {
     answers?: QueryAnswerType;
     captions?: QueryCaptionType;
+    debugMode?: QueryDebugMode;
     facets?: string[];
     filter?: string;
     highlightFields?: string;
@@ -2234,17 +2608,23 @@ export interface SearchRequest {
     searchText?: string;
     select?: string;
     semanticConfiguration?: string;
+    semanticErrorHandlingMode?: SemanticErrorHandlingMode;
     semanticFields?: string;
+    semanticMaxWaitInMilliseconds?: number;
+    semanticQuery?: string;
     sessionId?: string;
     skip?: number;
     speller?: QuerySpellerType;
     top?: number;
+    vectorFilterMode?: VectorFilterMode;
+    vectorQueries?: VectorQuery<TModel>[];
 }
 
 // @public
-export interface SearchRequestOptions<Fields> {
-    answers?: Answers;
+export interface SearchRequestOptions<TModel extends object, TFields extends SelectFields<TModel> = SelectFields<TModel>> {
+    answers?: Answers | AnswersOptions;
     captions?: Captions;
+    debugMode?: QueryDebugMode;
     facets?: string[];
     filter?: string;
     highlightFields?: string;
@@ -2258,14 +2638,20 @@ export interface SearchRequestOptions<Fields> {
     scoringParameters?: string[];
     scoringProfile?: string;
     scoringStatistics?: ScoringStatistics;
-    searchFields?: Fields[];
+    searchFields?: SearchFieldArray<TModel>;
     searchMode?: SearchMode;
-    select?: Fields[];
+    select?: SelectArray<TFields>;
+    semanticConfiguration?: string;
+    semanticErrorHandlingMode?: SemanticErrorHandlingMode;
     semanticFields?: string[];
+    semanticMaxWaitInMilliseconds?: number;
+    semanticQuery?: string;
     sessionId?: string;
     skip?: number;
     speller?: Speller;
     top?: number;
+    vectorFilterMode?: VectorFilterMode;
+    vectorQueries?: VectorQuery<TModel>[];
 }
 
 // @public
@@ -2279,14 +2665,15 @@ export interface SearchResourceEncryptionKey {
 }
 
 // @public
-export type SearchResult<T> = {
+export type SearchResult<TModel extends object, TFields extends SelectFields<TModel> = SelectFields<TModel>> = {
     readonly score: number;
     readonly rerankerScore?: number;
     readonly highlights?: {
-        [k in keyof T]?: string[];
+        [k in SelectFields<TModel>]?: string[];
     };
     readonly captions?: CaptionResult[];
-    document: T;
+    document: NarrowedModel<TModel, TFields>;
+    readonly documentDebugInfo?: DocumentDebugInfo[];
 };
 
 // @public
@@ -2303,10 +2690,29 @@ export interface SearchSuggester {
 }
 
 // @public
+export type SelectArray<TFields = never> = [string] extends [TFields] ? readonly TFields[] : (<T>() => T extends TFields ? true : false) extends <T>() => T extends never ? true : false ? readonly string[] : readonly TFields[];
+
+// @public
+export type SelectFields<TModel extends object> = (<T>() => T extends TModel ? true : false) extends <T>() => T extends never ? true : false ? string : (<T>() => T extends TModel ? true : false) extends <T>() => T extends any ? true : false ? string : (<T>() => T extends TModel ? true : false) extends <T>() => T extends object ? true : false ? string : TModel extends Array<infer Elem> ? Elem extends object ? SelectFields<Elem> : never : {
+    [Key in keyof TModel]: Key extends string ? NonNullable<TModel[Key]> extends object ? NonNullable<TModel[Key]> extends ExcludedODataTypes ? Key : SelectFields<NonNullable<TModel[Key]>> extends infer NextPaths ? (<T>() => T extends NextPaths ? true : false) extends <T>() => T extends never ? true : false ? Key : NextPaths extends string ? Key | `${Key}/${NextPaths}` : Key : never : Key : never;
+}[keyof TModel & string] & string;
+
+// @public
 export interface SemanticConfiguration {
     name: string;
     prioritizedFields: PrioritizedFields;
 }
+
+// @public
+export interface SemanticDebugInfo {
+    readonly contentFields?: QueryResultDocumentSemanticField[];
+    readonly keywordFields?: QueryResultDocumentSemanticField[];
+    readonly rerankerInput?: QueryResultDocumentRerankerInput;
+    readonly titleField?: QueryResultDocumentSemanticField;
+}
+
+// @public
+export type SemanticErrorHandlingMode = "partial" | "fail";
 
 // @public
 export interface SemanticField {
@@ -2315,11 +2721,21 @@ export interface SemanticField {
 }
 
 // @public
-export interface SemanticSettings {
-    configurations?: SemanticConfiguration[];
-}
+export type SemanticFieldState = "used" | "unused" | "partial";
 
 // @public
+export type SemanticPartialResponseReason = "maxWaitExceeded" | "capacityOverloaded" | "transient";
+
+// @public
+export type SemanticPartialResponseType = "baseResults" | "rerankedResults";
+
+// @public
+export interface SemanticSettings {
+    configurations?: SemanticConfiguration[];
+    defaultConfiguration?: string;
+}
+
+// @public @deprecated
 export type SentimentSkill = BaseSearchIndexerSkill & {
     odatatype: "#Microsoft.Skills.Text.SentimentSkill";
     defaultLanguageCode?: SentimentSkillLanguage;
@@ -2338,14 +2754,15 @@ export type SentimentSkillV3 = BaseSearchIndexerSkill & {
 
 // @public
 export interface ServiceCounters {
-    aliasCounter?: ResourceCounter;
+    aliasCounter: ResourceCounter;
     dataSourceCounter: ResourceCounter;
     documentCounter: ResourceCounter;
     indexCounter: ResourceCounter;
     indexerCounter: ResourceCounter;
-    skillsetCounter?: ResourceCounter;
+    skillsetCounter: ResourceCounter;
     storageSizeCounter: ResourceCounter;
     synonymMapCounter: ResourceCounter;
+    vectorIndexSizeCounter: ResourceCounter;
 }
 
 // @public
@@ -2395,6 +2812,8 @@ export interface SimpleField {
     sortable?: boolean;
     synonymMapNames?: string[];
     type: SearchFieldDataType;
+    vectorSearchDimensions?: number;
+    vectorSearchProfile?: string;
 }
 
 // @public
@@ -2422,6 +2841,8 @@ export type SplitSkill = BaseSearchIndexerSkill & {
     defaultLanguageCode?: SplitSkillLanguage;
     textSplitMode?: TextSplitMode;
     maxPageLength?: number;
+    pageOverlapLength?: number;
+    maximumPagesToTake?: number;
 };
 
 // @public
@@ -2466,31 +2887,34 @@ export type StopwordsTokenFilter = BaseTokenFilter & {
 };
 
 // @public
-export interface SuggestDocumentsResult<T> {
+export interface SuggestDocumentsResult<TModel extends object, TFields extends SelectFields<TModel> = SelectFields<TModel>> {
     readonly coverage?: number;
-    readonly results: SuggestResult<T>[];
+    readonly results: SuggestResult<TModel, TFields>[];
 }
 
-// @public
-export type SuggestOptions<Fields> = OperationOptions & SuggestRequest<Fields>;
+// @public (undocumented)
+export type SuggestNarrowedModel<TModel extends object, TFields extends SelectFields<TModel> = SelectFields<TModel>> = (<T>() => T extends TModel ? true : false) extends <T>() => T extends never ? true : false ? TModel : (<T>() => T extends TModel ? true : false) extends <T>() => T extends object ? true : false ? TModel : (<T>() => T extends TFields ? true : false) extends <T>() => T extends never ? true : false ? keyof ExtractDocumentKey<TModel> extends never ? TModel : ExtractDocumentKey<TModel> : TFields extends SelectFields<TModel> ? NarrowedModel<TModel, TFields> : never;
 
 // @public
-export interface SuggestRequest<Fields> {
+export type SuggestOptions<TModel extends object, TFields extends SelectFields<TModel> = SelectFields<TModel>> = OperationOptions & SuggestRequest<TModel, TFields>;
+
+// @public
+export interface SuggestRequest<TModel extends object, TFields extends SelectFields<TModel> = SelectFields<TModel>> {
     filter?: string;
     highlightPostTag?: string;
     highlightPreTag?: string;
     minimumCoverage?: number;
     orderBy?: string[];
-    searchFields?: Fields[];
-    select?: Fields[];
+    searchFields?: SearchFieldArray<TModel>;
+    select?: SelectArray<TFields>;
     top?: number;
     useFuzzyMatching?: boolean;
 }
 
 // @public
-export type SuggestResult<T> = {
+export type SuggestResult<TModel extends object, TFields extends SelectFields<TModel> = SelectFields<TModel>> = {
     readonly text: string;
-    document: T;
+    document: SuggestNarrowedModel<TModel, TFields>;
 };
 
 // @public
@@ -2562,6 +2986,9 @@ export type UaxUrlEmailTokenizer = BaseLexicalTokenizer & {
     maxTokenLength?: number;
 };
 
+// @public (undocumented)
+export type UnionToIntersection<Union> = (Union extends unknown ? (_: Union) => unknown : never) extends (_: infer I) => unknown ? I : never;
+
 // @public
 export type UniqueTokenFilter = BaseTokenFilter & {
     odatatype: "#Microsoft.Azure.Search.UniqueTokenFilter";
@@ -2572,20 +2999,66 @@ export type UniqueTokenFilter = BaseTokenFilter & {
 export type UploadDocumentsOptions = IndexDocumentsOptions;
 
 // @public
+export type VectorFilterMode = "postFilter" | "preFilter";
+
+// @public
+export interface VectorizableTextQuery<TModel extends object> extends BaseVectorQuery<TModel> {
+    kind: "text";
+    text?: string;
+}
+
+// @public
+export type VectorQuery<TModel extends object> = RawVectorQuery<TModel> | VectorizableTextQuery<TModel>;
+
+// @public (undocumented)
+export type VectorQueryKind = "vector" | "text";
+
+// @public
+export interface VectorSearch {
+    algorithms?: VectorSearchAlgorithmConfiguration[];
+    profiles?: VectorSearchProfile[];
+    vectorizers?: VectorSearchVectorizer[];
+}
+
+// @public
+export type VectorSearchAlgorithmConfiguration = HnswVectorSearchAlgorithmConfiguration | ExhaustiveKnnVectorSearchAlgorithmConfiguration;
+
+// @public (undocumented)
+export type VectorSearchAlgorithmKind = "hnsw" | "exhaustiveKnn";
+
+// @public
+export type VectorSearchAlgorithmMetric = "cosine" | "euclidean" | "dotProduct";
+
+// @public
+export interface VectorSearchProfile {
+    algorithm: string;
+    name: string;
+    vectorizer?: string;
+}
+
+// @public
+export type VectorSearchVectorizer = AzureOpenAIVectorizer | CustomVectorizer;
+
+// @public (undocumented)
+export type VectorSearchVectorizerKind = "azureOpenAI" | "customWebApi";
+
+// @public
 export type VisualFeature = string;
 
 // @public
-export type WebApiSkill = BaseSearchIndexerSkill & {
-    odatatype: "#Microsoft.Skills.Custom.WebApiSkill";
-    uri: string;
+export interface WebApiSkill extends BaseSearchIndexerSkill {
+    authIdentity?: SearchIndexerDataIdentity;
+    authResourceId?: string;
+    batchSize?: number;
+    degreeOfParallelism?: number;
     httpHeaders?: {
         [propertyName: string]: string;
     };
     httpMethod?: string;
+    odatatype: "#Microsoft.Skills.Custom.WebApiSkill";
     timeout?: string;
-    batchSize?: number;
-    degreeOfParallelism?: number;
-};
+    uri: string;
+}
 
 // @public
 export type WordDelimiterTokenFilter = BaseTokenFilter & {

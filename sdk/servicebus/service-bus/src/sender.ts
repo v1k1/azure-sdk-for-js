@@ -10,6 +10,7 @@ import {
   getSenderClosedErrorMsg,
   throwErrorIfConnectionClosed,
   throwIfNotValidServiceBusMessage,
+  throwTypeErrorIfNotInstanceOfParameterType,
   throwTypeErrorIfParameterMissing,
   throwTypeErrorIfParameterNotLong,
 } from "./util/errors";
@@ -219,7 +220,8 @@ export class ServiceBusSenderImpl implements ServiceBusSender {
         originalMessage,
         options ?? {},
         this.entityPath,
-        this._context.config.host
+        this._context.config.host,
+        "publish"
       );
       const spanLinks: TracingSpanLink[] = spanContext ? [{ tracingContext: spanContext }] : [];
       return tracingClient.withSpan(
@@ -230,6 +232,7 @@ export class ServiceBusSenderImpl implements ServiceBusSender {
           spanLinks,
           ...toSpanOptions(
             { entityPath: this.entityPath, host: this._context.config.host },
+            "publish",
             "client"
           ),
         }
@@ -269,6 +272,7 @@ export class ServiceBusSenderImpl implements ServiceBusSender {
         spanLinks,
         ...toSpanOptions(
           { entityPath: this.entityPath, host: this._context.config.host },
+          "publish",
           "client"
         ),
       }
@@ -294,6 +298,12 @@ export class ServiceBusSenderImpl implements ServiceBusSender {
       this._context.connectionId,
       "scheduledEnqueueTimeUtc",
       scheduledEnqueueTimeUtc
+    );
+    throwTypeErrorIfNotInstanceOfParameterType(
+      this._context.connectionId,
+      "scheduledEnqueueTimeUtc",
+      scheduledEnqueueTimeUtc,
+      Date
     );
     throwTypeErrorIfParameterMissing(this._context.connectionId, "messages", messages);
     const messagesToSchedule = Array.isArray(messages) ? messages : [messages];

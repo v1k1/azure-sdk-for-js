@@ -6,21 +6,27 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { ReplicationProtectedItems } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { SiteRecoveryManagementClient } from "../siteRecoveryManagementClient";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   ReplicationProtectedItem,
   ReplicationProtectedItemsListByReplicationProtectionContainersNextOptionalParams,
   ReplicationProtectedItemsListByReplicationProtectionContainersOptionalParams,
+  ReplicationProtectedItemsListByReplicationProtectionContainersResponse,
   ReplicationProtectedItemsListNextOptionalParams,
   ReplicationProtectedItemsListOptionalParams,
-  ReplicationProtectedItemsListByReplicationProtectionContainersResponse,
+  ReplicationProtectedItemsListResponse,
   ReplicationProtectedItemsGetOptionalParams,
   ReplicationProtectedItemsGetResponse,
   EnableProtectionInput,
@@ -74,7 +80,6 @@ import {
   UpdateMobilityServiceRequest,
   ReplicationProtectedItemsUpdateMobilityServiceOptionalParams,
   ReplicationProtectedItemsUpdateMobilityServiceResponse,
-  ReplicationProtectedItemsListResponse,
   ReplicationProtectedItemsListByReplicationProtectionContainersNextResponse,
   ReplicationProtectedItemsListNextResponse
 } from "../models";
@@ -95,16 +100,23 @@ export class ReplicationProtectedItemsImpl
 
   /**
    * Gets the list of ASR replication protected items in the protection container.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param options The options parameters.
    */
   public listByReplicationProtectionContainers(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     options?: ReplicationProtectedItemsListByReplicationProtectionContainersOptionalParams
   ): PagedAsyncIterableIterator<ReplicationProtectedItem> {
     const iter = this.listByReplicationProtectionContainersPagingAll(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       options
@@ -116,46 +128,71 @@ export class ReplicationProtectedItemsImpl
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listByReplicationProtectionContainersPagingPage(
+          resourceName,
+          resourceGroupName,
           fabricName,
           protectionContainerName,
-          options
+          options,
+          settings
         );
       }
     };
   }
 
   private async *listByReplicationProtectionContainersPagingPage(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
-    options?: ReplicationProtectedItemsListByReplicationProtectionContainersOptionalParams
+    options?: ReplicationProtectedItemsListByReplicationProtectionContainersOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<ReplicationProtectedItem[]> {
-    let result = await this._listByReplicationProtectionContainers(
-      fabricName,
-      protectionContainerName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: ReplicationProtectedItemsListByReplicationProtectionContainersResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listByReplicationProtectionContainers(
+        resourceName,
+        resourceGroupName,
+        fabricName,
+        protectionContainerName,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listByReplicationProtectionContainersNext(
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         continuationToken,
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
   private async *listByReplicationProtectionContainersPagingAll(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     options?: ReplicationProtectedItemsListByReplicationProtectionContainersOptionalParams
   ): AsyncIterableIterator<ReplicationProtectedItem> {
     for await (const page of this.listByReplicationProtectionContainersPagingPage(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       options
@@ -166,12 +203,17 @@ export class ReplicationProtectedItemsImpl
 
   /**
    * Gets the list of ASR replication protected items in the vault.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param options The options parameters.
    */
   public list(
+    resourceName: string,
+    resourceGroupName: string,
     options?: ReplicationProtectedItemsListOptionalParams
   ): PagedAsyncIterableIterator<ReplicationProtectedItem> {
-    const iter = this.listPagingAll(options);
+    const iter = this.listPagingAll(resourceName, resourceGroupName, options);
     return {
       next() {
         return iter.next();
@@ -179,40 +221,75 @@ export class ReplicationProtectedItemsImpl
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listPagingPage(options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listPagingPage(
+          resourceName,
+          resourceGroupName,
+          options,
+          settings
+        );
       }
     };
   }
 
   private async *listPagingPage(
-    options?: ReplicationProtectedItemsListOptionalParams
+    resourceName: string,
+    resourceGroupName: string,
+    options?: ReplicationProtectedItemsListOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<ReplicationProtectedItem[]> {
-    let result = await this._list(options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
-    while (continuationToken) {
-      result = await this._listNext(continuationToken, options);
+    let result: ReplicationProtectedItemsListResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._list(resourceName, resourceGroupName, options);
+      let page = result.value || [];
       continuationToken = result.nextLink;
-      yield result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
+    while (continuationToken) {
+      result = await this._listNext(
+        resourceName,
+        resourceGroupName,
+        continuationToken,
+        options
+      );
+      continuationToken = result.nextLink;
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
   private async *listPagingAll(
+    resourceName: string,
+    resourceGroupName: string,
     options?: ReplicationProtectedItemsListOptionalParams
   ): AsyncIterableIterator<ReplicationProtectedItem> {
-    for await (const page of this.listPagingPage(options)) {
+    for await (const page of this.listPagingPage(
+      resourceName,
+      resourceGroupName,
+      options
+    )) {
       yield* page;
     }
   }
 
   /**
    * Gets the list of ASR replication protected items in the protection container.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param options The options parameters.
    */
   private _listByReplicationProtectionContainers(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     options?: ReplicationProtectedItemsListByReplicationProtectionContainersOptionalParams
@@ -220,19 +297,30 @@ export class ReplicationProtectedItemsImpl
     ReplicationProtectedItemsListByReplicationProtectionContainersResponse
   > {
     return this.client.sendOperationRequest(
-      { fabricName, protectionContainerName, options },
+      {
+        resourceName,
+        resourceGroupName,
+        fabricName,
+        protectionContainerName,
+        options
+      },
       listByReplicationProtectionContainersOperationSpec
     );
   }
 
   /**
    * Gets the details of an ASR replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric unique name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
    * @param options The options parameters.
    */
   get(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
@@ -240,6 +328,8 @@ export class ReplicationProtectedItemsImpl
   ): Promise<ReplicationProtectedItemsGetResponse> {
     return this.client.sendOperationRequest(
       {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
@@ -251,6 +341,9 @@ export class ReplicationProtectedItemsImpl
 
   /**
    * The operation to create an ASR replication protected item (Enable replication).
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Name of the fabric.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName A name for the replication protected item.
@@ -258,14 +351,16 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginCreate(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     input: EnableProtectionInput,
     options?: ReplicationProtectedItemsCreateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationProtectedItemsCreateResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationProtectedItemsCreateResponse>,
       ReplicationProtectedItemsCreateResponse
     >
   > {
@@ -275,7 +370,7 @@ export class ReplicationProtectedItemsImpl
     ): Promise<ReplicationProtectedItemsCreateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -308,25 +403,35 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
         input,
         options
       },
-      createOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: createOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationProtectedItemsCreateResponse,
+      OperationState<ReplicationProtectedItemsCreateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to create an ASR replication protected item (Enable replication).
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Name of the fabric.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName A name for the replication protected item.
@@ -334,6 +439,8 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginCreateAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
@@ -341,6 +448,8 @@ export class ReplicationProtectedItemsImpl
     options?: ReplicationProtectedItemsCreateOptionalParams
   ): Promise<ReplicationProtectedItemsCreateResponse> {
     const poller = await this.beginCreate(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       replicatedProtectedItemName,
@@ -354,24 +463,29 @@ export class ReplicationProtectedItemsImpl
    * The operation to delete or purge a replication protected item. This operation will force delete the
    * replication protected item. Use the remove operation on replication protected item to perform a
    * clean disable replication for the item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
    * @param options The options parameters.
    */
   async beginPurge(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     options?: ReplicationProtectedItemsPurgeOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -404,38 +518,49 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
         options
       },
-      purgeOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: purgeOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to delete or purge a replication protected item. This operation will force delete the
    * replication protected item. Use the remove operation on replication protected item to perform a
    * clean disable replication for the item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
    * @param options The options parameters.
    */
   async beginPurgeAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     options?: ReplicationProtectedItemsPurgeOptionalParams
   ): Promise<void> {
     const poller = await this.beginPurge(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       replicatedProtectedItemName,
@@ -446,6 +571,9 @@ export class ReplicationProtectedItemsImpl
 
   /**
    * The operation to update the recovery settings of an ASR replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -453,14 +581,16 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginUpdate(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     updateProtectionInput: UpdateReplicationProtectedItemInput,
     options?: ReplicationProtectedItemsUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationProtectedItemsUpdateResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationProtectedItemsUpdateResponse>,
       ReplicationProtectedItemsUpdateResponse
     >
   > {
@@ -470,7 +600,7 @@ export class ReplicationProtectedItemsImpl
     ): Promise<ReplicationProtectedItemsUpdateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -503,25 +633,35 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
         updateProtectionInput,
         options
       },
-      updateOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: updateOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationProtectedItemsUpdateResponse,
+      OperationState<ReplicationProtectedItemsUpdateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to update the recovery settings of an ASR replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -529,6 +669,8 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginUpdateAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
@@ -536,6 +678,8 @@ export class ReplicationProtectedItemsImpl
     options?: ReplicationProtectedItemsUpdateOptionalParams
   ): Promise<ReplicationProtectedItemsUpdateResponse> {
     const poller = await this.beginUpdate(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       replicatedProtectedItemName,
@@ -547,6 +691,9 @@ export class ReplicationProtectedItemsImpl
 
   /**
    * Operation to add disks(s) to the replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -554,14 +701,16 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginAddDisks(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     addDisksInput: AddDisksInput,
     options?: ReplicationProtectedItemsAddDisksOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationProtectedItemsAddDisksResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationProtectedItemsAddDisksResponse>,
       ReplicationProtectedItemsAddDisksResponse
     >
   > {
@@ -571,7 +720,7 @@ export class ReplicationProtectedItemsImpl
     ): Promise<ReplicationProtectedItemsAddDisksResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -604,25 +753,35 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
         addDisksInput,
         options
       },
-      addDisksOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: addDisksOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationProtectedItemsAddDisksResponse,
+      OperationState<ReplicationProtectedItemsAddDisksResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * Operation to add disks(s) to the replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -630,6 +789,8 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginAddDisksAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
@@ -637,6 +798,8 @@ export class ReplicationProtectedItemsImpl
     options?: ReplicationProtectedItemsAddDisksOptionalParams
   ): Promise<ReplicationProtectedItemsAddDisksResponse> {
     const poller = await this.beginAddDisks(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       replicatedProtectedItemName,
@@ -648,6 +811,9 @@ export class ReplicationProtectedItemsImpl
 
   /**
    * The operation to change the recovery point of a failed over replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName The ARM fabric name.
    * @param protectionContainerName The protection container name.
    * @param replicatedProtectedItemName The replicated protected item name.
@@ -655,14 +821,16 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginApplyRecoveryPoint(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     applyRecoveryPointInput: ApplyRecoveryPointInput,
     options?: ReplicationProtectedItemsApplyRecoveryPointOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationProtectedItemsApplyRecoveryPointResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationProtectedItemsApplyRecoveryPointResponse>,
       ReplicationProtectedItemsApplyRecoveryPointResponse
     >
   > {
@@ -672,7 +840,7 @@ export class ReplicationProtectedItemsImpl
     ): Promise<ReplicationProtectedItemsApplyRecoveryPointResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -705,25 +873,35 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
         applyRecoveryPointInput,
         options
       },
-      applyRecoveryPointOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: applyRecoveryPointOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationProtectedItemsApplyRecoveryPointResponse,
+      OperationState<ReplicationProtectedItemsApplyRecoveryPointResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to change the recovery point of a failed over replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName The ARM fabric name.
    * @param protectionContainerName The protection container name.
    * @param replicatedProtectedItemName The replicated protected item name.
@@ -731,6 +909,8 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginApplyRecoveryPointAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
@@ -738,6 +918,8 @@ export class ReplicationProtectedItemsImpl
     options?: ReplicationProtectedItemsApplyRecoveryPointOptionalParams
   ): Promise<ReplicationProtectedItemsApplyRecoveryPointResponse> {
     const poller = await this.beginApplyRecoveryPoint(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       replicatedProtectedItemName,
@@ -749,19 +931,24 @@ export class ReplicationProtectedItemsImpl
 
   /**
    * Operation to cancel the failover of the replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
    * @param options The options parameters.
    */
   async beginFailoverCancel(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     options?: ReplicationProtectedItemsFailoverCancelOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationProtectedItemsFailoverCancelResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationProtectedItemsFailoverCancelResponse>,
       ReplicationProtectedItemsFailoverCancelResponse
     >
   > {
@@ -771,7 +958,7 @@ export class ReplicationProtectedItemsImpl
     ): Promise<ReplicationProtectedItemsFailoverCancelResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -804,36 +991,50 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
         options
       },
-      failoverCancelOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: failoverCancelOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationProtectedItemsFailoverCancelResponse,
+      OperationState<ReplicationProtectedItemsFailoverCancelResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * Operation to cancel the failover of the replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
    * @param options The options parameters.
    */
   async beginFailoverCancelAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     options?: ReplicationProtectedItemsFailoverCancelOptionalParams
   ): Promise<ReplicationProtectedItemsFailoverCancelResponse> {
     const poller = await this.beginFailoverCancel(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       replicatedProtectedItemName,
@@ -844,19 +1045,24 @@ export class ReplicationProtectedItemsImpl
 
   /**
    * Operation to commit the failover of the replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
    * @param options The options parameters.
    */
   async beginFailoverCommit(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     options?: ReplicationProtectedItemsFailoverCommitOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationProtectedItemsFailoverCommitResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationProtectedItemsFailoverCommitResponse>,
       ReplicationProtectedItemsFailoverCommitResponse
     >
   > {
@@ -866,7 +1072,7 @@ export class ReplicationProtectedItemsImpl
     ): Promise<ReplicationProtectedItemsFailoverCommitResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -899,36 +1105,50 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
         options
       },
-      failoverCommitOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: failoverCommitOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationProtectedItemsFailoverCommitResponse,
+      OperationState<ReplicationProtectedItemsFailoverCommitResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * Operation to commit the failover of the replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
    * @param options The options parameters.
    */
   async beginFailoverCommitAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     options?: ReplicationProtectedItemsFailoverCommitOptionalParams
   ): Promise<ReplicationProtectedItemsFailoverCommitResponse> {
     const poller = await this.beginFailoverCommit(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       replicatedProtectedItemName,
@@ -939,6 +1159,9 @@ export class ReplicationProtectedItemsImpl
 
   /**
    * Operation to initiate a planned failover of the replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -946,14 +1169,16 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginPlannedFailover(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     failoverInput: PlannedFailoverInput,
     options?: ReplicationProtectedItemsPlannedFailoverOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationProtectedItemsPlannedFailoverResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationProtectedItemsPlannedFailoverResponse>,
       ReplicationProtectedItemsPlannedFailoverResponse
     >
   > {
@@ -963,7 +1188,7 @@ export class ReplicationProtectedItemsImpl
     ): Promise<ReplicationProtectedItemsPlannedFailoverResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -996,25 +1221,35 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
         failoverInput,
         options
       },
-      plannedFailoverOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: plannedFailoverOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationProtectedItemsPlannedFailoverResponse,
+      OperationState<ReplicationProtectedItemsPlannedFailoverResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * Operation to initiate a planned failover of the replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -1022,6 +1257,8 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginPlannedFailoverAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
@@ -1029,6 +1266,8 @@ export class ReplicationProtectedItemsImpl
     options?: ReplicationProtectedItemsPlannedFailoverOptionalParams
   ): Promise<ReplicationProtectedItemsPlannedFailoverResponse> {
     const poller = await this.beginPlannedFailover(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       replicatedProtectedItemName,
@@ -1041,6 +1280,9 @@ export class ReplicationProtectedItemsImpl
   /**
    * The operation to disable replication on a replication protected item. This will also remove the
    * item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -1048,19 +1290,21 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginDelete(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     disableProtectionInput: DisableProtectionInput,
     options?: ReplicationProtectedItemsDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -1093,26 +1337,33 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
         disableProtectionInput,
         options
       },
-      deleteOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: deleteOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to disable replication on a replication protected item. This will also remove the
    * item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -1120,6 +1371,8 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginDeleteAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
@@ -1127,6 +1380,8 @@ export class ReplicationProtectedItemsImpl
     options?: ReplicationProtectedItemsDeleteOptionalParams
   ): Promise<void> {
     const poller = await this.beginDelete(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       replicatedProtectedItemName,
@@ -1138,6 +1393,9 @@ export class ReplicationProtectedItemsImpl
 
   /**
    * Operation to remove disk(s) from the replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -1145,14 +1403,16 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginRemoveDisks(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     removeDisksInput: RemoveDisksInput,
     options?: ReplicationProtectedItemsRemoveDisksOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationProtectedItemsRemoveDisksResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationProtectedItemsRemoveDisksResponse>,
       ReplicationProtectedItemsRemoveDisksResponse
     >
   > {
@@ -1162,7 +1422,7 @@ export class ReplicationProtectedItemsImpl
     ): Promise<ReplicationProtectedItemsRemoveDisksResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -1195,25 +1455,35 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
         removeDisksInput,
         options
       },
-      removeDisksOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: removeDisksOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationProtectedItemsRemoveDisksResponse,
+      OperationState<ReplicationProtectedItemsRemoveDisksResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * Operation to remove disk(s) from the replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -1221,6 +1491,8 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginRemoveDisksAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
@@ -1228,6 +1500,8 @@ export class ReplicationProtectedItemsImpl
     options?: ReplicationProtectedItemsRemoveDisksOptionalParams
   ): Promise<ReplicationProtectedItemsRemoveDisksResponse> {
     const poller = await this.beginRemoveDisks(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       replicatedProtectedItemName,
@@ -1240,19 +1514,24 @@ export class ReplicationProtectedItemsImpl
   /**
    * The operation to start resynchronize/repair replication for a replication protected item requiring
    * resynchronization.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName The name of the fabric.
    * @param protectionContainerName The name of the container.
    * @param replicatedProtectedItemName The name of the replication protected item.
    * @param options The options parameters.
    */
   async beginRepairReplication(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     options?: ReplicationProtectedItemsRepairReplicationOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationProtectedItemsRepairReplicationResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationProtectedItemsRepairReplicationResponse>,
       ReplicationProtectedItemsRepairReplicationResponse
     >
   > {
@@ -1262,7 +1541,7 @@ export class ReplicationProtectedItemsImpl
     ): Promise<ReplicationProtectedItemsRepairReplicationResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -1295,37 +1574,51 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
         options
       },
-      repairReplicationOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: repairReplicationOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationProtectedItemsRepairReplicationResponse,
+      OperationState<ReplicationProtectedItemsRepairReplicationResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to start resynchronize/repair replication for a replication protected item requiring
    * resynchronization.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName The name of the fabric.
    * @param protectionContainerName The name of the container.
    * @param replicatedProtectedItemName The name of the replication protected item.
    * @param options The options parameters.
    */
   async beginRepairReplicationAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     options?: ReplicationProtectedItemsRepairReplicationOptionalParams
   ): Promise<ReplicationProtectedItemsRepairReplicationResponse> {
     const poller = await this.beginRepairReplication(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       replicatedProtectedItemName,
@@ -1336,6 +1629,9 @@ export class ReplicationProtectedItemsImpl
 
   /**
    * Operation to reprotect or reverse replicate a failed over replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -1343,14 +1639,16 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginReprotect(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     reprotectInput: ReverseReplicationInput,
     options?: ReplicationProtectedItemsReprotectOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationProtectedItemsReprotectResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationProtectedItemsReprotectResponse>,
       ReplicationProtectedItemsReprotectResponse
     >
   > {
@@ -1360,7 +1658,7 @@ export class ReplicationProtectedItemsImpl
     ): Promise<ReplicationProtectedItemsReprotectResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -1393,25 +1691,35 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
         reprotectInput,
         options
       },
-      reprotectOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: reprotectOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationProtectedItemsReprotectResponse,
+      OperationState<ReplicationProtectedItemsReprotectResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * Operation to reprotect or reverse replicate a failed over replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -1419,6 +1727,8 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginReprotectAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
@@ -1426,6 +1736,8 @@ export class ReplicationProtectedItemsImpl
     options?: ReplicationProtectedItemsReprotectOptionalParams
   ): Promise<ReplicationProtectedItemsReprotectResponse> {
     const poller = await this.beginReprotect(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       replicatedProtectedItemName,
@@ -1437,6 +1749,9 @@ export class ReplicationProtectedItemsImpl
 
   /**
    * Operation to resolve health issues of the replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -1444,14 +1759,16 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginResolveHealthErrors(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     resolveHealthInput: ResolveHealthInput,
     options?: ReplicationProtectedItemsResolveHealthErrorsOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationProtectedItemsResolveHealthErrorsResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationProtectedItemsResolveHealthErrorsResponse>,
       ReplicationProtectedItemsResolveHealthErrorsResponse
     >
   > {
@@ -1461,7 +1778,7 @@ export class ReplicationProtectedItemsImpl
     ): Promise<ReplicationProtectedItemsResolveHealthErrorsResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -1494,25 +1811,35 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
         resolveHealthInput,
         options
       },
-      resolveHealthErrorsOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: resolveHealthErrorsOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationProtectedItemsResolveHealthErrorsResponse,
+      OperationState<ReplicationProtectedItemsResolveHealthErrorsResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * Operation to resolve health issues of the replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -1520,6 +1847,8 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginResolveHealthErrorsAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
@@ -1527,6 +1856,8 @@ export class ReplicationProtectedItemsImpl
     options?: ReplicationProtectedItemsResolveHealthErrorsOptionalParams
   ): Promise<ReplicationProtectedItemsResolveHealthErrorsResponse> {
     const poller = await this.beginResolveHealthErrors(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       replicatedProtectedItemName,
@@ -1538,6 +1869,9 @@ export class ReplicationProtectedItemsImpl
 
   /**
    * Operation to initiate a switch provider of the replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -1545,14 +1879,16 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginSwitchProvider(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     switchProviderInput: SwitchProviderInput,
     options?: ReplicationProtectedItemsSwitchProviderOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationProtectedItemsSwitchProviderResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationProtectedItemsSwitchProviderResponse>,
       ReplicationProtectedItemsSwitchProviderResponse
     >
   > {
@@ -1562,7 +1898,7 @@ export class ReplicationProtectedItemsImpl
     ): Promise<ReplicationProtectedItemsSwitchProviderResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -1595,26 +1931,36 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
         switchProviderInput,
         options
       },
-      switchProviderOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
-      intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      spec: switchProviderOperationSpec
     });
+    const poller = await createHttpPoller<
+      ReplicationProtectedItemsSwitchProviderResponse,
+      OperationState<ReplicationProtectedItemsSwitchProviderResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
+      intervalInMs: options?.updateIntervalInMs,
+      resourceLocationConfig: "azure-async-operation"
+    });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * Operation to initiate a switch provider of the replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -1622,6 +1968,8 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginSwitchProviderAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
@@ -1629,6 +1977,8 @@ export class ReplicationProtectedItemsImpl
     options?: ReplicationProtectedItemsSwitchProviderOptionalParams
   ): Promise<ReplicationProtectedItemsSwitchProviderResponse> {
     const poller = await this.beginSwitchProvider(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       replicatedProtectedItemName,
@@ -1640,6 +1990,9 @@ export class ReplicationProtectedItemsImpl
 
   /**
    * Operation to perform a test failover of the replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -1647,14 +2000,16 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginTestFailover(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     testfailoverInput: TestFailoverInput,
     options?: ReplicationProtectedItemsTestFailoverOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationProtectedItemsTestFailoverResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationProtectedItemsTestFailoverResponse>,
       ReplicationProtectedItemsTestFailoverResponse
     >
   > {
@@ -1664,7 +2019,7 @@ export class ReplicationProtectedItemsImpl
     ): Promise<ReplicationProtectedItemsTestFailoverResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -1697,25 +2052,35 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
         testfailoverInput,
         options
       },
-      testFailoverOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: testFailoverOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationProtectedItemsTestFailoverResponse,
+      OperationState<ReplicationProtectedItemsTestFailoverResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * Operation to perform a test failover of the replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -1723,6 +2088,8 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginTestFailoverAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
@@ -1730,6 +2097,8 @@ export class ReplicationProtectedItemsImpl
     options?: ReplicationProtectedItemsTestFailoverOptionalParams
   ): Promise<ReplicationProtectedItemsTestFailoverResponse> {
     const poller = await this.beginTestFailover(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       replicatedProtectedItemName,
@@ -1741,6 +2110,9 @@ export class ReplicationProtectedItemsImpl
 
   /**
    * Operation to clean up the test failover of a replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -1748,14 +2120,16 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginTestFailoverCleanup(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     cleanupInput: TestFailoverCleanupInput,
     options?: ReplicationProtectedItemsTestFailoverCleanupOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationProtectedItemsTestFailoverCleanupResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationProtectedItemsTestFailoverCleanupResponse>,
       ReplicationProtectedItemsTestFailoverCleanupResponse
     >
   > {
@@ -1765,7 +2139,7 @@ export class ReplicationProtectedItemsImpl
     ): Promise<ReplicationProtectedItemsTestFailoverCleanupResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -1798,25 +2172,35 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
         cleanupInput,
         options
       },
-      testFailoverCleanupOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: testFailoverCleanupOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationProtectedItemsTestFailoverCleanupResponse,
+      OperationState<ReplicationProtectedItemsTestFailoverCleanupResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * Operation to clean up the test failover of a replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -1824,6 +2208,8 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginTestFailoverCleanupAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
@@ -1831,6 +2217,8 @@ export class ReplicationProtectedItemsImpl
     options?: ReplicationProtectedItemsTestFailoverCleanupOptionalParams
   ): Promise<ReplicationProtectedItemsTestFailoverCleanupResponse> {
     const poller = await this.beginTestFailoverCleanup(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       replicatedProtectedItemName,
@@ -1842,6 +2230,9 @@ export class ReplicationProtectedItemsImpl
 
   /**
    * Operation to initiate a failover of the replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -1849,14 +2240,16 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginUnplannedFailover(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     failoverInput: UnplannedFailoverInput,
     options?: ReplicationProtectedItemsUnplannedFailoverOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationProtectedItemsUnplannedFailoverResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationProtectedItemsUnplannedFailoverResponse>,
       ReplicationProtectedItemsUnplannedFailoverResponse
     >
   > {
@@ -1866,7 +2259,7 @@ export class ReplicationProtectedItemsImpl
     ): Promise<ReplicationProtectedItemsUnplannedFailoverResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -1899,25 +2292,35 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
         failoverInput,
         options
       },
-      unplannedFailoverOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: unplannedFailoverOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationProtectedItemsUnplannedFailoverResponse,
+      OperationState<ReplicationProtectedItemsUnplannedFailoverResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * Operation to initiate a failover of the replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Unique fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -1925,6 +2328,8 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginUnplannedFailoverAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
@@ -1932,6 +2337,8 @@ export class ReplicationProtectedItemsImpl
     options?: ReplicationProtectedItemsUnplannedFailoverOptionalParams
   ): Promise<ReplicationProtectedItemsUnplannedFailoverResponse> {
     const poller = await this.beginUnplannedFailover(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       replicatedProtectedItemName,
@@ -1943,6 +2350,9 @@ export class ReplicationProtectedItemsImpl
 
   /**
    * The operation to update appliance of an ASR replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -1950,14 +2360,16 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginUpdateAppliance(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
     applianceUpdateInput: UpdateApplianceForReplicationProtectedItemInput,
     options?: ReplicationProtectedItemsUpdateApplianceOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationProtectedItemsUpdateApplianceResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationProtectedItemsUpdateApplianceResponse>,
       ReplicationProtectedItemsUpdateApplianceResponse
     >
   > {
@@ -1967,7 +2379,7 @@ export class ReplicationProtectedItemsImpl
     ): Promise<ReplicationProtectedItemsUpdateApplianceResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -2000,25 +2412,35 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
         replicatedProtectedItemName,
         applianceUpdateInput,
         options
       },
-      updateApplianceOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: updateApplianceOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationProtectedItemsUpdateApplianceResponse,
+      OperationState<ReplicationProtectedItemsUpdateApplianceResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to update appliance of an ASR replication protected item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param replicatedProtectedItemName Replication protected item name.
@@ -2026,6 +2448,8 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   async beginUpdateApplianceAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     replicatedProtectedItemName: string,
@@ -2033,6 +2457,8 @@ export class ReplicationProtectedItemsImpl
     options?: ReplicationProtectedItemsUpdateApplianceOptionalParams
   ): Promise<ReplicationProtectedItemsUpdateApplianceResponse> {
     const poller = await this.beginUpdateAppliance(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
       replicatedProtectedItemName,
@@ -2045,24 +2471,27 @@ export class ReplicationProtectedItemsImpl
   /**
    * The operation to update(push update) the installed mobility service software on a replication
    * protected item to the latest available version.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName The name of the fabric containing the protected item.
    * @param protectionContainerName The name of the container containing the protected item.
-   * @param replicationProtectedItemName The name of the protected item on which the agent is to be
-   *                                     updated.
+   * @param replicatedProtectedItemName The name of the protected item on which the agent is to be
+   *                                    updated.
    * @param updateMobilityServiceRequest Request to update the mobility service on the protected item.
    * @param options The options parameters.
    */
   async beginUpdateMobilityService(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
-    replicationProtectedItemName: string,
+    replicatedProtectedItemName: string,
     updateMobilityServiceRequest: UpdateMobilityServiceRequest,
     options?: ReplicationProtectedItemsUpdateMobilityServiceOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<
-        ReplicationProtectedItemsUpdateMobilityServiceResponse
-      >,
+    SimplePollerLike<
+      OperationState<ReplicationProtectedItemsUpdateMobilityServiceResponse>,
       ReplicationProtectedItemsUpdateMobilityServiceResponse
     >
   > {
@@ -2072,7 +2501,7 @@ export class ReplicationProtectedItemsImpl
     ): Promise<ReplicationProtectedItemsUpdateMobilityServiceResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -2105,44 +2534,59 @@ export class ReplicationProtectedItemsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
         fabricName,
         protectionContainerName,
-        replicationProtectedItemName,
+        replicatedProtectedItemName,
         updateMobilityServiceRequest,
         options
       },
-      updateMobilityServiceOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
-      intervalInMs: options?.updateIntervalInMs
+      spec: updateMobilityServiceOperationSpec
     });
+    const poller = await createHttpPoller<
+      ReplicationProtectedItemsUpdateMobilityServiceResponse,
+      OperationState<ReplicationProtectedItemsUpdateMobilityServiceResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
+      intervalInMs: options?.updateIntervalInMs,
+      resourceLocationConfig: "location"
+    });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to update(push update) the installed mobility service software on a replication
    * protected item to the latest available version.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName The name of the fabric containing the protected item.
    * @param protectionContainerName The name of the container containing the protected item.
-   * @param replicationProtectedItemName The name of the protected item on which the agent is to be
-   *                                     updated.
+   * @param replicatedProtectedItemName The name of the protected item on which the agent is to be
+   *                                    updated.
    * @param updateMobilityServiceRequest Request to update the mobility service on the protected item.
    * @param options The options parameters.
    */
   async beginUpdateMobilityServiceAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
-    replicationProtectedItemName: string,
+    replicatedProtectedItemName: string,
     updateMobilityServiceRequest: UpdateMobilityServiceRequest,
     options?: ReplicationProtectedItemsUpdateMobilityServiceOptionalParams
   ): Promise<ReplicationProtectedItemsUpdateMobilityServiceResponse> {
     const poller = await this.beginUpdateMobilityService(
+      resourceName,
+      resourceGroupName,
       fabricName,
       protectionContainerName,
-      replicationProtectedItemName,
+      replicatedProtectedItemName,
       updateMobilityServiceRequest,
       options
     );
@@ -2151,16 +2595,27 @@ export class ReplicationProtectedItemsImpl
 
   /**
    * Gets the list of ASR replication protected items in the vault.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param options The options parameters.
    */
   private _list(
+    resourceName: string,
+    resourceGroupName: string,
     options?: ReplicationProtectedItemsListOptionalParams
   ): Promise<ReplicationProtectedItemsListResponse> {
-    return this.client.sendOperationRequest({ options }, listOperationSpec);
+    return this.client.sendOperationRequest(
+      { resourceName, resourceGroupName, options },
+      listOperationSpec
+    );
   }
 
   /**
    * ListByReplicationProtectionContainersNext
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param nextLink The nextLink from the previous successful call to the
@@ -2168,6 +2623,8 @@ export class ReplicationProtectedItemsImpl
    * @param options The options parameters.
    */
   private _listByReplicationProtectionContainersNext(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     nextLink: string,
@@ -2176,22 +2633,34 @@ export class ReplicationProtectedItemsImpl
     ReplicationProtectedItemsListByReplicationProtectionContainersNextResponse
   > {
     return this.client.sendOperationRequest(
-      { fabricName, protectionContainerName, nextLink, options },
+      {
+        resourceName,
+        resourceGroupName,
+        fabricName,
+        protectionContainerName,
+        nextLink,
+        options
+      },
       listByReplicationProtectionContainersNextOperationSpec
     );
   }
 
   /**
    * ListNext
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param nextLink The nextLink from the previous successful call to the List method.
    * @param options The options parameters.
    */
   private _listNext(
+    resourceName: string,
+    resourceGroupName: string,
     nextLink: string,
     options?: ReplicationProtectedItemsListNextOptionalParams
   ): Promise<ReplicationProtectedItemsListNextResponse> {
     return this.client.sendOperationRequest(
-      { nextLink, options },
+      { resourceName, resourceGroupName, nextLink, options },
       listNextOperationSpec
     );
   }
@@ -2803,7 +3272,7 @@ const updateApplianceOperationSpec: coreClient.OperationSpec = {
 };
 const updateMobilityServiceOperationSpec: coreClient.OperationSpec = {
   path:
-    "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RecoveryServices/vaults/{resourceName}/replicationFabrics/{fabricName}/replicationProtectionContainers/{protectionContainerName}/replicationProtectedItems/{replicationProtectedItemName}/updateMobilityService",
+    "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RecoveryServices/vaults/{resourceName}/replicationFabrics/{fabricName}/replicationProtectionContainers/{protectionContainerName}/replicationProtectedItems/{replicatedProtectedItemName}/updateMobilityService",
   httpMethod: "POST",
   responses: {
     200: {
@@ -2828,7 +3297,7 @@ const updateMobilityServiceOperationSpec: coreClient.OperationSpec = {
     Parameters.resourceName,
     Parameters.fabricName,
     Parameters.protectionContainerName,
-    Parameters.replicationProtectedItemName
+    Parameters.replicatedProtectedItemName
   ],
   headerParameters: [Parameters.accept, Parameters.contentType],
   mediaType: "json",
@@ -2865,7 +3334,6 @@ const listByReplicationProtectionContainersNextOperationSpec: coreClient.Operati
       bodyMapper: Mappers.ReplicationProtectedItemCollection
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.resourceGroupName,
@@ -2886,11 +3354,6 @@ const listNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ReplicationProtectedItemCollection
     }
   },
-  queryParameters: [
-    Parameters.apiVersion,
-    Parameters.filter,
-    Parameters.skipToken
-  ],
   urlParameters: [
     Parameters.$host,
     Parameters.resourceGroupName,

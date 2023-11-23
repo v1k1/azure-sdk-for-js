@@ -10,16 +10,18 @@
 // Licensed under the MIT License.
 const { DevCenterClient } = require("@azure/arm-devcenter");
 const { DefaultAzureCredential } = require("@azure/identity");
+require("dotenv").config();
 
 /**
  * This sample demonstrates how to Lists schedules for a pool
  *
  * @summary Lists schedules for a pool
- * x-ms-original-file: specification/devcenter/resource-manager/Microsoft.DevCenter/preview/2022-09-01-preview/examples/Schedules_ListByPool.json
+ * x-ms-original-file: specification/devcenter/resource-manager/Microsoft.DevCenter/preview/2023-10-01-preview/examples/Schedules_ListByPool.json
  */
 async function schedulesListByPool() {
-  const subscriptionId = "{subscriptionId}";
-  const resourceGroupName = "rg1";
+  const subscriptionId =
+    process.env["DEVCENTER_SUBSCRIPTION_ID"] || "0ac520ee-14c0-480f-b6c9-0a90c58ffff";
+  const resourceGroupName = process.env["DEVCENTER_RESOURCE_GROUP"] || "rg1";
   const projectName = "TestProject";
   const poolName = "DevPool";
   const credential = new DefaultAzureCredential();
@@ -31,4 +33,8 @@ async function schedulesListByPool() {
   console.log(resArray);
 }
 
-schedulesListByPool().catch(console.error);
+async function main() {
+  schedulesListByPool();
+}
+
+main().catch(console.error);

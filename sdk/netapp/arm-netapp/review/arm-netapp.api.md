@@ -6,37 +6,9 @@
 
 import * as coreAuth from '@azure/core-auth';
 import * as coreClient from '@azure/core-client';
+import { OperationState } from '@azure/core-lro';
 import { PagedAsyncIterableIterator } from '@azure/core-paging';
-import { PollerLike } from '@azure/core-lro';
-import { PollOperationState } from '@azure/core-lro';
-
-// @public
-export interface AccountBackups {
-    beginDelete(resourceGroupName: string, accountName: string, backupName: string, options?: AccountBackupsDeleteOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
-    beginDeleteAndWait(resourceGroupName: string, accountName: string, backupName: string, options?: AccountBackupsDeleteOptionalParams): Promise<void>;
-    get(resourceGroupName: string, accountName: string, backupName: string, options?: AccountBackupsGetOptionalParams): Promise<AccountBackupsGetResponse>;
-    list(resourceGroupName: string, accountName: string, options?: AccountBackupsListOptionalParams): PagedAsyncIterableIterator<Backup>;
-}
-
-// @public
-export interface AccountBackupsDeleteOptionalParams extends coreClient.OperationOptions {
-    resumeFrom?: string;
-    updateIntervalInMs?: number;
-}
-
-// @public
-export interface AccountBackupsGetOptionalParams extends coreClient.OperationOptions {
-}
-
-// @public
-export type AccountBackupsGetResponse = Backup;
-
-// @public
-export interface AccountBackupsListOptionalParams extends coreClient.OperationOptions {
-}
-
-// @public
-export type AccountBackupsListResponse = BackupsList;
+import { SimplePollerLike } from '@azure/core-lro';
 
 // @public
 export interface AccountEncryption {
@@ -47,13 +19,13 @@ export interface AccountEncryption {
 
 // @public
 export interface Accounts {
-    beginCreateOrUpdate(resourceGroupName: string, accountName: string, body: NetAppAccount, options?: AccountsCreateOrUpdateOptionalParams): Promise<PollerLike<PollOperationState<AccountsCreateOrUpdateResponse>, AccountsCreateOrUpdateResponse>>;
+    beginCreateOrUpdate(resourceGroupName: string, accountName: string, body: NetAppAccount, options?: AccountsCreateOrUpdateOptionalParams): Promise<SimplePollerLike<OperationState<AccountsCreateOrUpdateResponse>, AccountsCreateOrUpdateResponse>>;
     beginCreateOrUpdateAndWait(resourceGroupName: string, accountName: string, body: NetAppAccount, options?: AccountsCreateOrUpdateOptionalParams): Promise<AccountsCreateOrUpdateResponse>;
-    beginDelete(resourceGroupName: string, accountName: string, options?: AccountsDeleteOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginDelete(resourceGroupName: string, accountName: string, options?: AccountsDeleteOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginDeleteAndWait(resourceGroupName: string, accountName: string, options?: AccountsDeleteOptionalParams): Promise<void>;
-    beginRenewCredentials(resourceGroupName: string, accountName: string, options?: AccountsRenewCredentialsOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginRenewCredentials(resourceGroupName: string, accountName: string, options?: AccountsRenewCredentialsOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginRenewCredentialsAndWait(resourceGroupName: string, accountName: string, options?: AccountsRenewCredentialsOptionalParams): Promise<void>;
-    beginUpdate(resourceGroupName: string, accountName: string, body: NetAppAccountPatch, options?: AccountsUpdateOptionalParams): Promise<PollerLike<PollOperationState<AccountsUpdateResponse>, AccountsUpdateResponse>>;
+    beginUpdate(resourceGroupName: string, accountName: string, body: NetAppAccountPatch, options?: AccountsUpdateOptionalParams): Promise<SimplePollerLike<OperationState<AccountsUpdateResponse>, AccountsUpdateResponse>>;
     beginUpdateAndWait(resourceGroupName: string, accountName: string, body: NetAppAccountPatch, options?: AccountsUpdateOptionalParams): Promise<AccountsUpdateResponse>;
     get(resourceGroupName: string, accountName: string, options?: AccountsGetOptionalParams): Promise<AccountsGetResponse>;
     list(resourceGroupName: string, options?: AccountsListOptionalParams): PagedAsyncIterableIterator<NetAppAccount>;
@@ -142,6 +114,7 @@ export interface ActiveDirectory {
     ldapSigning?: boolean;
     organizationalUnit?: string;
     password?: string;
+    preferredServersForLdapClient?: string;
     securityOperators?: string[];
     serverRootCACertificate?: string;
     site?: string;
@@ -166,45 +139,12 @@ export interface AuthorizeRequest {
 export type AvsDataStore = string;
 
 // @public
-export interface Backup {
-    readonly backupId?: string;
-    readonly backupType?: BackupType;
-    readonly creationDate?: Date;
-    readonly failureReason?: string;
-    readonly id?: string;
-    label?: string;
-    location: string;
-    readonly name?: string;
-    readonly provisioningState?: string;
-    readonly size?: number;
-    readonly type?: string;
-    useExistingSnapshot?: boolean;
-    readonly volumeName?: string;
-}
-
-// @public
-export interface BackupPatch {
-    readonly backupId?: string;
-    readonly backupType?: BackupType;
-    readonly creationDate?: Date;
-    readonly failureReason?: string;
-    label?: string;
-    readonly provisioningState?: string;
-    readonly size?: number;
-    tags?: {
-        [propertyName: string]: string;
-    };
-    useExistingSnapshot?: boolean;
-    readonly volumeName?: string;
-}
-
-// @public
 export interface BackupPolicies {
-    beginCreate(resourceGroupName: string, accountName: string, backupPolicyName: string, body: BackupPolicy, options?: BackupPoliciesCreateOptionalParams): Promise<PollerLike<PollOperationState<BackupPoliciesCreateResponse>, BackupPoliciesCreateResponse>>;
+    beginCreate(resourceGroupName: string, accountName: string, backupPolicyName: string, body: BackupPolicy, options?: BackupPoliciesCreateOptionalParams): Promise<SimplePollerLike<OperationState<BackupPoliciesCreateResponse>, BackupPoliciesCreateResponse>>;
     beginCreateAndWait(resourceGroupName: string, accountName: string, backupPolicyName: string, body: BackupPolicy, options?: BackupPoliciesCreateOptionalParams): Promise<BackupPoliciesCreateResponse>;
-    beginDelete(resourceGroupName: string, accountName: string, backupPolicyName: string, options?: BackupPoliciesDeleteOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginDelete(resourceGroupName: string, accountName: string, backupPolicyName: string, options?: BackupPoliciesDeleteOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginDeleteAndWait(resourceGroupName: string, accountName: string, backupPolicyName: string, options?: BackupPoliciesDeleteOptionalParams): Promise<void>;
-    beginUpdate(resourceGroupName: string, accountName: string, backupPolicyName: string, body: BackupPolicyPatch, options?: BackupPoliciesUpdateOptionalParams): Promise<PollerLike<PollOperationState<BackupPoliciesUpdateResponse>, BackupPoliciesUpdateResponse>>;
+    beginUpdate(resourceGroupName: string, accountName: string, backupPolicyName: string, body: BackupPolicyPatch, options?: BackupPoliciesUpdateOptionalParams): Promise<SimplePollerLike<OperationState<BackupPoliciesUpdateResponse>, BackupPoliciesUpdateResponse>>;
     beginUpdateAndWait(resourceGroupName: string, accountName: string, backupPolicyName: string, body: BackupPolicyPatch, options?: BackupPoliciesUpdateOptionalParams): Promise<BackupPoliciesUpdateResponse>;
     get(resourceGroupName: string, accountName: string, backupPolicyName: string, options?: BackupPoliciesGetOptionalParams): Promise<BackupPoliciesGetResponse>;
     list(resourceGroupName: string, accountName: string, options?: BackupPoliciesListOptionalParams): PagedAsyncIterableIterator<BackupPolicy>;
@@ -267,25 +207,6 @@ export interface BackupPolicy extends TrackedResource {
 }
 
 // @public
-export interface BackupPolicyDetails {
-    readonly backupPolicyId?: string;
-    dailyBackupsToKeep?: number;
-    enabled?: boolean;
-    readonly id?: string;
-    location?: string;
-    monthlyBackupsToKeep?: number;
-    readonly name?: string;
-    readonly provisioningState?: string;
-    tags?: {
-        [propertyName: string]: string;
-    };
-    readonly type?: string;
-    readonly volumeBackups?: VolumeBackups[];
-    readonly volumesAssigned?: number;
-    weeklyBackupsToKeep?: number;
-}
-
-// @public
 export interface BackupPolicyPatch {
     readonly backupPolicyId?: string;
     dailyBackupsToKeep?: number;
@@ -306,46 +227,8 @@ export interface BackupPolicyPatch {
 
 // @public
 export interface Backups {
-    beginCreate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, backupName: string, body: Backup, options?: BackupsCreateOptionalParams): Promise<PollerLike<PollOperationState<BackupsCreateResponse>, BackupsCreateResponse>>;
-    beginCreateAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, backupName: string, body: Backup, options?: BackupsCreateOptionalParams): Promise<BackupsCreateResponse>;
-    beginDelete(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, backupName: string, options?: BackupsDeleteOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
-    beginDeleteAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, backupName: string, options?: BackupsDeleteOptionalParams): Promise<void>;
-    beginUpdate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, backupName: string, options?: BackupsUpdateOptionalParams): Promise<PollerLike<PollOperationState<BackupsUpdateResponse>, BackupsUpdateResponse>>;
-    beginUpdateAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, backupName: string, options?: BackupsUpdateOptionalParams): Promise<BackupsUpdateResponse>;
-    get(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, backupName: string, options?: BackupsGetOptionalParams): Promise<BackupsGetResponse>;
-    getStatus(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: BackupsGetStatusOptionalParams): Promise<BackupsGetStatusResponse>;
     getVolumeRestoreStatus(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: BackupsGetVolumeRestoreStatusOptionalParams): Promise<BackupsGetVolumeRestoreStatusResponse>;
-    list(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: BackupsListOptionalParams): PagedAsyncIterableIterator<Backup>;
 }
-
-// @public
-export interface BackupsCreateOptionalParams extends coreClient.OperationOptions {
-    resumeFrom?: string;
-    updateIntervalInMs?: number;
-}
-
-// @public
-export type BackupsCreateResponse = Backup;
-
-// @public
-export interface BackupsDeleteOptionalParams extends coreClient.OperationOptions {
-    resumeFrom?: string;
-    updateIntervalInMs?: number;
-}
-
-// @public
-export interface BackupsGetOptionalParams extends coreClient.OperationOptions {
-}
-
-// @public
-export type BackupsGetResponse = Backup;
-
-// @public
-export interface BackupsGetStatusOptionalParams extends coreClient.OperationOptions {
-}
-
-// @public
-export type BackupsGetStatusResponse = BackupStatus;
 
 // @public
 export interface BackupsGetVolumeRestoreStatusOptionalParams extends coreClient.OperationOptions {
@@ -355,41 +238,10 @@ export interface BackupsGetVolumeRestoreStatusOptionalParams extends coreClient.
 export type BackupsGetVolumeRestoreStatusResponse = RestoreStatus;
 
 // @public
-export interface BackupsList {
-    value?: Backup[];
+export interface BreakFileLocksRequest {
+    clientIp?: string;
+    confirmRunningDisruptiveOperation?: boolean;
 }
-
-// @public
-export interface BackupsListOptionalParams extends coreClient.OperationOptions {
-}
-
-// @public
-export type BackupsListResponse = BackupsList;
-
-// @public
-export interface BackupStatus {
-    readonly errorMessage?: string;
-    readonly healthy?: boolean;
-    readonly lastTransferSize?: number;
-    readonly lastTransferType?: string;
-    readonly mirrorState?: MirrorState;
-    readonly relationshipStatus?: RelationshipStatus;
-    readonly totalTransferBytes?: number;
-    readonly unhealthyReason?: string;
-}
-
-// @public
-export interface BackupsUpdateOptionalParams extends coreClient.OperationOptions {
-    body?: BackupPatch;
-    resumeFrom?: string;
-    updateIntervalInMs?: number;
-}
-
-// @public
-export type BackupsUpdateResponse = Backup;
-
-// @public
-export type BackupType = string;
 
 // @public
 export interface BreakReplicationRequest {
@@ -458,6 +310,9 @@ export interface CloudErrorBody {
 }
 
 // @public
+export type CoolAccessRetrievalPolicy = string;
+
+// @public
 export type CreatedByType = string;
 
 // @public
@@ -493,6 +348,26 @@ export type EncryptionType = string;
 export type EndpointType = string;
 
 // @public
+export interface ErrorAdditionalInfo {
+    readonly info?: Record<string, unknown>;
+    readonly type?: string;
+}
+
+// @public
+export interface ErrorDetail {
+    readonly additionalInfo?: ErrorAdditionalInfo[];
+    readonly code?: string;
+    readonly details?: ErrorDetail[];
+    readonly message?: string;
+    readonly target?: string;
+}
+
+// @public
+export interface ErrorResponse {
+    error?: ErrorDetail;
+}
+
+// @public
 export interface ExportPolicyRule {
     allowedClients?: string;
     chownMode?: ChownMode;
@@ -512,9 +387,25 @@ export interface ExportPolicyRule {
 }
 
 // @public
+export type FileAccessLogs = string;
+
+// @public
 export interface FilePathAvailabilityRequest {
     name: string;
     subnetId: string;
+}
+
+// @public
+export function getContinuationToken(page: unknown): string | undefined;
+
+// @public
+export interface GetGroupIdListForLdapUserRequest {
+    username: string;
+}
+
+// @public
+export interface GetGroupIdListForLdapUserResponse {
+    groupIdsForLdapUser?: string[];
 }
 
 // @public
@@ -523,19 +414,6 @@ export interface HourlySchedule {
     snapshotsToKeep?: number;
     usedBytes?: number;
 }
-
-// @public
-export interface Identity {
-    readonly principalId?: string;
-    readonly tenantId?: string;
-    type: IdentityType;
-    userAssignedIdentities?: {
-        [propertyName: string]: UserAssignedIdentity;
-    };
-}
-
-// @public
-export type IdentityType = string;
 
 // @public
 export type InAvailabilityReasonType = string;
@@ -566,6 +444,7 @@ export enum KnownActiveDirectoryStatus {
 
 // @public
 export enum KnownApplicationType {
+    Oracle = "ORACLE",
     SAPHana = "SAP-HANA"
 }
 
@@ -573,12 +452,6 @@ export enum KnownApplicationType {
 export enum KnownAvsDataStore {
     Disabled = "Disabled",
     Enabled = "Enabled"
-}
-
-// @public
-export enum KnownBackupType {
-    Manual = "Manual",
-    Scheduled = "Scheduled"
 }
 
 // @public
@@ -601,6 +474,13 @@ export enum KnownCheckQuotaNameResourceTypes {
 export enum KnownChownMode {
     Restricted = "Restricted",
     Unrestricted = "Unrestricted"
+}
+
+// @public
+export enum KnownCoolAccessRetrievalPolicy {
+    Default = "Default",
+    Never = "Never",
+    OnRead = "OnRead"
 }
 
 // @public
@@ -636,11 +516,9 @@ export enum KnownEndpointType {
 }
 
 // @public
-export enum KnownIdentityType {
-    None = "None",
-    SystemAssigned = "SystemAssigned",
-    SystemAssignedUserAssigned = "SystemAssigned,UserAssigned",
-    UserAssigned = "UserAssigned"
+export enum KnownFileAccessLogs {
+    Disabled = "Disabled",
+    Enabled = "Enabled"
 }
 
 // @public
@@ -665,6 +543,14 @@ export enum KnownKeyVaultStatus {
 }
 
 // @public
+export enum KnownManagedServiceIdentityType {
+    None = "None",
+    SystemAssigned = "SystemAssigned",
+    SystemAssignedUserAssigned = "SystemAssigned,UserAssigned",
+    UserAssigned = "UserAssigned"
+}
+
+// @public
 export enum KnownMetricAggregationType {
     Average = "Average"
 }
@@ -679,7 +565,17 @@ export enum KnownMirrorState {
 // @public
 export enum KnownNetworkFeatures {
     Basic = "Basic",
-    Standard = "Standard"
+    BasicStandard = "Basic_Standard",
+    Standard = "Standard",
+    StandardBasic = "Standard_Basic"
+}
+
+// @public
+export enum KnownNetworkSiblingSetProvisioningState {
+    Canceled = "Canceled",
+    Failed = "Failed",
+    Succeeded = "Succeeded",
+    Updating = "Updating"
 }
 
 // @public
@@ -690,10 +586,14 @@ export enum KnownQosType {
 
 // @public
 export enum KnownRegionStorageToNetworkProximity {
+    AcrossT2 = "AcrossT2",
     Default = "Default",
     T1 = "T1",
+    T1AndAcrossT2 = "T1AndAcrossT2",
     T1AndT2 = "T1AndT2",
-    T2 = "T2"
+    T1AndT2AndAcrossT2 = "T1AndT2AndAcrossT2",
+    T2 = "T2",
+    T2AndAcrossT2 = "T2AndAcrossT2"
 }
 
 // @public
@@ -745,6 +645,7 @@ export enum KnownType {
 
 // @public
 export enum KnownVolumeStorageToNetworkProximity {
+    AcrossT2 = "AcrossT2",
     Default = "Default",
     T1 = "T1",
     T2 = "T2"
@@ -767,6 +668,19 @@ export interface LogSpecification {
     displayName?: string;
     name?: string;
 }
+
+// @public
+export interface ManagedServiceIdentity {
+    readonly principalId?: string;
+    readonly tenantId?: string;
+    type: ManagedServiceIdentityType;
+    userAssignedIdentities?: {
+        [propertyName: string]: UserAssignedIdentity;
+    };
+}
+
+// @public
+export type ManagedServiceIdentityType = string;
 
 // @public
 export type MetricAggregationType = string;
@@ -832,7 +746,7 @@ export interface NetAppAccount extends TrackedResource {
     readonly disableShowmount?: boolean;
     encryption?: AccountEncryption;
     readonly etag?: string;
-    identity?: Identity;
+    identity?: ManagedServiceIdentity;
     readonly provisioningState?: string;
 }
 
@@ -848,6 +762,7 @@ export interface NetAppAccountPatch {
     readonly disableShowmount?: boolean;
     encryption?: AccountEncryption;
     readonly id?: string;
+    identity?: ManagedServiceIdentity;
     location?: string;
     readonly name?: string;
     readonly provisioningState?: string;
@@ -862,8 +777,6 @@ export class NetAppManagementClient extends coreClient.ServiceClient {
     // (undocumented)
     $host: string;
     constructor(credentials: coreAuth.TokenCredential, subscriptionId: string, options?: NetAppManagementClientOptionalParams);
-    // (undocumented)
-    accountBackups: AccountBackups;
     // (undocumented)
     accounts: Accounts;
     // (undocumented)
@@ -889,8 +802,6 @@ export class NetAppManagementClient extends coreClient.ServiceClient {
     // (undocumented)
     subvolumes: Subvolumes;
     // (undocumented)
-    vaults: Vaults;
-    // (undocumented)
     volumeGroups: VolumeGroups;
     // (undocumented)
     volumeQuotaRules: VolumeQuotaRules;
@@ -907,9 +818,12 @@ export interface NetAppManagementClientOptionalParams extends coreClient.Service
 
 // @public
 export interface NetAppResource {
+    beginUpdateNetworkSiblingSet(location: string, networkSiblingSetId: string, subnetId: string, networkSiblingSetStateId: string, networkFeatures: NetworkFeatures, options?: NetAppResourceUpdateNetworkSiblingSetOptionalParams): Promise<SimplePollerLike<OperationState<NetAppResourceUpdateNetworkSiblingSetResponse>, NetAppResourceUpdateNetworkSiblingSetResponse>>;
+    beginUpdateNetworkSiblingSetAndWait(location: string, networkSiblingSetId: string, subnetId: string, networkSiblingSetStateId: string, networkFeatures: NetworkFeatures, options?: NetAppResourceUpdateNetworkSiblingSetOptionalParams): Promise<NetAppResourceUpdateNetworkSiblingSetResponse>;
     checkFilePathAvailability(location: string, name: string, subnetId: string, options?: NetAppResourceCheckFilePathAvailabilityOptionalParams): Promise<NetAppResourceCheckFilePathAvailabilityResponse>;
-    checkNameAvailability(location: string, name: string, resourceGroup: string, typeParam: CheckNameResourceTypes, options?: NetAppResourceCheckNameAvailabilityOptionalParams): Promise<NetAppResourceCheckNameAvailabilityResponse>;
-    checkQuotaAvailability(location: string, name: string, resourceGroup: string, typeParam: CheckQuotaNameResourceTypes, options?: NetAppResourceCheckQuotaAvailabilityOptionalParams): Promise<NetAppResourceCheckQuotaAvailabilityResponse>;
+    checkNameAvailability(location: string, name: string, typeParam: CheckNameResourceTypes, resourceGroup: string, options?: NetAppResourceCheckNameAvailabilityOptionalParams): Promise<NetAppResourceCheckNameAvailabilityResponse>;
+    checkQuotaAvailability(location: string, name: string, typeParam: CheckQuotaNameResourceTypes, resourceGroup: string, options?: NetAppResourceCheckQuotaAvailabilityOptionalParams): Promise<NetAppResourceCheckQuotaAvailabilityResponse>;
+    queryNetworkSiblingSet(location: string, networkSiblingSetId: string, subnetId: string, options?: NetAppResourceQueryNetworkSiblingSetOptionalParams): Promise<NetAppResourceQueryNetworkSiblingSetResponse>;
     queryRegionInfo(location: string, options?: NetAppResourceQueryRegionInfoOptionalParams): Promise<NetAppResourceQueryRegionInfoResponse>;
 }
 
@@ -933,6 +847,13 @@ export interface NetAppResourceCheckQuotaAvailabilityOptionalParams extends core
 
 // @public
 export type NetAppResourceCheckQuotaAvailabilityResponse = CheckAvailabilityResponse;
+
+// @public
+export interface NetAppResourceQueryNetworkSiblingSetOptionalParams extends coreClient.OperationOptions {
+}
+
+// @public
+export type NetAppResourceQueryNetworkSiblingSetResponse = NetworkSiblingSet;
 
 // @public
 export interface NetAppResourceQueryRegionInfoOptionalParams extends coreClient.OperationOptions {
@@ -962,7 +883,41 @@ export interface NetAppResourceQuotaLimitsListOptionalParams extends coreClient.
 export type NetAppResourceQuotaLimitsListResponse = SubscriptionQuotaItemList;
 
 // @public
+export interface NetAppResourceUpdateNetworkSiblingSetHeaders {
+    // (undocumented)
+    location?: string;
+}
+
+// @public
+export interface NetAppResourceUpdateNetworkSiblingSetOptionalParams extends coreClient.OperationOptions {
+    resumeFrom?: string;
+    updateIntervalInMs?: number;
+}
+
+// @public
+export type NetAppResourceUpdateNetworkSiblingSetResponse = NetworkSiblingSet;
+
+// @public
 export type NetworkFeatures = string;
+
+// @public
+export interface NetworkSiblingSet {
+    networkFeatures?: NetworkFeatures;
+    networkSiblingSetId?: string;
+    networkSiblingSetStateId?: string;
+    nicInfoList?: NicInfo[];
+    readonly provisioningState?: NetworkSiblingSetProvisioningState;
+    subnetId?: string;
+}
+
+// @public
+export type NetworkSiblingSetProvisioningState = string;
+
+// @public
+export interface NicInfo {
+    readonly ipAddress?: string;
+    volumeResourceIds?: string[];
+}
 
 // @public
 export interface Operation {
@@ -1010,11 +965,11 @@ export interface PoolChangeRequest {
 
 // @public
 export interface Pools {
-    beginCreateOrUpdate(resourceGroupName: string, accountName: string, poolName: string, body: CapacityPool, options?: PoolsCreateOrUpdateOptionalParams): Promise<PollerLike<PollOperationState<PoolsCreateOrUpdateResponse>, PoolsCreateOrUpdateResponse>>;
+    beginCreateOrUpdate(resourceGroupName: string, accountName: string, poolName: string, body: CapacityPool, options?: PoolsCreateOrUpdateOptionalParams): Promise<SimplePollerLike<OperationState<PoolsCreateOrUpdateResponse>, PoolsCreateOrUpdateResponse>>;
     beginCreateOrUpdateAndWait(resourceGroupName: string, accountName: string, poolName: string, body: CapacityPool, options?: PoolsCreateOrUpdateOptionalParams): Promise<PoolsCreateOrUpdateResponse>;
-    beginDelete(resourceGroupName: string, accountName: string, poolName: string, options?: PoolsDeleteOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginDelete(resourceGroupName: string, accountName: string, poolName: string, options?: PoolsDeleteOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginDeleteAndWait(resourceGroupName: string, accountName: string, poolName: string, options?: PoolsDeleteOptionalParams): Promise<void>;
-    beginUpdate(resourceGroupName: string, accountName: string, poolName: string, body: CapacityPoolPatch, options?: PoolsUpdateOptionalParams): Promise<PollerLike<PollOperationState<PoolsUpdateResponse>, PoolsUpdateResponse>>;
+    beginUpdate(resourceGroupName: string, accountName: string, poolName: string, body: CapacityPoolPatch, options?: PoolsUpdateOptionalParams): Promise<SimplePollerLike<OperationState<PoolsUpdateResponse>, PoolsUpdateResponse>>;
     beginUpdateAndWait(resourceGroupName: string, accountName: string, poolName: string, body: CapacityPoolPatch, options?: PoolsUpdateOptionalParams): Promise<PoolsUpdateResponse>;
     get(resourceGroupName: string, accountName: string, poolName: string, options?: PoolsGetOptionalParams): Promise<PoolsGetResponse>;
     list(resourceGroupName: string, accountName: string, options?: PoolsListOptionalParams): PagedAsyncIterableIterator<CapacityPool>;
@@ -1076,6 +1031,12 @@ export interface ProxyResource extends Resource {
 export type QosType = string;
 
 // @public
+export interface QueryNetworkSiblingSetRequest {
+    networkSiblingSetId: string;
+    subnetId: string;
+}
+
+// @public
 export interface QuotaAvailabilityRequest {
     name: string;
     resourceGroup: string;
@@ -1123,7 +1084,7 @@ export interface ReplicationObject {
     endpointType?: EndpointType;
     remoteVolumeRegion?: string;
     remoteVolumeResourceId: string;
-    replicationId?: string;
+    readonly replicationId?: string;
     replicationSchedule?: ReplicationSchedule;
 }
 
@@ -1190,21 +1151,18 @@ export type SmbAccessBasedEnumeration = string;
 export type SmbNonBrowsable = string;
 
 // @public
-export interface Snapshot {
+export interface Snapshot extends ProxyResource {
     readonly created?: Date;
-    readonly id?: string;
     location: string;
-    readonly name?: string;
     readonly provisioningState?: string;
     readonly snapshotId?: string;
-    readonly type?: string;
 }
 
 // @public
 export interface SnapshotPolicies {
-    beginDelete(resourceGroupName: string, accountName: string, snapshotPolicyName: string, options?: SnapshotPoliciesDeleteOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginDelete(resourceGroupName: string, accountName: string, snapshotPolicyName: string, options?: SnapshotPoliciesDeleteOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginDeleteAndWait(resourceGroupName: string, accountName: string, snapshotPolicyName: string, options?: SnapshotPoliciesDeleteOptionalParams): Promise<void>;
-    beginUpdate(resourceGroupName: string, accountName: string, snapshotPolicyName: string, body: SnapshotPolicyPatch, options?: SnapshotPoliciesUpdateOptionalParams): Promise<PollerLike<PollOperationState<SnapshotPoliciesUpdateResponse>, SnapshotPoliciesUpdateResponse>>;
+    beginUpdate(resourceGroupName: string, accountName: string, snapshotPolicyName: string, body: SnapshotPolicyPatch, options?: SnapshotPoliciesUpdateOptionalParams): Promise<SimplePollerLike<OperationState<SnapshotPoliciesUpdateResponse>, SnapshotPoliciesUpdateResponse>>;
     beginUpdateAndWait(resourceGroupName: string, accountName: string, snapshotPolicyName: string, body: SnapshotPolicyPatch, options?: SnapshotPoliciesUpdateOptionalParams): Promise<SnapshotPoliciesUpdateResponse>;
     create(resourceGroupName: string, accountName: string, snapshotPolicyName: string, body: SnapshotPolicy, options?: SnapshotPoliciesCreateOptionalParams): Promise<SnapshotPoliciesCreateResponse>;
     get(resourceGroupName: string, accountName: string, snapshotPolicyName: string, options?: SnapshotPoliciesGetOptionalParams): Promise<SnapshotPoliciesGetResponse>;
@@ -1318,13 +1276,13 @@ export interface SnapshotRestoreFiles {
 
 // @public
 export interface Snapshots {
-    beginCreate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, snapshotName: string, body: Snapshot, options?: SnapshotsCreateOptionalParams): Promise<PollerLike<PollOperationState<SnapshotsCreateResponse>, SnapshotsCreateResponse>>;
+    beginCreate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, snapshotName: string, body: Snapshot, options?: SnapshotsCreateOptionalParams): Promise<SimplePollerLike<OperationState<SnapshotsCreateResponse>, SnapshotsCreateResponse>>;
     beginCreateAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, snapshotName: string, body: Snapshot, options?: SnapshotsCreateOptionalParams): Promise<SnapshotsCreateResponse>;
-    beginDelete(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, snapshotName: string, options?: SnapshotsDeleteOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginDelete(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, snapshotName: string, options?: SnapshotsDeleteOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginDeleteAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, snapshotName: string, options?: SnapshotsDeleteOptionalParams): Promise<void>;
-    beginRestoreFiles(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, snapshotName: string, body: SnapshotRestoreFiles, options?: SnapshotsRestoreFilesOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginRestoreFiles(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, snapshotName: string, body: SnapshotRestoreFiles, options?: SnapshotsRestoreFilesOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginRestoreFilesAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, snapshotName: string, body: SnapshotRestoreFiles, options?: SnapshotsRestoreFilesOptionalParams): Promise<void>;
-    beginUpdate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, snapshotName: string, body: Record<string, unknown>, options?: SnapshotsUpdateOptionalParams): Promise<PollerLike<PollOperationState<SnapshotsUpdateResponse>, SnapshotsUpdateResponse>>;
+    beginUpdate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, snapshotName: string, body: Record<string, unknown>, options?: SnapshotsUpdateOptionalParams): Promise<SimplePollerLike<OperationState<SnapshotsUpdateResponse>, SnapshotsUpdateResponse>>;
     beginUpdateAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, snapshotName: string, body: Record<string, unknown>, options?: SnapshotsUpdateOptionalParams): Promise<SnapshotsUpdateResponse>;
     get(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, snapshotName: string, options?: SnapshotsGetOptionalParams): Promise<SnapshotsGetResponse>;
     list(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: SnapshotsListOptionalParams): PagedAsyncIterableIterator<Snapshot>;
@@ -1423,13 +1381,13 @@ export interface SubvolumePatchRequest {
 
 // @public
 export interface Subvolumes {
-    beginCreate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, subvolumeName: string, body: SubvolumeInfo, options?: SubvolumesCreateOptionalParams): Promise<PollerLike<PollOperationState<SubvolumesCreateResponse>, SubvolumesCreateResponse>>;
+    beginCreate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, subvolumeName: string, body: SubvolumeInfo, options?: SubvolumesCreateOptionalParams): Promise<SimplePollerLike<OperationState<SubvolumesCreateResponse>, SubvolumesCreateResponse>>;
     beginCreateAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, subvolumeName: string, body: SubvolumeInfo, options?: SubvolumesCreateOptionalParams): Promise<SubvolumesCreateResponse>;
-    beginDelete(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, subvolumeName: string, options?: SubvolumesDeleteOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginDelete(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, subvolumeName: string, options?: SubvolumesDeleteOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginDeleteAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, subvolumeName: string, options?: SubvolumesDeleteOptionalParams): Promise<void>;
-    beginGetMetadata(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, subvolumeName: string, options?: SubvolumesGetMetadataOptionalParams): Promise<PollerLike<PollOperationState<SubvolumesGetMetadataResponse>, SubvolumesGetMetadataResponse>>;
+    beginGetMetadata(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, subvolumeName: string, options?: SubvolumesGetMetadataOptionalParams): Promise<SimplePollerLike<OperationState<SubvolumesGetMetadataResponse>, SubvolumesGetMetadataResponse>>;
     beginGetMetadataAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, subvolumeName: string, options?: SubvolumesGetMetadataOptionalParams): Promise<SubvolumesGetMetadataResponse>;
-    beginUpdate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, subvolumeName: string, body: SubvolumePatchRequest, options?: SubvolumesUpdateOptionalParams): Promise<PollerLike<PollOperationState<SubvolumesUpdateResponse>, SubvolumesUpdateResponse>>;
+    beginUpdate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, subvolumeName: string, body: SubvolumePatchRequest, options?: SubvolumesUpdateOptionalParams): Promise<SimplePollerLike<OperationState<SubvolumesUpdateResponse>, SubvolumesUpdateResponse>>;
     beginUpdateAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, subvolumeName: string, body: SubvolumePatchRequest, options?: SubvolumesUpdateOptionalParams): Promise<SubvolumesUpdateResponse>;
     get(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, subvolumeName: string, options?: SubvolumesGetOptionalParams): Promise<SubvolumesGetResponse>;
     listByVolume(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: SubvolumesListByVolumeOptionalParams): PagedAsyncIterableIterator<SubvolumeInfo>;
@@ -1517,47 +1475,33 @@ export interface TrackedResource extends Resource {
 export type Type = string;
 
 // @public
+export interface UpdateNetworkSiblingSetRequest {
+    networkFeatures: NetworkFeatures;
+    networkSiblingSetId: string;
+    networkSiblingSetStateId: string;
+    subnetId: string;
+}
+
+// @public
 export interface UserAssignedIdentity {
     readonly clientId?: string;
     readonly principalId?: string;
 }
 
 // @public
-export interface Vault {
-    readonly id?: string;
-    readonly name?: string;
-    readonly type?: string;
-    vaultName?: string;
-}
-
-// @public
-export interface VaultList {
-    value?: Vault[];
-}
-
-// @public
-export interface Vaults {
-    list(resourceGroupName: string, accountName: string, options?: VaultsListOptionalParams): PagedAsyncIterableIterator<Vault>;
-}
-
-// @public
-export interface VaultsListOptionalParams extends coreClient.OperationOptions {
-}
-
-// @public
-export type VaultsListResponse = VaultList;
-
-// @public
 export interface Volume extends TrackedResource {
+    readonly actualThroughputMibps?: number;
     avsDataStore?: AvsDataStore;
     backupId?: string;
     readonly baremetalTenantId?: string;
     capacityPoolResourceId?: string;
     readonly cloneProgress?: number;
     coolAccess?: boolean;
+    coolAccessRetrievalPolicy?: CoolAccessRetrievalPolicy;
     coolnessPeriod?: number;
     creationToken: string;
     dataProtection?: VolumePropertiesDataProtection;
+    readonly dataStoreResourceId?: string[];
     defaultGroupQuotaInKiBs?: number;
     defaultUserQuotaInKiBs?: number;
     deleteBaseSnapshot?: boolean;
@@ -1566,8 +1510,10 @@ export interface Volume extends TrackedResource {
     encryptionKeySource?: EncryptionKeySource;
     readonly etag?: string;
     exportPolicy?: VolumePropertiesExportPolicy;
+    readonly fileAccessLogs?: FileAccessLogs;
     readonly fileSystemId?: string;
     isDefaultQuotaEnabled?: boolean;
+    isLargeVolume?: boolean;
     isRestoring?: boolean;
     kerberosEnabled?: boolean;
     keyVaultPrivateEndpointResourceId?: string;
@@ -1576,8 +1522,10 @@ export interface Volume extends TrackedResource {
     readonly mountTargets?: MountTargetProperties[];
     networkFeatures?: NetworkFeatures;
     readonly networkSiblingSetId?: string;
+    readonly originatingResourceId?: string;
     placementRules?: PlacementKeyValuePairs[];
     protocolTypes?: string[];
+    readonly provisionedAvailabilityZone?: string;
     readonly provisioningState?: string;
     proximityPlacementGroup?: string;
     securityStyle?: SecurityStyle;
@@ -1598,14 +1546,6 @@ export interface Volume extends TrackedResource {
     volumeSpecName?: string;
     volumeType?: string;
     zones?: string[];
-}
-
-// @public
-export interface VolumeBackupProperties {
-    backupEnabled?: boolean;
-    backupPolicyId?: string;
-    policyEnforced?: boolean;
-    vaultId?: string;
 }
 
 // @public
@@ -1653,9 +1593,9 @@ export interface VolumeGroupMetaData {
 
 // @public
 export interface VolumeGroups {
-    beginCreate(resourceGroupName: string, accountName: string, volumeGroupName: string, body: VolumeGroupDetails, options?: VolumeGroupsCreateOptionalParams): Promise<PollerLike<PollOperationState<VolumeGroupsCreateResponse>, VolumeGroupsCreateResponse>>;
+    beginCreate(resourceGroupName: string, accountName: string, volumeGroupName: string, body: VolumeGroupDetails, options?: VolumeGroupsCreateOptionalParams): Promise<SimplePollerLike<OperationState<VolumeGroupsCreateResponse>, VolumeGroupsCreateResponse>>;
     beginCreateAndWait(resourceGroupName: string, accountName: string, volumeGroupName: string, body: VolumeGroupDetails, options?: VolumeGroupsCreateOptionalParams): Promise<VolumeGroupsCreateResponse>;
-    beginDelete(resourceGroupName: string, accountName: string, volumeGroupName: string, options?: VolumeGroupsDeleteOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginDelete(resourceGroupName: string, accountName: string, volumeGroupName: string, options?: VolumeGroupsDeleteOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginDeleteAndWait(resourceGroupName: string, accountName: string, volumeGroupName: string, options?: VolumeGroupsDeleteOptionalParams): Promise<void>;
     get(resourceGroupName: string, accountName: string, volumeGroupName: string, options?: VolumeGroupsGetOptionalParams): Promise<VolumeGroupsGetResponse>;
     listByNetAppAccount(resourceGroupName: string, accountName: string, options?: VolumeGroupsListByNetAppAccountOptionalParams): PagedAsyncIterableIterator<VolumeGroup>;
@@ -1692,15 +1632,18 @@ export type VolumeGroupsListByNetAppAccountResponse = VolumeGroupList;
 
 // @public
 export interface VolumeGroupVolumeProperties {
+    readonly actualThroughputMibps?: number;
     avsDataStore?: AvsDataStore;
     backupId?: string;
     readonly baremetalTenantId?: string;
     capacityPoolResourceId?: string;
     readonly cloneProgress?: number;
     coolAccess?: boolean;
+    coolAccessRetrievalPolicy?: CoolAccessRetrievalPolicy;
     coolnessPeriod?: number;
     creationToken: string;
     dataProtection?: VolumePropertiesDataProtection;
+    readonly dataStoreResourceId?: string[];
     defaultGroupQuotaInKiBs?: number;
     defaultUserQuotaInKiBs?: number;
     deleteBaseSnapshot?: boolean;
@@ -1708,9 +1651,11 @@ export interface VolumeGroupVolumeProperties {
     readonly encrypted?: boolean;
     encryptionKeySource?: EncryptionKeySource;
     exportPolicy?: VolumePropertiesExportPolicy;
+    readonly fileAccessLogs?: FileAccessLogs;
     readonly fileSystemId?: string;
     readonly id?: string;
     isDefaultQuotaEnabled?: boolean;
+    isLargeVolume?: boolean;
     isRestoring?: boolean;
     kerberosEnabled?: boolean;
     keyVaultPrivateEndpointResourceId?: string;
@@ -1720,8 +1665,10 @@ export interface VolumeGroupVolumeProperties {
     name?: string;
     networkFeatures?: NetworkFeatures;
     readonly networkSiblingSetId?: string;
+    readonly originatingResourceId?: string;
     placementRules?: PlacementKeyValuePairs[];
     protocolTypes?: string[];
+    readonly provisionedAvailabilityZone?: string;
     readonly provisioningState?: string;
     proximityPlacementGroup?: string;
     securityStyle?: SecurityStyle;
@@ -1745,6 +1692,7 @@ export interface VolumeGroupVolumeProperties {
     readonly volumeGroupName?: string;
     volumeSpecName?: string;
     volumeType?: string;
+    zones?: string[];
 }
 
 // @public
@@ -1756,6 +1704,7 @@ export interface VolumeList {
 // @public
 export interface VolumePatch {
     coolAccess?: boolean;
+    coolAccessRetrievalPolicy?: CoolAccessRetrievalPolicy;
     coolnessPeriod?: number;
     dataProtection?: VolumePatchPropertiesDataProtection;
     defaultGroupQuotaInKiBs?: number;
@@ -1766,6 +1715,9 @@ export interface VolumePatch {
     location?: string;
     readonly name?: string;
     serviceLevel?: ServiceLevel;
+    smbAccessBasedEnumeration?: SmbAccessBasedEnumeration;
+    smbNonBrowsable?: SmbNonBrowsable;
+    snapshotDirectoryVisible?: boolean;
     tags?: {
         [propertyName: string]: string;
     };
@@ -1777,7 +1729,6 @@ export interface VolumePatch {
 
 // @public
 export interface VolumePatchPropertiesDataProtection {
-    backup?: VolumeBackupProperties;
     snapshot?: VolumeSnapshotProperties;
 }
 
@@ -1788,9 +1739,9 @@ export interface VolumePatchPropertiesExportPolicy {
 
 // @public
 export interface VolumePropertiesDataProtection {
-    backup?: VolumeBackupProperties;
     replication?: ReplicationObject;
     snapshot?: VolumeSnapshotProperties;
+    volumeRelocation?: VolumeRelocationProperties;
 }
 
 // @public
@@ -1812,15 +1763,18 @@ export interface VolumeQuotaRulePatch {
     quotaSizeInKiBs?: number;
     quotaTarget?: string;
     quotaType?: Type;
+    tags?: {
+        [propertyName: string]: string;
+    };
 }
 
 // @public
 export interface VolumeQuotaRules {
-    beginCreate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, volumeQuotaRuleName: string, body: VolumeQuotaRule, options?: VolumeQuotaRulesCreateOptionalParams): Promise<PollerLike<PollOperationState<VolumeQuotaRulesCreateResponse>, VolumeQuotaRulesCreateResponse>>;
+    beginCreate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, volumeQuotaRuleName: string, body: VolumeQuotaRule, options?: VolumeQuotaRulesCreateOptionalParams): Promise<SimplePollerLike<OperationState<VolumeQuotaRulesCreateResponse>, VolumeQuotaRulesCreateResponse>>;
     beginCreateAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, volumeQuotaRuleName: string, body: VolumeQuotaRule, options?: VolumeQuotaRulesCreateOptionalParams): Promise<VolumeQuotaRulesCreateResponse>;
-    beginDelete(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, volumeQuotaRuleName: string, options?: VolumeQuotaRulesDeleteOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginDelete(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, volumeQuotaRuleName: string, options?: VolumeQuotaRulesDeleteOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginDeleteAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, volumeQuotaRuleName: string, options?: VolumeQuotaRulesDeleteOptionalParams): Promise<void>;
-    beginUpdate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, volumeQuotaRuleName: string, body: VolumeQuotaRulePatch, options?: VolumeQuotaRulesUpdateOptionalParams): Promise<PollerLike<PollOperationState<VolumeQuotaRulesUpdateResponse>, VolumeQuotaRulesUpdateResponse>>;
+    beginUpdate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, volumeQuotaRuleName: string, body: VolumeQuotaRulePatch, options?: VolumeQuotaRulesUpdateOptionalParams): Promise<SimplePollerLike<OperationState<VolumeQuotaRulesUpdateResponse>, VolumeQuotaRulesUpdateResponse>>;
     beginUpdateAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, volumeQuotaRuleName: string, body: VolumeQuotaRulePatch, options?: VolumeQuotaRulesUpdateOptionalParams): Promise<VolumeQuotaRulesUpdateResponse>;
     get(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, volumeQuotaRuleName: string, options?: VolumeQuotaRulesGetOptionalParams): Promise<VolumeQuotaRulesGetResponse>;
     listByVolume(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumeQuotaRulesListByVolumeOptionalParams): PagedAsyncIterableIterator<VolumeQuotaRule>;
@@ -1871,8 +1825,7 @@ export type VolumeQuotaRulesUpdateResponse = VolumeQuotaRule;
 
 // @public
 export interface VolumeRelocationProperties {
-    oldBareMetalTenantId?: string;
-    oldVolumeId?: string;
+    readonly readyToBeFinalized?: boolean;
     relocationRequested?: boolean;
 }
 
@@ -1883,35 +1836,41 @@ export interface VolumeRevert {
 
 // @public
 export interface Volumes {
-    beginAuthorizeReplication(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: AuthorizeRequest, options?: VolumesAuthorizeReplicationOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginAuthorizeReplication(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: AuthorizeRequest, options?: VolumesAuthorizeReplicationOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginAuthorizeReplicationAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: AuthorizeRequest, options?: VolumesAuthorizeReplicationOptionalParams): Promise<void>;
-    beginBreakReplication(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesBreakReplicationOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginBreakFileLocks(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesBreakFileLocksOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
+    beginBreakFileLocksAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesBreakFileLocksOptionalParams): Promise<void>;
+    beginBreakReplication(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesBreakReplicationOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginBreakReplicationAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesBreakReplicationOptionalParams): Promise<void>;
-    beginCreateOrUpdate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: Volume, options?: VolumesCreateOrUpdateOptionalParams): Promise<PollerLike<PollOperationState<VolumesCreateOrUpdateResponse>, VolumesCreateOrUpdateResponse>>;
+    beginCreateOrUpdate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: Volume, options?: VolumesCreateOrUpdateOptionalParams): Promise<SimplePollerLike<OperationState<VolumesCreateOrUpdateResponse>, VolumesCreateOrUpdateResponse>>;
     beginCreateOrUpdateAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: Volume, options?: VolumesCreateOrUpdateOptionalParams): Promise<VolumesCreateOrUpdateResponse>;
-    beginDelete(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesDeleteOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginDelete(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesDeleteOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginDeleteAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesDeleteOptionalParams): Promise<void>;
-    beginDeleteReplication(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesDeleteReplicationOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginDeleteReplication(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesDeleteReplicationOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginDeleteReplicationAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesDeleteReplicationOptionalParams): Promise<void>;
-    beginFinalizeRelocation(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesFinalizeRelocationOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginFinalizeRelocation(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesFinalizeRelocationOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginFinalizeRelocationAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesFinalizeRelocationOptionalParams): Promise<void>;
-    beginPoolChange(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: PoolChangeRequest, options?: VolumesPoolChangeOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginListGetGroupIdListForLdapUser(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: GetGroupIdListForLdapUserRequest, options?: VolumesListGetGroupIdListForLdapUserOptionalParams): Promise<SimplePollerLike<OperationState<VolumesListGetGroupIdListForLdapUserResponse>, VolumesListGetGroupIdListForLdapUserResponse>>;
+    beginListGetGroupIdListForLdapUserAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: GetGroupIdListForLdapUserRequest, options?: VolumesListGetGroupIdListForLdapUserOptionalParams): Promise<VolumesListGetGroupIdListForLdapUserResponse>;
+    beginPoolChange(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: PoolChangeRequest, options?: VolumesPoolChangeOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginPoolChangeAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: PoolChangeRequest, options?: VolumesPoolChangeOptionalParams): Promise<void>;
-    beginReestablishReplication(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: ReestablishReplicationRequest, options?: VolumesReestablishReplicationOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginPopulateAvailabilityZone(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesPopulateAvailabilityZoneOptionalParams): Promise<SimplePollerLike<OperationState<VolumesPopulateAvailabilityZoneResponse>, VolumesPopulateAvailabilityZoneResponse>>;
+    beginPopulateAvailabilityZoneAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesPopulateAvailabilityZoneOptionalParams): Promise<VolumesPopulateAvailabilityZoneResponse>;
+    beginReestablishReplication(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: ReestablishReplicationRequest, options?: VolumesReestablishReplicationOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginReestablishReplicationAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: ReestablishReplicationRequest, options?: VolumesReestablishReplicationOptionalParams): Promise<void>;
-    beginReInitializeReplication(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesReInitializeReplicationOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginReInitializeReplication(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesReInitializeReplicationOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginReInitializeReplicationAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesReInitializeReplicationOptionalParams): Promise<void>;
-    beginRelocate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesRelocateOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginRelocate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesRelocateOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginRelocateAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesRelocateOptionalParams): Promise<void>;
-    beginResetCifsPassword(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesResetCifsPasswordOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginResetCifsPassword(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesResetCifsPasswordOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginResetCifsPasswordAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesResetCifsPasswordOptionalParams): Promise<void>;
-    beginResyncReplication(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesResyncReplicationOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginResyncReplication(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesResyncReplicationOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginResyncReplicationAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesResyncReplicationOptionalParams): Promise<void>;
-    beginRevert(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: VolumeRevert, options?: VolumesRevertOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginRevert(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: VolumeRevert, options?: VolumesRevertOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginRevertAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: VolumeRevert, options?: VolumesRevertOptionalParams): Promise<void>;
-    beginRevertRelocation(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesRevertRelocationOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginRevertRelocation(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesRevertRelocationOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginRevertRelocationAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesRevertRelocationOptionalParams): Promise<void>;
-    beginUpdate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: VolumePatch, options?: VolumesUpdateOptionalParams): Promise<PollerLike<PollOperationState<VolumesUpdateResponse>, VolumesUpdateResponse>>;
+    beginUpdate(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: VolumePatch, options?: VolumesUpdateOptionalParams): Promise<SimplePollerLike<OperationState<VolumesUpdateResponse>, VolumesUpdateResponse>>;
     beginUpdateAndWait(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, body: VolumePatch, options?: VolumesUpdateOptionalParams): Promise<VolumesUpdateResponse>;
     get(resourceGroupName: string, accountName: string, poolName: string, volumeName: string, options?: VolumesGetOptionalParams): Promise<VolumesGetResponse>;
     list(resourceGroupName: string, accountName: string, poolName: string, options?: VolumesListOptionalParams): PagedAsyncIterableIterator<Volume>;
@@ -1921,6 +1880,19 @@ export interface Volumes {
 
 // @public
 export interface VolumesAuthorizeReplicationOptionalParams extends coreClient.OperationOptions {
+    resumeFrom?: string;
+    updateIntervalInMs?: number;
+}
+
+// @public
+export interface VolumesBreakFileLocksHeaders {
+    // (undocumented)
+    location?: string;
+}
+
+// @public
+export interface VolumesBreakFileLocksOptionalParams extends coreClient.OperationOptions {
+    body?: BreakFileLocksRequest;
     resumeFrom?: string;
     updateIntervalInMs?: number;
 }
@@ -1968,6 +1940,21 @@ export interface VolumesGetOptionalParams extends coreClient.OperationOptions {
 export type VolumesGetResponse = Volume;
 
 // @public
+export interface VolumesListGetGroupIdListForLdapUserHeaders {
+    // (undocumented)
+    location?: string;
+}
+
+// @public
+export interface VolumesListGetGroupIdListForLdapUserOptionalParams extends coreClient.OperationOptions {
+    resumeFrom?: string;
+    updateIntervalInMs?: number;
+}
+
+// @public
+export type VolumesListGetGroupIdListForLdapUserResponse = GetGroupIdListForLdapUserResponse;
+
+// @public
 export interface VolumesListNextOptionalParams extends coreClient.OperationOptions {
 }
 
@@ -1998,6 +1985,21 @@ export interface VolumesPoolChangeOptionalParams extends coreClient.OperationOpt
     resumeFrom?: string;
     updateIntervalInMs?: number;
 }
+
+// @public
+export interface VolumesPopulateAvailabilityZoneHeaders {
+    // (undocumented)
+    location?: string;
+}
+
+// @public
+export interface VolumesPopulateAvailabilityZoneOptionalParams extends coreClient.OperationOptions {
+    resumeFrom?: string;
+    updateIntervalInMs?: number;
+}
+
+// @public
+export type VolumesPopulateAvailabilityZoneResponse = Volume;
 
 // @public
 export interface VolumesReestablishReplicationOptionalParams extends coreClient.OperationOptions {

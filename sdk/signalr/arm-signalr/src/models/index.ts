@@ -154,7 +154,7 @@ export interface ErrorAdditionalInfo {
 
 /** Data POST-ed to the nameAvailability action */
 export interface NameAvailabilityParameters {
-  /** The resource type. Can be "Microsoft.SignalRService/SignalR" or "Microsoft.SignalRService/webPubSub" */
+  /** The resource type. Can be "Microsoft.SignalRService/SignalR", "Microsoft.SignalRService/WebPubSub", "Microsoft.SignalRService/SignalR/replicas" or "Microsoft.SignalRService/WebPubSub/replicas" */
   type: string;
   /** The resource name to validate. e.g."my-resource-name" */
   name: string;
@@ -219,7 +219,7 @@ export interface ResourceSku {
   /**
    * The name of the SKU. Required.
    *
-   * Allowed values: Standard_S1, Free_F1
+   * Allowed values: Standard_S1, Free_F1, Premium_P1
    */
   name: string;
   /**
@@ -242,26 +242,11 @@ export interface ResourceSku {
    * Optional, integer. The unit count of the resource. 1 by default.
    *
    * If present, following values are allowed:
-   *     Free: 1
-   *     Standard: 1,2,5,10,20,50,100
+   *     Free: 1;
+   *     Standard: 1,2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100;
+   *     Premium:  1,2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100;
    */
   capacity?: number;
-}
-
-/** Metadata pertaining to creation and last modification of the resource. */
-export interface SystemData {
-  /** The identity that created the resource. */
-  createdBy?: string;
-  /** The type of identity that created the resource. */
-  createdByType?: CreatedByType;
-  /** The timestamp of resource creation (UTC). */
-  createdAt?: Date;
-  /** The identity that last modified the resource. */
-  lastModifiedBy?: string;
-  /** The type of identity that last modified the resource. */
-  lastModifiedByType?: CreatedByType;
-  /** The timestamp of resource last modification (UTC) */
-  lastModifiedAt?: Date;
 }
 
 /** Private endpoint */
@@ -280,28 +265,49 @@ export interface PrivateLinkServiceConnectionState {
   actionsRequired?: string;
 }
 
-/** The core properties of ARM resources. */
+/** Common fields that are returned in the response for all Azure Resource Manager resources */
 export interface Resource {
   /**
-   * Fully qualified resource Id for the resource.
+   * Fully qualified resource ID for the resource. E.g. "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
   readonly id?: string;
   /**
-   * The name of the resource.
+   * The name of the resource
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
   readonly name?: string;
   /**
-   * The type of the resource - e.g. "Microsoft.SignalRService/SignalR"
+   * The type of the resource. E.g. "Microsoft.Compute/virtualMachines" or "Microsoft.Storage/storageAccounts"
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
   readonly type?: string;
+  /**
+   * Azure Resource Manager metadata containing createdBy and modifiedBy information.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly systemData?: SystemData;
+}
+
+/** Metadata pertaining to creation and last modification of the resource. */
+export interface SystemData {
+  /** The identity that created the resource. */
+  createdBy?: string;
+  /** The type of identity that created the resource. */
+  createdByType?: CreatedByType;
+  /** The timestamp of resource creation (UTC). */
+  createdAt?: Date;
+  /** The identity that last modified the resource. */
+  lastModifiedBy?: string;
+  /** The type of identity that last modified the resource. */
+  lastModifiedByType?: CreatedByType;
+  /** The timestamp of resource last modification (UTC) */
+  lastModifiedAt?: Date;
 }
 
 /** TLS settings for the resource */
 export interface SignalRTlsSettings {
-  /** Request client certificate during TLS handshake if enabled */
+  /** Request client certificate during TLS handshake if enabled. Not supported for free tier. Any input will be ignored for free tier. */
   clientCertEnabled?: boolean;
 }
 
@@ -379,6 +385,21 @@ export interface SignalRCorsSettings {
   allowedOrigins?: string[];
 }
 
+/** Serverless settings. */
+export interface ServerlessSettings {
+  /**
+   * Gets or sets Client Connection Timeout. Optional to be set.
+   * Value in seconds.
+   * Default value is 30 seconds.
+   * Customer should set the timeout to a shorter period if messages are expected to be sent in shorter intervals,
+   * and want the client to disconnect more quickly after the last message is sent.
+   * You can set the timeout to a longer period if messages are expected to be sent in longer intervals,
+   * and they want to keep the same client connection alive during this session.
+   * The service considers the client disconnected if it hasn't received a message (including keep-alive) in this interval.
+   */
+  connectionTimeoutInSeconds?: number;
+}
+
 /** The settings for the Upstream when the service is in server-less mode. */
 export interface ServerlessUpstreamSettings {
   /** Gets or sets the list of Upstream URL templates. Order matters, and the first matching template takes effects. */
@@ -448,6 +469,8 @@ export interface SignalRNetworkACLs {
   publicNetwork?: NetworkACL;
   /** ACLs for requests from private endpoints */
   privateEndpoints?: PrivateEndpointACL[];
+  /** IP rules for filtering public traffic */
+  ipRules?: IPRule[];
 }
 
 /** Network ACL */
@@ -456,6 +479,14 @@ export interface NetworkACL {
   allow?: SignalRRequestType[];
   /** Denied request types. The value can be one or more of: ClientConnection, ServerConnection, RESTAPI. */
   deny?: SignalRRequestType[];
+}
+
+/** An IP rule */
+export interface IPRule {
+  /** An IP or CIDR or ServiceTag */
+  value?: string;
+  /** Azure Networking ACL Action. */
+  action?: ACLAction;
 }
 
 /** A class represent managed identities used for request and response */
@@ -577,11 +608,13 @@ export interface RegenerateKeyParameters {
   keyType?: KeyType;
 }
 
-/** A list of shared private link resources */
-export interface SharedPrivateLinkResourceList {
-  /** The list of the shared private link resources */
-  value?: SharedPrivateLinkResource[];
-  /** Request URL that can be used to query next page of private endpoint connections. Returned when the total number of requested private endpoint connections exceed maximum page size. */
+export interface ReplicaList {
+  /** List of the replica */
+  value?: Replica[];
+  /**
+   * The URL the client should use to fetch the next page (per server side paging).
+   * It's null for now, added for future use.
+   */
   nextLink?: string;
 }
 
@@ -648,30 +681,33 @@ export interface SkuCapacity {
   readonly scaleType?: ScaleType;
 }
 
-/** The resource model definition for a ARM proxy resource. It will have everything other than required location and tags */
-export type ProxyResource = Resource & {};
+/** A list of shared private link resources */
+export interface SharedPrivateLinkResourceList {
+  /** The list of the shared private link resources */
+  value?: SharedPrivateLinkResource[];
+  /** Request URL that can be used to query next page of private endpoint connections. Returned when the total number of requested private endpoint connections exceed maximum page size. */
+  nextLink?: string;
+}
 
-/** The resource model definition for a ARM tracked top level resource. */
-export type TrackedResource = Resource & {
-  /** The GEO location of the resource. e.g. West US | East US | North Central US | South Central US. */
-  location?: string;
-  /** Tags of the service which is a list of key value pairs that describe the resource. */
+/** The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location */
+export interface ProxyResource extends Resource {}
+
+/** The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location' */
+export interface TrackedResource extends Resource {
+  /** Resource tags. */
   tags?: { [propertyName: string]: string };
-};
+  /** The geo-location where the resource lives */
+  location: string;
+}
 
 /** ACL for a private endpoint */
-export type PrivateEndpointACL = NetworkACL & {
+export interface PrivateEndpointACL extends NetworkACL {
   /** Name of the private endpoint connection */
   name: string;
-};
+}
 
 /** A private endpoint connection to an azure resource */
-export type PrivateEndpointConnection = ProxyResource & {
-  /**
-   * Metadata pertaining to creation and last modification of the resource.
-   * NOTE: This property will not be serialized. It can only be populated by the server.
-   */
-  readonly systemData?: SystemData;
+export interface PrivateEndpointConnection extends ProxyResource {
   /**
    * Provisioning state of the resource.
    * NOTE: This property will not be serialized. It can only be populated by the server.
@@ -686,15 +722,10 @@ export type PrivateEndpointConnection = ProxyResource & {
   readonly groupIds?: string[];
   /** Connection state of the private endpoint connection */
   privateLinkServiceConnectionState?: PrivateLinkServiceConnectionState;
-};
+}
 
 /** Describes a Shared Private Link Resource */
-export type SharedPrivateLinkResource = ProxyResource & {
-  /**
-   * Metadata pertaining to creation and last modification of the resource.
-   * NOTE: This property will not be serialized. It can only be populated by the server.
-   */
-  readonly systemData?: SystemData;
+export interface SharedPrivateLinkResource extends ProxyResource {
   /** The group id from the provider of resource the shared private link resource is for */
   groupId?: string;
   /** The resource id of the resource the shared private link resource is for */
@@ -711,15 +742,10 @@ export type SharedPrivateLinkResource = ProxyResource & {
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
   readonly status?: SharedPrivateLinkResourceStatus;
-};
+}
 
 /** A custom certificate. */
-export type CustomCertificate = ProxyResource & {
-  /**
-   * Metadata pertaining to creation and last modification of the resource.
-   * NOTE: This property will not be serialized. It can only be populated by the server.
-   */
-  readonly systemData?: SystemData;
+export interface CustomCertificate extends ProxyResource {
   /**
    * Provisioning state of the resource.
    * NOTE: This property will not be serialized. It can only be populated by the server.
@@ -731,15 +757,10 @@ export type CustomCertificate = ProxyResource & {
   keyVaultSecretName: string;
   /** Certificate secret version. */
   keyVaultSecretVersion?: string;
-};
+}
 
 /** A custom domain */
-export type CustomDomain = ProxyResource & {
-  /**
-   * Metadata pertaining to creation and last modification of the resource.
-   * NOTE: This property will not be serialized. It can only be populated by the server.
-   */
-  readonly systemData?: SystemData;
+export interface CustomDomain extends ProxyResource {
   /**
    * Provisioning state of the resource.
    * NOTE: This property will not be serialized. It can only be populated by the server.
@@ -749,10 +770,10 @@ export type CustomDomain = ProxyResource & {
   domainName: string;
   /** Reference to a resource. */
   customCertificate: ResourceReference;
-};
+}
 
 /** Private link resource */
-export type PrivateLinkResource = ProxyResource & {
+export interface PrivateLinkResource extends ProxyResource {
   /** Group Id of the private link resource */
   groupId?: string;
   /** Required members of the private link resource */
@@ -761,21 +782,16 @@ export type PrivateLinkResource = ProxyResource & {
   requiredZoneNames?: string[];
   /** The list of resources that are onboarded to private link service */
   shareablePrivateLinkResourceTypes?: ShareablePrivateLinkResourceType[];
-};
+}
 
 /** A class represent a resource. */
-export type SignalRResource = TrackedResource & {
+export interface SignalRResource extends TrackedResource {
   /** The billing information of the resource. */
   sku?: ResourceSku;
-  /** The kind of the service, it can be SignalR or RawWebSockets */
+  /** The kind of the service */
   kind?: ServiceKind;
   /** A class represent managed identities used for request and response */
   identity?: ManagedIdentity;
-  /**
-   * Metadata pertaining to creation and last modification of the resource.
-   * NOTE: This property will not be serialized. It can only be populated by the server.
-   */
-  readonly systemData?: SystemData;
   /**
    * Provisioning state of the resource.
    * NOTE: This property will not be serialized. It can only be populated by the server.
@@ -838,6 +854,8 @@ export type SignalRResource = TrackedResource & {
   resourceLogConfiguration?: ResourceLogConfiguration;
   /** Cross-Origin Resource Sharing (CORS) settings. */
   cors?: SignalRCorsSettings;
+  /** Serverless settings. */
+  serverless?: ServerlessSettings;
   /** The settings for the Upstream when the service is in server-less mode. */
   upstream?: ServerlessUpstreamSettings;
   /** Network ACLs for the resource */
@@ -860,13 +878,76 @@ export type SignalRResource = TrackedResource & {
    * When set as true, connection with AuthType=aad won't work.
    */
   disableAadAuth?: boolean;
-};
+  /**
+   * Enable or disable the regional endpoint. Default to "Enabled".
+   * When it's Disabled, new connections will not be routed to this endpoint, however existing connections will not be affected.
+   * This property is replica specific. Disable the regional endpoint without replica is not allowed.
+   */
+  regionEndpointEnabled?: string;
+  /**
+   * Stop or start the resource.  Default to "False".
+   * When it's true, the data plane of the resource is shutdown.
+   * When it's false, the data plane of the resource is started.
+   */
+  resourceStopped?: string;
+}
+
+/** A class represent a replica resource. */
+export interface Replica extends TrackedResource {
+  /** The billing information of the resource. */
+  sku?: ResourceSku;
+  /**
+   * Provisioning state of the resource.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly provisioningState?: ProvisioningState;
+  /**
+   * Enable or disable the regional endpoint. Default to "Enabled".
+   * When it's Disabled, new connections will not be routed to this endpoint, however existing connections will not be affected.
+   */
+  regionEndpointEnabled?: string;
+  /**
+   * Stop or start the resource.  Default to "false".
+   * When it's true, the data plane of the resource is shutdown.
+   * When it's false, the data plane of the resource is started.
+   */
+  resourceStopped?: string;
+}
+
+/** Defines headers for SignalR_update operation. */
+export interface SignalRUpdateHeaders {
+  location?: string;
+}
+
+/** Defines headers for SignalR_regenerateKey operation. */
+export interface SignalRRegenerateKeyHeaders {
+  location?: string;
+}
+
+/** Defines headers for SignalR_restart operation. */
+export interface SignalRRestartHeaders {
+  location?: string;
+}
+
+/** Defines headers for SignalRReplicas_update operation. */
+export interface SignalRReplicasUpdateHeaders {
+  location?: string;
+}
+
+/** Defines headers for SignalRReplicas_restart operation. */
+export interface SignalRReplicasRestartHeaders {
+  location?: string;
+}
 
 /** Known values of {@link SignalRSkuTier} that the service accepts. */
 export enum KnownSignalRSkuTier {
+  /** Free */
   Free = "Free",
+  /** Basic */
   Basic = "Basic",
+  /** Standard */
   Standard = "Standard",
+  /** Premium */
   Premium = "Premium"
 }
 
@@ -884,14 +965,23 @@ export type SignalRSkuTier = string;
 
 /** Known values of {@link ProvisioningState} that the service accepts. */
 export enum KnownProvisioningState {
+  /** Unknown */
   Unknown = "Unknown",
+  /** Succeeded */
   Succeeded = "Succeeded",
+  /** Failed */
   Failed = "Failed",
+  /** Canceled */
   Canceled = "Canceled",
+  /** Running */
   Running = "Running",
+  /** Creating */
   Creating = "Creating",
+  /** Updating */
   Updating = "Updating",
+  /** Deleting */
   Deleting = "Deleting",
+  /** Moving */
   Moving = "Moving"
 }
 
@@ -912,31 +1002,15 @@ export enum KnownProvisioningState {
  */
 export type ProvisioningState = string;
 
-/** Known values of {@link CreatedByType} that the service accepts. */
-export enum KnownCreatedByType {
-  User = "User",
-  Application = "Application",
-  ManagedIdentity = "ManagedIdentity",
-  Key = "Key"
-}
-
-/**
- * Defines values for CreatedByType. \
- * {@link KnownCreatedByType} can be used interchangeably with CreatedByType,
- *  this enum contains the known values that the service supports.
- * ### Known values supported by the service
- * **User** \
- * **Application** \
- * **ManagedIdentity** \
- * **Key**
- */
-export type CreatedByType = string;
-
 /** Known values of {@link PrivateLinkServiceConnectionStatus} that the service accepts. */
 export enum KnownPrivateLinkServiceConnectionStatus {
+  /** Pending */
   Pending = "Pending",
+  /** Approved */
   Approved = "Approved",
+  /** Rejected */
   Rejected = "Rejected",
+  /** Disconnected */
   Disconnected = "Disconnected"
 }
 
@@ -952,12 +1026,41 @@ export enum KnownPrivateLinkServiceConnectionStatus {
  */
 export type PrivateLinkServiceConnectionStatus = string;
 
+/** Known values of {@link CreatedByType} that the service accepts. */
+export enum KnownCreatedByType {
+  /** User */
+  User = "User",
+  /** Application */
+  Application = "Application",
+  /** ManagedIdentity */
+  ManagedIdentity = "ManagedIdentity",
+  /** Key */
+  Key = "Key"
+}
+
+/**
+ * Defines values for CreatedByType. \
+ * {@link KnownCreatedByType} can be used interchangeably with CreatedByType,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **User** \
+ * **Application** \
+ * **ManagedIdentity** \
+ * **Key**
+ */
+export type CreatedByType = string;
+
 /** Known values of {@link SharedPrivateLinkResourceStatus} that the service accepts. */
 export enum KnownSharedPrivateLinkResourceStatus {
+  /** Pending */
   Pending = "Pending",
+  /** Approved */
   Approved = "Approved",
+  /** Rejected */
   Rejected = "Rejected",
+  /** Disconnected */
   Disconnected = "Disconnected",
+  /** Timeout */
   Timeout = "Timeout"
 }
 
@@ -976,9 +1079,13 @@ export type SharedPrivateLinkResourceStatus = string;
 
 /** Known values of {@link FeatureFlags} that the service accepts. */
 export enum KnownFeatureFlags {
+  /** ServiceMode */
   ServiceMode = "ServiceMode",
+  /** EnableConnectivityLogs */
   EnableConnectivityLogs = "EnableConnectivityLogs",
+  /** EnableMessagingLogs */
   EnableMessagingLogs = "EnableMessagingLogs",
+  /** EnableLiveTrace */
   EnableLiveTrace = "EnableLiveTrace"
 }
 
@@ -996,7 +1103,9 @@ export type FeatureFlags = string;
 
 /** Known values of {@link UpstreamAuthType} that the service accepts. */
 export enum KnownUpstreamAuthType {
+  /** None */
   None = "None",
+  /** ManagedIdentity */
   ManagedIdentity = "ManagedIdentity"
 }
 
@@ -1012,7 +1121,9 @@ export type UpstreamAuthType = string;
 
 /** Known values of {@link ACLAction} that the service accepts. */
 export enum KnownACLAction {
+  /** Allow */
   Allow = "Allow",
+  /** Deny */
   Deny = "Deny"
 }
 
@@ -1028,9 +1139,13 @@ export type ACLAction = string;
 
 /** Known values of {@link SignalRRequestType} that the service accepts. */
 export enum KnownSignalRRequestType {
+  /** ClientConnection */
   ClientConnection = "ClientConnection",
+  /** ServerConnection */
   ServerConnection = "ServerConnection",
+  /** Restapi */
   Restapi = "RESTAPI",
+  /** Trace */
   Trace = "Trace"
 }
 
@@ -1048,7 +1163,9 @@ export type SignalRRequestType = string;
 
 /** Known values of {@link ServiceKind} that the service accepts. */
 export enum KnownServiceKind {
+  /** SignalR */
   SignalR = "SignalR",
+  /** RawWebSockets */
   RawWebSockets = "RawWebSockets"
 }
 
@@ -1064,8 +1181,11 @@ export type ServiceKind = string;
 
 /** Known values of {@link ManagedIdentityType} that the service accepts. */
 export enum KnownManagedIdentityType {
+  /** None */
   None = "None",
+  /** SystemAssigned */
   SystemAssigned = "SystemAssigned",
+  /** UserAssigned */
   UserAssigned = "UserAssigned"
 }
 
@@ -1082,8 +1202,11 @@ export type ManagedIdentityType = string;
 
 /** Known values of {@link KeyType} that the service accepts. */
 export enum KnownKeyType {
+  /** Primary */
   Primary = "Primary",
+  /** Secondary */
   Secondary = "Secondary",
+  /** Salt */
   Salt = "Salt"
 }
 
@@ -1100,8 +1223,11 @@ export type KeyType = string;
 
 /** Known values of {@link ScaleType} that the service accepts. */
 export enum KnownScaleType {
+  /** None */
   None = "None",
+  /** Manual */
   Manual = "Manual",
+  /** Automatic */
   Automatic = "Automatic"
 }
 
@@ -1210,6 +1336,13 @@ export interface SignalRRegenerateKeyOptionalParams
 export type SignalRRegenerateKeyResponse = SignalRKeys;
 
 /** Optional parameters. */
+export interface SignalRListReplicaSkusOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the listReplicaSkus operation. */
+export type SignalRListReplicaSkusResponse = SkuList;
+
+/** Optional parameters. */
 export interface SignalRRestartOptionalParams
   extends coreClient.OperationOptions {
   /** Delay to wait until next poll, in milliseconds. */
@@ -1217,6 +1350,9 @@ export interface SignalRRestartOptionalParams
   /** A serialized poller which can be used to resume an existing paused Long-Running-Operation. */
   resumeFrom?: string;
 }
+
+/** Contains response data for the restart operation. */
+export type SignalRRestartResponse = SignalRRestartHeaders;
 
 /** Optional parameters. */
 export interface SignalRListSkusOptionalParams
@@ -1381,6 +1517,67 @@ export interface SignalRPrivateLinkResourcesListNextOptionalParams
 
 /** Contains response data for the listNext operation. */
 export type SignalRPrivateLinkResourcesListNextResponse = PrivateLinkResourceList;
+
+/** Optional parameters. */
+export interface SignalRReplicasListOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the list operation. */
+export type SignalRReplicasListResponse = ReplicaList;
+
+/** Optional parameters. */
+export interface SignalRReplicasGetOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the get operation. */
+export type SignalRReplicasGetResponse = Replica;
+
+/** Optional parameters. */
+export interface SignalRReplicasCreateOrUpdateOptionalParams
+  extends coreClient.OperationOptions {
+  /** Delay to wait until next poll, in milliseconds. */
+  updateIntervalInMs?: number;
+  /** A serialized poller which can be used to resume an existing paused Long-Running-Operation. */
+  resumeFrom?: string;
+}
+
+/** Contains response data for the createOrUpdate operation. */
+export type SignalRReplicasCreateOrUpdateResponse = Replica;
+
+/** Optional parameters. */
+export interface SignalRReplicasDeleteOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Optional parameters. */
+export interface SignalRReplicasUpdateOptionalParams
+  extends coreClient.OperationOptions {
+  /** Delay to wait until next poll, in milliseconds. */
+  updateIntervalInMs?: number;
+  /** A serialized poller which can be used to resume an existing paused Long-Running-Operation. */
+  resumeFrom?: string;
+}
+
+/** Contains response data for the update operation. */
+export type SignalRReplicasUpdateResponse = Replica;
+
+/** Optional parameters. */
+export interface SignalRReplicasRestartOptionalParams
+  extends coreClient.OperationOptions {
+  /** Delay to wait until next poll, in milliseconds. */
+  updateIntervalInMs?: number;
+  /** A serialized poller which can be used to resume an existing paused Long-Running-Operation. */
+  resumeFrom?: string;
+}
+
+/** Contains response data for the restart operation. */
+export type SignalRReplicasRestartResponse = SignalRReplicasRestartHeaders;
+
+/** Optional parameters. */
+export interface SignalRReplicasListNextOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the listNext operation. */
+export type SignalRReplicasListNextResponse = ReplicaList;
 
 /** Optional parameters. */
 export interface SignalRSharedPrivateLinkResourcesListOptionalParams

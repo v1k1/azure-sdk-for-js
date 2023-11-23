@@ -10,16 +10,18 @@
 // Licensed under the MIT License.
 const { TrafficManagerManagementClient } = require("@azure/arm-trafficmanager");
 const { DefaultAzureCredential } = require("@azure/identity");
+require("dotenv").config();
 
 /**
  * This sample demonstrates how to Gets latest heatmap for Traffic Manager profile.
  *
  * @summary Gets latest heatmap for Traffic Manager profile.
- * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2018-08-01/examples/HeatMap-GET.json
+ * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2022-04-01/examples/HeatMap-GET.json
  */
 async function heatMapGet() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "azuresdkfornetautoresttrafficmanager1323";
+  const subscriptionId = process.env["TRAFFICMANAGER_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName =
+    process.env["TRAFFICMANAGER_RESOURCE_GROUP"] || "azuresdkfornetautoresttrafficmanager1323";
   const profileName = "azuresdkfornetautoresttrafficmanager3880";
   const credential = new DefaultAzureCredential();
   const client = new TrafficManagerManagementClient(credential, subscriptionId);
@@ -27,17 +29,16 @@ async function heatMapGet() {
   console.log(result);
 }
 
-heatMapGet().catch(console.error);
-
 /**
  * This sample demonstrates how to Gets latest heatmap for Traffic Manager profile.
  *
  * @summary Gets latest heatmap for Traffic Manager profile.
- * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2018-08-01/examples/HeatMap-GET-With-Null-Values.json
+ * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2022-04-01/examples/HeatMap-GET-With-Null-Values.json
  */
 async function heatMapGetWithNullValues() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "azuresdkfornetautoresttrafficmanager1323";
+  const subscriptionId = process.env["TRAFFICMANAGER_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName =
+    process.env["TRAFFICMANAGER_RESOURCE_GROUP"] || "azuresdkfornetautoresttrafficmanager1323";
   const profileName = "azuresdkfornetautoresttrafficmanager3880";
   const credential = new DefaultAzureCredential();
   const client = new TrafficManagerManagementClient(credential, subscriptionId);
@@ -45,17 +46,16 @@ async function heatMapGetWithNullValues() {
   console.log(result);
 }
 
-heatMapGetWithNullValues().catch(console.error);
-
 /**
  * This sample demonstrates how to Gets latest heatmap for Traffic Manager profile.
  *
  * @summary Gets latest heatmap for Traffic Manager profile.
- * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2018-08-01/examples/HeatMap-GET-With-TopLeft-BotRight.json
+ * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2022-04-01/examples/HeatMap-GET-With-TopLeft-BotRight.json
  */
 async function heatMapGetWithTopLeftBotRight() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "azuresdkfornetautoresttrafficmanager1323";
+  const subscriptionId = process.env["TRAFFICMANAGER_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName =
+    process.env["TRAFFICMANAGER_RESOURCE_GROUP"] || "azuresdkfornetautoresttrafficmanager1323";
   const profileName = "azuresdkfornetautoresttrafficmanager3880";
   const topLeft = [10, 50.001];
   const botRight = [-50.001, 80];
@@ -66,4 +66,10 @@ async function heatMapGetWithTopLeftBotRight() {
   console.log(result);
 }
 
-heatMapGetWithTopLeftBotRight().catch(console.error);
+async function main() {
+  heatMapGet();
+  heatMapGetWithNullValues();
+  heatMapGetWithTopLeftBotRight();
+}
+
+main().catch(console.error);

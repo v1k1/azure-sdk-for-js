@@ -8,6 +8,11 @@
 
 import * as coreClient from "@azure/core-client";
 
+export type EventListenerFilterUnion = EventListenerFilter | EventNameFilter;
+export type EventListenerEndpointUnion =
+  | EventListenerEndpoint
+  | EventHubEndpoint;
+
 /** Result of the request to list REST API operations. It contains a list of operations. */
 export interface OperationList {
   /** List of operations supported by the resource provider. */
@@ -154,7 +159,7 @@ export interface ErrorAdditionalInfo {
 
 /** Data POST-ed to the nameAvailability action */
 export interface NameAvailabilityParameters {
-  /** The resource type. Can be "Microsoft.SignalRService/SignalR" or "Microsoft.SignalRService/webPubSub" */
+  /** The resource type. Can be "Microsoft.SignalRService/SignalR", "Microsoft.SignalRService/WebPubSub", "Microsoft.SignalRService/SignalR/replicas" or "Microsoft.SignalRService/WebPubSub/replicas" */
   type: string;
   /** The resource name to validate. e.g."my-resource-name" */
   name: string;
@@ -219,7 +224,7 @@ export interface ResourceSku {
   /**
    * The name of the SKU. Required.
    *
-   * Allowed values: Standard_S1, Free_F1
+   * Allowed values: Standard_S1, Free_F1, Premium_P1
    */
   name: string;
   /**
@@ -242,26 +247,11 @@ export interface ResourceSku {
    * Optional, integer. The unit count of the resource. 1 by default.
    *
    * If present, following values are allowed:
-   *     Free: 1
-   *     Standard: 1,2,5,10,20,50,100
+   *     Free: 1;
+   *     Standard: 1,2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100;
+   *     Premium:  1,2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100;
    */
   capacity?: number;
-}
-
-/** Metadata pertaining to creation and last modification of the resource. */
-export interface SystemData {
-  /** The identity that created the resource. */
-  createdBy?: string;
-  /** The type of identity that created the resource. */
-  createdByType?: CreatedByType;
-  /** The timestamp of resource creation (UTC). */
-  createdAt?: Date;
-  /** The identity that last modified the resource. */
-  lastModifiedBy?: string;
-  /** The type of identity that last modified the resource. */
-  lastModifiedByType?: CreatedByType;
-  /** The timestamp of resource last modification (UTC) */
-  lastModifiedAt?: Date;
 }
 
 /** Private endpoint */
@@ -280,28 +270,49 @@ export interface PrivateLinkServiceConnectionState {
   actionsRequired?: string;
 }
 
-/** The core properties of ARM resources. */
+/** Common fields that are returned in the response for all Azure Resource Manager resources */
 export interface Resource {
   /**
-   * Fully qualified resource Id for the resource.
+   * Fully qualified resource ID for the resource. E.g. "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
   readonly id?: string;
   /**
-   * The name of the resource.
+   * The name of the resource
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
   readonly name?: string;
   /**
-   * The type of the resource - e.g. "Microsoft.SignalRService/SignalR"
+   * The type of the resource. E.g. "Microsoft.Compute/virtualMachines" or "Microsoft.Storage/storageAccounts"
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
   readonly type?: string;
+  /**
+   * Azure Resource Manager metadata containing createdBy and modifiedBy information.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly systemData?: SystemData;
+}
+
+/** Metadata pertaining to creation and last modification of the resource. */
+export interface SystemData {
+  /** The identity that created the resource. */
+  createdBy?: string;
+  /** The type of identity that created the resource. */
+  createdByType?: CreatedByType;
+  /** The timestamp of resource creation (UTC). */
+  createdAt?: Date;
+  /** The identity that last modified the resource. */
+  lastModifiedBy?: string;
+  /** The type of identity that last modified the resource. */
+  lastModifiedByType?: CreatedByType;
+  /** The timestamp of resource last modification (UTC) */
+  lastModifiedAt?: Date;
 }
 
 /** TLS settings for the resource */
 export interface WebPubSubTlsSettings {
-  /** Request client certificate during TLS handshake if enabled */
+  /** Request client certificate during TLS handshake if enabled. Not supported for free tier. Any input will be ignored for free tier. */
   clientCertEnabled?: boolean;
 }
 
@@ -365,6 +376,8 @@ export interface WebPubSubNetworkACLs {
   publicNetwork?: NetworkACL;
   /** ACLs for requests from private endpoints */
   privateEndpoints?: PrivateEndpointACL[];
+  /** IP rules for filtering public traffic */
+  ipRules?: IPRule[];
 }
 
 /** Network ACL */
@@ -373,6 +386,14 @@ export interface NetworkACL {
   allow?: WebPubSubRequestType[];
   /** Denied request types. The value can be one or more of: ClientConnection, ServerConnection, RESTAPI. */
   deny?: WebPubSubRequestType[];
+}
+
+/** An IP rule */
+export interface IPRule {
+  /** An IP or CIDR or ServiceTag */
+  value?: string;
+  /** Azure Networking ACL Action. */
+  action?: ACLAction;
 }
 
 /** A class represent managed identities used for request and response */
@@ -411,6 +432,34 @@ export interface UserAssignedIdentityProperty {
   readonly clientId?: string;
 }
 
+/** Custom certificates list. */
+export interface CustomCertificateList {
+  /** List of custom certificates of this resource. */
+  value?: CustomCertificate[];
+  /**
+   * The URL the client should use to fetch the next page (per server side paging).
+   * It's null for now, added for future use.
+   */
+  nextLink?: string;
+}
+
+/** Custom domains list */
+export interface CustomDomainList {
+  /** List of custom domains that bind to this resource. */
+  value?: CustomDomain[];
+  /**
+   * The URL the client should use to fetch the next page (per server side paging).
+   * It's null for now, added for future use.
+   */
+  nextLink?: string;
+}
+
+/** Reference to a resource. */
+export interface ResourceReference {
+  /** Resource ID. */
+  id?: string;
+}
+
 /** Hub setting list */
 export interface WebPubSubHubList {
   /** List of hub settings to this resource. */
@@ -427,6 +476,13 @@ export interface WebPubSubHubList {
 export interface WebPubSubHubProperties {
   /** Event handler of a hub. */
   eventHandlers?: EventHandler[];
+  /**
+   * Event listener settings for forwarding your client events to listeners.
+   * Event listener is transparent to Web PubSub clients, and it doesn't return any result to clients nor interrupt the lifetime of clients.
+   * One event can be sent to multiple listeners, as long as it matches the filters in those listeners. The order of the array elements doesn't matter.
+   * Maximum count of event listeners among all hubs is 10.
+   */
+  eventListeners?: EventListener[];
   /** The settings for configuring if anonymous connections are allowed for this hub: "allow" or "deny". Default to "deny". */
   anonymousConnectPolicy?: string;
 }
@@ -440,13 +496,13 @@ export interface EventHandler {
   urlTemplate: string;
   /**
    * Gets or sets the matching pattern for event names.
-   * There are 3 kind of patterns supported:
-   *     1. "*", it to matches any event name
+   * There are 3 kinds of patterns supported:
+   *     1. "*", it matches any event name
    *     2. Combine multiple events with ",", for example "event1,event2", it matches event "event1" and "event2"
-   *     3. The single event name, for example, "event1", it matches "event1"
+   *     3. A single event name, for example, "event1", it matches "event1"
    */
   userEventPattern?: string;
-  /** Gets ot sets the list of system events. */
+  /** Gets or sets the list of system events. */
   systemEvents?: string[];
   /** Upstream auth settings. If not set, no auth is used for upstream messages. */
   auth?: UpstreamAuthSettings;
@@ -467,6 +523,26 @@ export interface ManagedIdentitySettings {
    * It also appears in the aud (audience) claim of the issued token.
    */
   resource?: string;
+}
+
+/** A setting defines which kinds of events should be sent to which endpoint. */
+export interface EventListener {
+  /** A base class for event filter which determines whether an event should be sent to an event listener. */
+  filter: EventListenerFilterUnion;
+  /** An endpoint specifying where Web PubSub should send events to. */
+  endpoint: EventListenerEndpointUnion;
+}
+
+/** A base class for event filter which determines whether an event should be sent to an event listener. */
+export interface EventListenerFilter {
+  /** Polymorphic discriminator, which specifies the different types this object can be */
+  type: "EventName";
+}
+
+/** An endpoint specifying where Web PubSub should send events to. */
+export interface EventListenerEndpoint {
+  /** Polymorphic discriminator, which specifies the different types this object can be */
+  type: "EventHub";
 }
 
 /** A class represents the access keys of the resource. */
@@ -524,11 +600,13 @@ export interface RegenerateKeyParameters {
   keyType?: KeyType;
 }
 
-/** A list of shared private link resources */
-export interface SharedPrivateLinkResourceList {
-  /** The list of the shared private link resources */
-  value?: SharedPrivateLinkResource[];
-  /** Request URL that can be used to query next page of private endpoint connections. Returned when the total number of requested private endpoint connections exceed maximum page size. */
+export interface ReplicaList {
+  /** List of the replica */
+  value?: Replica[];
+  /**
+   * The URL the client should use to fetch the next page (per server side paging).
+   * It's null for now, added for future use.
+   */
   nextLink?: string;
 }
 
@@ -595,30 +673,62 @@ export interface SkuCapacity {
   readonly scaleType?: ScaleType;
 }
 
-/** The resource model definition for a ARM proxy resource. It will have everything other than required location and tags */
-export type ProxyResource = Resource & {};
+/** A list of shared private link resources */
+export interface SharedPrivateLinkResourceList {
+  /** The list of the shared private link resources */
+  value?: SharedPrivateLinkResource[];
+  /** Request URL that can be used to query next page of private endpoint connections. Returned when the total number of requested private endpoint connections exceed maximum page size. */
+  nextLink?: string;
+}
 
-/** The resource model definition for a ARM tracked top level resource. */
-export type TrackedResource = Resource & {
-  /** The GEO location of the resource. e.g. West US | East US | North Central US | South Central US. */
-  location?: string;
-  /** Tags of the service which is a list of key value pairs that describe the resource. */
+/** The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location */
+export interface ProxyResource extends Resource {}
+
+/** The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location' */
+export interface TrackedResource extends Resource {
+  /** Resource tags. */
   tags?: { [propertyName: string]: string };
-};
+  /** The geo-location where the resource lives */
+  location: string;
+}
 
 /** ACL for a private endpoint */
-export type PrivateEndpointACL = NetworkACL & {
+export interface PrivateEndpointACL extends NetworkACL {
   /** Name of the private endpoint connection */
   name: string;
-};
+}
+
+/** Filter events by their name. */
+export interface EventNameFilter extends EventListenerFilter {
+  /** Polymorphic discriminator, which specifies the different types this object can be */
+  type: "EventName";
+  /** Gets or sets a list of system events. Supported events: "connected" and "disconnected". Blocking event "connect" is not supported because it requires a response. */
+  systemEvents?: string[];
+  /**
+   * Gets or sets a matching pattern for event names.
+   * There are 3 kinds of patterns supported:
+   *     1. "*", it matches any event name
+   *     2. Combine multiple events with ",", for example "event1,event2", it matches events "event1" and "event2"
+   *     3. A single event name, for example, "event1", it matches "event1"
+   */
+  userEventPattern?: string;
+}
+
+/**
+ * An Event Hub endpoint.
+ * The managed identity of Web PubSub service must be enabled, and the identity should have the "Azure Event Hubs Data sender" role to access Event Hub.
+ */
+export interface EventHubEndpoint extends EventListenerEndpoint {
+  /** Polymorphic discriminator, which specifies the different types this object can be */
+  type: "EventHub";
+  /** The fully qualified namespace name of the Event Hub resource. For example, "example.servicebus.windows.net". */
+  fullyQualifiedNamespace: string;
+  /** The name of the Event Hub. */
+  eventHubName: string;
+}
 
 /** A private endpoint connection to an azure resource */
-export type PrivateEndpointConnection = ProxyResource & {
-  /**
-   * Metadata pertaining to creation and last modification of the resource.
-   * NOTE: This property will not be serialized. It can only be populated by the server.
-   */
-  readonly systemData?: SystemData;
+export interface PrivateEndpointConnection extends ProxyResource {
   /**
    * Provisioning state of the resource.
    * NOTE: This property will not be serialized. It can only be populated by the server.
@@ -633,15 +743,10 @@ export type PrivateEndpointConnection = ProxyResource & {
   readonly groupIds?: string[];
   /** Connection state of the private endpoint connection */
   privateLinkServiceConnectionState?: PrivateLinkServiceConnectionState;
-};
+}
 
 /** Describes a Shared Private Link Resource */
-export type SharedPrivateLinkResource = ProxyResource & {
-  /**
-   * Metadata pertaining to creation and last modification of the resource.
-   * NOTE: This property will not be serialized. It can only be populated by the server.
-   */
-  readonly systemData?: SystemData;
+export interface SharedPrivateLinkResource extends ProxyResource {
   /** The group id from the provider of resource the shared private link resource is for */
   groupId?: string;
   /** The resource id of the resource the shared private link resource is for */
@@ -658,21 +763,44 @@ export type SharedPrivateLinkResource = ProxyResource & {
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
   readonly status?: SharedPrivateLinkResourceStatus;
-};
+}
 
-/** A hub setting */
-export type WebPubSubHub = ProxyResource & {
+/** A custom certificate. */
+export interface CustomCertificate extends ProxyResource {
   /**
-   * Metadata pertaining to creation and last modification of the resource.
+   * Provisioning state of the resource.
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
-  readonly systemData?: SystemData;
+  readonly provisioningState?: ProvisioningState;
+  /** Base uri of the KeyVault that stores certificate. */
+  keyVaultBaseUri: string;
+  /** Certificate secret name. */
+  keyVaultSecretName: string;
+  /** Certificate secret version. */
+  keyVaultSecretVersion?: string;
+}
+
+/** A custom domain */
+export interface CustomDomain extends ProxyResource {
+  /**
+   * Provisioning state of the resource.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly provisioningState?: ProvisioningState;
+  /** The custom domain name. */
+  domainName: string;
+  /** Reference to a resource. */
+  customCertificate: ResourceReference;
+}
+
+/** A hub setting */
+export interface WebPubSubHub extends ProxyResource {
   /** Properties of a hub. */
   properties: WebPubSubHubProperties;
-};
+}
 
 /** Private link resource */
-export type PrivateLinkResource = ProxyResource & {
+export interface PrivateLinkResource extends ProxyResource {
   /** Group Id of the private link resource */
   groupId?: string;
   /** Required members of the private link resource */
@@ -681,19 +809,16 @@ export type PrivateLinkResource = ProxyResource & {
   requiredZoneNames?: string[];
   /** The list of resources that are onboarded to private link service */
   shareablePrivateLinkResourceTypes?: ShareablePrivateLinkResourceType[];
-};
+}
 
 /** A class represent a resource. */
-export type WebPubSubResource = TrackedResource & {
+export interface WebPubSubResource extends TrackedResource {
   /** The billing information of the resource. */
   sku?: ResourceSku;
+  /** The kind of the service */
+  kind?: ServiceKind;
   /** A class represent managed identities used for request and response */
   identity?: ManagedIdentity;
-  /**
-   * Metadata pertaining to creation and last modification of the resource.
-   * NOTE: This property will not be serialized. It can only be populated by the server.
-   */
-  readonly systemData?: SystemData;
   /**
    * Provisioning state of the resource.
    * NOTE: This property will not be serialized. It can only be populated by the server.
@@ -765,13 +890,76 @@ export type WebPubSubResource = TrackedResource & {
    * When set as true, connection with AuthType=aad won't work.
    */
   disableAadAuth?: boolean;
-};
+  /**
+   * Enable or disable the regional endpoint. Default to "Enabled".
+   * When it's Disabled, new connections will not be routed to this endpoint, however existing connections will not be affected.
+   * This property is replica specific. Disable the regional endpoint without replica is not allowed.
+   */
+  regionEndpointEnabled?: string;
+  /**
+   * Stop or start the resource.  Default to "false".
+   * When it's true, the data plane of the resource is shutdown.
+   * When it's false, the data plane of the resource is started.
+   */
+  resourceStopped?: string;
+}
+
+/** A class represent a replica resource. */
+export interface Replica extends TrackedResource {
+  /** The billing information of the resource. */
+  sku?: ResourceSku;
+  /**
+   * Provisioning state of the resource.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly provisioningState?: ProvisioningState;
+  /**
+   * Enable or disable the regional endpoint. Default to "Enabled".
+   * When it's Disabled, new connections will not be routed to this endpoint, however existing connections will not be affected.
+   */
+  regionEndpointEnabled?: string;
+  /**
+   * Stop or start the resource.  Default to "false".
+   * When it's true, the data plane of the resource is shutdown.
+   * When it's false, the data plane of the resource is started.
+   */
+  resourceStopped?: string;
+}
+
+/** Defines headers for WebPubSub_update operation. */
+export interface WebPubSubUpdateHeaders {
+  location?: string;
+}
+
+/** Defines headers for WebPubSub_regenerateKey operation. */
+export interface WebPubSubRegenerateKeyHeaders {
+  location?: string;
+}
+
+/** Defines headers for WebPubSub_restart operation. */
+export interface WebPubSubRestartHeaders {
+  location?: string;
+}
+
+/** Defines headers for WebPubSubReplicas_update operation. */
+export interface WebPubSubReplicasUpdateHeaders {
+  location?: string;
+}
+
+/** Defines headers for WebPubSubReplicas_restart operation. */
+export interface WebPubSubReplicasRestartHeaders {
+  location?: string;
+}
 
 /** Known values of {@link WebPubSubSkuTier} that the service accepts. */
 export enum KnownWebPubSubSkuTier {
+  /** Free */
   Free = "Free",
+  /** Basic */
   Basic = "Basic",
+  /** Standard */
   Standard = "Standard",
+  /** Premium */
   Premium = "Premium"
 }
 
@@ -789,14 +977,23 @@ export type WebPubSubSkuTier = string;
 
 /** Known values of {@link ProvisioningState} that the service accepts. */
 export enum KnownProvisioningState {
+  /** Unknown */
   Unknown = "Unknown",
+  /** Succeeded */
   Succeeded = "Succeeded",
+  /** Failed */
   Failed = "Failed",
+  /** Canceled */
   Canceled = "Canceled",
+  /** Running */
   Running = "Running",
+  /** Creating */
   Creating = "Creating",
+  /** Updating */
   Updating = "Updating",
+  /** Deleting */
   Deleting = "Deleting",
+  /** Moving */
   Moving = "Moving"
 }
 
@@ -817,31 +1014,15 @@ export enum KnownProvisioningState {
  */
 export type ProvisioningState = string;
 
-/** Known values of {@link CreatedByType} that the service accepts. */
-export enum KnownCreatedByType {
-  User = "User",
-  Application = "Application",
-  ManagedIdentity = "ManagedIdentity",
-  Key = "Key"
-}
-
-/**
- * Defines values for CreatedByType. \
- * {@link KnownCreatedByType} can be used interchangeably with CreatedByType,
- *  this enum contains the known values that the service supports.
- * ### Known values supported by the service
- * **User** \
- * **Application** \
- * **ManagedIdentity** \
- * **Key**
- */
-export type CreatedByType = string;
-
 /** Known values of {@link PrivateLinkServiceConnectionStatus} that the service accepts. */
 export enum KnownPrivateLinkServiceConnectionStatus {
+  /** Pending */
   Pending = "Pending",
+  /** Approved */
   Approved = "Approved",
+  /** Rejected */
   Rejected = "Rejected",
+  /** Disconnected */
   Disconnected = "Disconnected"
 }
 
@@ -857,12 +1038,41 @@ export enum KnownPrivateLinkServiceConnectionStatus {
  */
 export type PrivateLinkServiceConnectionStatus = string;
 
+/** Known values of {@link CreatedByType} that the service accepts. */
+export enum KnownCreatedByType {
+  /** User */
+  User = "User",
+  /** Application */
+  Application = "Application",
+  /** ManagedIdentity */
+  ManagedIdentity = "ManagedIdentity",
+  /** Key */
+  Key = "Key"
+}
+
+/**
+ * Defines values for CreatedByType. \
+ * {@link KnownCreatedByType} can be used interchangeably with CreatedByType,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **User** \
+ * **Application** \
+ * **ManagedIdentity** \
+ * **Key**
+ */
+export type CreatedByType = string;
+
 /** Known values of {@link SharedPrivateLinkResourceStatus} that the service accepts. */
 export enum KnownSharedPrivateLinkResourceStatus {
+  /** Pending */
   Pending = "Pending",
+  /** Approved */
   Approved = "Approved",
+  /** Rejected */
   Rejected = "Rejected",
+  /** Disconnected */
   Disconnected = "Disconnected",
+  /** Timeout */
   Timeout = "Timeout"
 }
 
@@ -881,7 +1091,9 @@ export type SharedPrivateLinkResourceStatus = string;
 
 /** Known values of {@link ACLAction} that the service accepts. */
 export enum KnownACLAction {
+  /** Allow */
   Allow = "Allow",
+  /** Deny */
   Deny = "Deny"
 }
 
@@ -897,9 +1109,13 @@ export type ACLAction = string;
 
 /** Known values of {@link WebPubSubRequestType} that the service accepts. */
 export enum KnownWebPubSubRequestType {
+  /** ClientConnection */
   ClientConnection = "ClientConnection",
+  /** ServerConnection */
   ServerConnection = "ServerConnection",
+  /** Restapi */
   Restapi = "RESTAPI",
+  /** Trace */
   Trace = "Trace"
 }
 
@@ -915,10 +1131,31 @@ export enum KnownWebPubSubRequestType {
  */
 export type WebPubSubRequestType = string;
 
+/** Known values of {@link ServiceKind} that the service accepts. */
+export enum KnownServiceKind {
+  /** WebPubSub */
+  WebPubSub = "WebPubSub",
+  /** SocketIO */
+  SocketIO = "SocketIO"
+}
+
+/**
+ * Defines values for ServiceKind. \
+ * {@link KnownServiceKind} can be used interchangeably with ServiceKind,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **WebPubSub** \
+ * **SocketIO**
+ */
+export type ServiceKind = string;
+
 /** Known values of {@link ManagedIdentityType} that the service accepts. */
 export enum KnownManagedIdentityType {
+  /** None */
   None = "None",
+  /** SystemAssigned */
   SystemAssigned = "SystemAssigned",
+  /** UserAssigned */
   UserAssigned = "UserAssigned"
 }
 
@@ -935,7 +1172,9 @@ export type ManagedIdentityType = string;
 
 /** Known values of {@link UpstreamAuthType} that the service accepts. */
 export enum KnownUpstreamAuthType {
+  /** None */
   None = "None",
+  /** ManagedIdentity */
   ManagedIdentity = "ManagedIdentity"
 }
 
@@ -949,10 +1188,43 @@ export enum KnownUpstreamAuthType {
  */
 export type UpstreamAuthType = string;
 
+/** Known values of {@link EventListenerFilterDiscriminator} that the service accepts. */
+export enum KnownEventListenerFilterDiscriminator {
+  /** EventName */
+  EventName = "EventName"
+}
+
+/**
+ * Defines values for EventListenerFilterDiscriminator. \
+ * {@link KnownEventListenerFilterDiscriminator} can be used interchangeably with EventListenerFilterDiscriminator,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **EventName**
+ */
+export type EventListenerFilterDiscriminator = string;
+
+/** Known values of {@link EventListenerEndpointDiscriminator} that the service accepts. */
+export enum KnownEventListenerEndpointDiscriminator {
+  /** EventHub */
+  EventHub = "EventHub"
+}
+
+/**
+ * Defines values for EventListenerEndpointDiscriminator. \
+ * {@link KnownEventListenerEndpointDiscriminator} can be used interchangeably with EventListenerEndpointDiscriminator,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **EventHub**
+ */
+export type EventListenerEndpointDiscriminator = string;
+
 /** Known values of {@link KeyType} that the service accepts. */
 export enum KnownKeyType {
+  /** Primary */
   Primary = "Primary",
+  /** Secondary */
   Secondary = "Secondary",
+  /** Salt */
   Salt = "Salt"
 }
 
@@ -969,8 +1241,11 @@ export type KeyType = string;
 
 /** Known values of {@link ScaleType} that the service accepts. */
 export enum KnownScaleType {
+  /** None */
   None = "None",
+  /** Manual */
   Manual = "Manual",
+  /** Automatic */
   Automatic = "Automatic"
 }
 
@@ -1080,6 +1355,13 @@ export interface WebPubSubRegenerateKeyOptionalParams
 export type WebPubSubRegenerateKeyResponse = WebPubSubKeys;
 
 /** Optional parameters. */
+export interface WebPubSubListReplicaSkusOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the listReplicaSkus operation. */
+export type WebPubSubListReplicaSkusResponse = SkuList;
+
+/** Optional parameters. */
 export interface WebPubSubRestartOptionalParams
   extends coreClient.OperationOptions {
   /** Delay to wait until next poll, in milliseconds. */
@@ -1087,6 +1369,9 @@ export interface WebPubSubRestartOptionalParams
   /** A serialized poller which can be used to resume an existing paused Long-Running-Operation. */
   resumeFrom?: string;
 }
+
+/** Contains response data for the restart operation. */
+export type WebPubSubRestartResponse = WebPubSubRestartHeaders;
 
 /** Optional parameters. */
 export interface WebPubSubListSkusOptionalParams
@@ -1121,6 +1406,85 @@ export interface UsagesListNextOptionalParams
 
 /** Contains response data for the listNext operation. */
 export type UsagesListNextResponse = SignalRServiceUsageList;
+
+/** Optional parameters. */
+export interface WebPubSubCustomCertificatesListOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the list operation. */
+export type WebPubSubCustomCertificatesListResponse = CustomCertificateList;
+
+/** Optional parameters. */
+export interface WebPubSubCustomCertificatesGetOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the get operation. */
+export type WebPubSubCustomCertificatesGetResponse = CustomCertificate;
+
+/** Optional parameters. */
+export interface WebPubSubCustomCertificatesCreateOrUpdateOptionalParams
+  extends coreClient.OperationOptions {
+  /** Delay to wait until next poll, in milliseconds. */
+  updateIntervalInMs?: number;
+  /** A serialized poller which can be used to resume an existing paused Long-Running-Operation. */
+  resumeFrom?: string;
+}
+
+/** Contains response data for the createOrUpdate operation. */
+export type WebPubSubCustomCertificatesCreateOrUpdateResponse = CustomCertificate;
+
+/** Optional parameters. */
+export interface WebPubSubCustomCertificatesDeleteOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Optional parameters. */
+export interface WebPubSubCustomCertificatesListNextOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the listNext operation. */
+export type WebPubSubCustomCertificatesListNextResponse = CustomCertificateList;
+
+/** Optional parameters. */
+export interface WebPubSubCustomDomainsListOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the list operation. */
+export type WebPubSubCustomDomainsListResponse = CustomDomainList;
+
+/** Optional parameters. */
+export interface WebPubSubCustomDomainsGetOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the get operation. */
+export type WebPubSubCustomDomainsGetResponse = CustomDomain;
+
+/** Optional parameters. */
+export interface WebPubSubCustomDomainsCreateOrUpdateOptionalParams
+  extends coreClient.OperationOptions {
+  /** Delay to wait until next poll, in milliseconds. */
+  updateIntervalInMs?: number;
+  /** A serialized poller which can be used to resume an existing paused Long-Running-Operation. */
+  resumeFrom?: string;
+}
+
+/** Contains response data for the createOrUpdate operation. */
+export type WebPubSubCustomDomainsCreateOrUpdateResponse = CustomDomain;
+
+/** Optional parameters. */
+export interface WebPubSubCustomDomainsDeleteOptionalParams
+  extends coreClient.OperationOptions {
+  /** Delay to wait until next poll, in milliseconds. */
+  updateIntervalInMs?: number;
+  /** A serialized poller which can be used to resume an existing paused Long-Running-Operation. */
+  resumeFrom?: string;
+}
+
+/** Optional parameters. */
+export interface WebPubSubCustomDomainsListNextOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the listNext operation. */
+export type WebPubSubCustomDomainsListNextResponse = CustomDomainList;
 
 /** Optional parameters. */
 export interface WebPubSubHubsListOptionalParams
@@ -1214,6 +1578,67 @@ export interface WebPubSubPrivateLinkResourcesListNextOptionalParams
 
 /** Contains response data for the listNext operation. */
 export type WebPubSubPrivateLinkResourcesListNextResponse = PrivateLinkResourceList;
+
+/** Optional parameters. */
+export interface WebPubSubReplicasListOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the list operation. */
+export type WebPubSubReplicasListResponse = ReplicaList;
+
+/** Optional parameters. */
+export interface WebPubSubReplicasGetOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the get operation. */
+export type WebPubSubReplicasGetResponse = Replica;
+
+/** Optional parameters. */
+export interface WebPubSubReplicasCreateOrUpdateOptionalParams
+  extends coreClient.OperationOptions {
+  /** Delay to wait until next poll, in milliseconds. */
+  updateIntervalInMs?: number;
+  /** A serialized poller which can be used to resume an existing paused Long-Running-Operation. */
+  resumeFrom?: string;
+}
+
+/** Contains response data for the createOrUpdate operation. */
+export type WebPubSubReplicasCreateOrUpdateResponse = Replica;
+
+/** Optional parameters. */
+export interface WebPubSubReplicasDeleteOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Optional parameters. */
+export interface WebPubSubReplicasUpdateOptionalParams
+  extends coreClient.OperationOptions {
+  /** Delay to wait until next poll, in milliseconds. */
+  updateIntervalInMs?: number;
+  /** A serialized poller which can be used to resume an existing paused Long-Running-Operation. */
+  resumeFrom?: string;
+}
+
+/** Contains response data for the update operation. */
+export type WebPubSubReplicasUpdateResponse = Replica;
+
+/** Optional parameters. */
+export interface WebPubSubReplicasRestartOptionalParams
+  extends coreClient.OperationOptions {
+  /** Delay to wait until next poll, in milliseconds. */
+  updateIntervalInMs?: number;
+  /** A serialized poller which can be used to resume an existing paused Long-Running-Operation. */
+  resumeFrom?: string;
+}
+
+/** Contains response data for the restart operation. */
+export type WebPubSubReplicasRestartResponse = WebPubSubReplicasRestartHeaders;
+
+/** Optional parameters. */
+export interface WebPubSubReplicasListNextOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the listNext operation. */
+export type WebPubSubReplicasListNextResponse = ReplicaList;
 
 /** Optional parameters. */
 export interface WebPubSubSharedPrivateLinkResourcesListOptionalParams

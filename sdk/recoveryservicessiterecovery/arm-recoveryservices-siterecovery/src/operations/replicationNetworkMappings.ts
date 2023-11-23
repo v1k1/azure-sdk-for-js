@@ -6,21 +6,27 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { ReplicationNetworkMappings } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { SiteRecoveryManagementClient } from "../siteRecoveryManagementClient";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   NetworkMapping,
   ReplicationNetworkMappingsListByReplicationNetworksNextOptionalParams,
   ReplicationNetworkMappingsListByReplicationNetworksOptionalParams,
+  ReplicationNetworkMappingsListByReplicationNetworksResponse,
   ReplicationNetworkMappingsListNextOptionalParams,
   ReplicationNetworkMappingsListOptionalParams,
-  ReplicationNetworkMappingsListByReplicationNetworksResponse,
+  ReplicationNetworkMappingsListResponse,
   ReplicationNetworkMappingsGetOptionalParams,
   ReplicationNetworkMappingsGetResponse,
   CreateNetworkMappingInput,
@@ -30,7 +36,6 @@ import {
   UpdateNetworkMappingInput,
   ReplicationNetworkMappingsUpdateOptionalParams,
   ReplicationNetworkMappingsUpdateResponse,
-  ReplicationNetworkMappingsListResponse,
   ReplicationNetworkMappingsListByReplicationNetworksNextResponse,
   ReplicationNetworkMappingsListNextResponse
 } from "../models";
@@ -51,16 +56,23 @@ export class ReplicationNetworkMappingsImpl
 
   /**
    * Lists all ASR network mappings for the specified network.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Primary fabric name.
    * @param networkName Primary network name.
    * @param options The options parameters.
    */
   public listByReplicationNetworks(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     networkName: string,
     options?: ReplicationNetworkMappingsListByReplicationNetworksOptionalParams
   ): PagedAsyncIterableIterator<NetworkMapping> {
     const iter = this.listByReplicationNetworksPagingAll(
+      resourceName,
+      resourceGroupName,
       fabricName,
       networkName,
       options
@@ -72,46 +84,71 @@ export class ReplicationNetworkMappingsImpl
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listByReplicationNetworksPagingPage(
+          resourceName,
+          resourceGroupName,
           fabricName,
           networkName,
-          options
+          options,
+          settings
         );
       }
     };
   }
 
   private async *listByReplicationNetworksPagingPage(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     networkName: string,
-    options?: ReplicationNetworkMappingsListByReplicationNetworksOptionalParams
+    options?: ReplicationNetworkMappingsListByReplicationNetworksOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<NetworkMapping[]> {
-    let result = await this._listByReplicationNetworks(
-      fabricName,
-      networkName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: ReplicationNetworkMappingsListByReplicationNetworksResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listByReplicationNetworks(
+        resourceName,
+        resourceGroupName,
+        fabricName,
+        networkName,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listByReplicationNetworksNext(
+        resourceName,
+        resourceGroupName,
         fabricName,
         networkName,
         continuationToken,
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
   private async *listByReplicationNetworksPagingAll(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     networkName: string,
     options?: ReplicationNetworkMappingsListByReplicationNetworksOptionalParams
   ): AsyncIterableIterator<NetworkMapping> {
     for await (const page of this.listByReplicationNetworksPagingPage(
+      resourceName,
+      resourceGroupName,
       fabricName,
       networkName,
       options
@@ -122,12 +159,17 @@ export class ReplicationNetworkMappingsImpl
 
   /**
    * Lists all ASR network mappings in the vault.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param options The options parameters.
    */
   public list(
+    resourceName: string,
+    resourceGroupName: string,
     options?: ReplicationNetworkMappingsListOptionalParams
   ): PagedAsyncIterableIterator<NetworkMapping> {
-    const iter = this.listPagingAll(options);
+    const iter = this.listPagingAll(resourceName, resourceGroupName, options);
     return {
       next() {
         return iter.next();
@@ -135,71 +177,121 @@ export class ReplicationNetworkMappingsImpl
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listPagingPage(options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listPagingPage(
+          resourceName,
+          resourceGroupName,
+          options,
+          settings
+        );
       }
     };
   }
 
   private async *listPagingPage(
-    options?: ReplicationNetworkMappingsListOptionalParams
+    resourceName: string,
+    resourceGroupName: string,
+    options?: ReplicationNetworkMappingsListOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<NetworkMapping[]> {
-    let result = await this._list(options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
-    while (continuationToken) {
-      result = await this._listNext(continuationToken, options);
+    let result: ReplicationNetworkMappingsListResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._list(resourceName, resourceGroupName, options);
+      let page = result.value || [];
       continuationToken = result.nextLink;
-      yield result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
+    while (continuationToken) {
+      result = await this._listNext(
+        resourceName,
+        resourceGroupName,
+        continuationToken,
+        options
+      );
+      continuationToken = result.nextLink;
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
   private async *listPagingAll(
+    resourceName: string,
+    resourceGroupName: string,
     options?: ReplicationNetworkMappingsListOptionalParams
   ): AsyncIterableIterator<NetworkMapping> {
-    for await (const page of this.listPagingPage(options)) {
+    for await (const page of this.listPagingPage(
+      resourceName,
+      resourceGroupName,
+      options
+    )) {
       yield* page;
     }
   }
 
   /**
    * Lists all ASR network mappings for the specified network.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Primary fabric name.
    * @param networkName Primary network name.
    * @param options The options parameters.
    */
   private _listByReplicationNetworks(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     networkName: string,
     options?: ReplicationNetworkMappingsListByReplicationNetworksOptionalParams
   ): Promise<ReplicationNetworkMappingsListByReplicationNetworksResponse> {
     return this.client.sendOperationRequest(
-      { fabricName, networkName, options },
+      { resourceName, resourceGroupName, fabricName, networkName, options },
       listByReplicationNetworksOperationSpec
     );
   }
 
   /**
    * Gets the details of an ASR network mapping.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Primary fabric name.
    * @param networkName Primary network name.
    * @param networkMappingName Network mapping name.
    * @param options The options parameters.
    */
   get(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     networkName: string,
     networkMappingName: string,
     options?: ReplicationNetworkMappingsGetOptionalParams
   ): Promise<ReplicationNetworkMappingsGetResponse> {
     return this.client.sendOperationRequest(
-      { fabricName, networkName, networkMappingName, options },
+      {
+        resourceName,
+        resourceGroupName,
+        fabricName,
+        networkName,
+        networkMappingName,
+        options
+      },
       getOperationSpec
     );
   }
 
   /**
    * The operation to create an ASR network mapping.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Primary fabric name.
    * @param networkName Primary network name.
    * @param networkMappingName Network mapping name.
@@ -207,14 +299,16 @@ export class ReplicationNetworkMappingsImpl
    * @param options The options parameters.
    */
   async beginCreate(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     networkName: string,
     networkMappingName: string,
     input: CreateNetworkMappingInput,
     options?: ReplicationNetworkMappingsCreateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationNetworkMappingsCreateResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationNetworkMappingsCreateResponse>,
       ReplicationNetworkMappingsCreateResponse
     >
   > {
@@ -224,7 +318,7 @@ export class ReplicationNetworkMappingsImpl
     ): Promise<ReplicationNetworkMappingsCreateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -257,19 +351,35 @@ export class ReplicationNetworkMappingsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { fabricName, networkName, networkMappingName, input, options },
-      createOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
+        fabricName,
+        networkName,
+        networkMappingName,
+        input,
+        options
+      },
+      spec: createOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationNetworkMappingsCreateResponse,
+      OperationState<ReplicationNetworkMappingsCreateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to create an ASR network mapping.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Primary fabric name.
    * @param networkName Primary network name.
    * @param networkMappingName Network mapping name.
@@ -277,6 +387,8 @@ export class ReplicationNetworkMappingsImpl
    * @param options The options parameters.
    */
   async beginCreateAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     networkName: string,
     networkMappingName: string,
@@ -284,6 +396,8 @@ export class ReplicationNetworkMappingsImpl
     options?: ReplicationNetworkMappingsCreateOptionalParams
   ): Promise<ReplicationNetworkMappingsCreateResponse> {
     const poller = await this.beginCreate(
+      resourceName,
+      resourceGroupName,
       fabricName,
       networkName,
       networkMappingName,
@@ -295,24 +409,29 @@ export class ReplicationNetworkMappingsImpl
 
   /**
    * The operation to delete a network mapping.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Primary fabric name.
    * @param networkName Primary network name.
    * @param networkMappingName ARM Resource Name for network mapping.
    * @param options The options parameters.
    */
   async beginDelete(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     networkName: string,
     networkMappingName: string,
     options?: ReplicationNetworkMappingsDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -345,31 +464,47 @@ export class ReplicationNetworkMappingsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { fabricName, networkName, networkMappingName, options },
-      deleteOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
+        fabricName,
+        networkName,
+        networkMappingName,
+        options
+      },
+      spec: deleteOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to delete a network mapping.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Primary fabric name.
    * @param networkName Primary network name.
    * @param networkMappingName ARM Resource Name for network mapping.
    * @param options The options parameters.
    */
   async beginDeleteAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     networkName: string,
     networkMappingName: string,
     options?: ReplicationNetworkMappingsDeleteOptionalParams
   ): Promise<void> {
     const poller = await this.beginDelete(
+      resourceName,
+      resourceGroupName,
       fabricName,
       networkName,
       networkMappingName,
@@ -380,6 +515,9 @@ export class ReplicationNetworkMappingsImpl
 
   /**
    * The operation to update an ASR network mapping.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Primary fabric name.
    * @param networkName Primary network name.
    * @param networkMappingName Network mapping name.
@@ -387,14 +525,16 @@ export class ReplicationNetworkMappingsImpl
    * @param options The options parameters.
    */
   async beginUpdate(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     networkName: string,
     networkMappingName: string,
     input: UpdateNetworkMappingInput,
     options?: ReplicationNetworkMappingsUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationNetworkMappingsUpdateResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationNetworkMappingsUpdateResponse>,
       ReplicationNetworkMappingsUpdateResponse
     >
   > {
@@ -404,7 +544,7 @@ export class ReplicationNetworkMappingsImpl
     ): Promise<ReplicationNetworkMappingsUpdateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -437,19 +577,35 @@ export class ReplicationNetworkMappingsImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { fabricName, networkName, networkMappingName, input, options },
-      updateOperationSpec
-    );
-    return new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceName,
+        resourceGroupName,
+        fabricName,
+        networkName,
+        networkMappingName,
+        input,
+        options
+      },
+      spec: updateOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ReplicationNetworkMappingsUpdateResponse,
+      OperationState<ReplicationNetworkMappingsUpdateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
+    await poller.poll();
+    return poller;
   }
 
   /**
    * The operation to update an ASR network mapping.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Primary fabric name.
    * @param networkName Primary network name.
    * @param networkMappingName Network mapping name.
@@ -457,6 +613,8 @@ export class ReplicationNetworkMappingsImpl
    * @param options The options parameters.
    */
   async beginUpdateAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     networkName: string,
     networkMappingName: string,
@@ -464,6 +622,8 @@ export class ReplicationNetworkMappingsImpl
     options?: ReplicationNetworkMappingsUpdateOptionalParams
   ): Promise<ReplicationNetworkMappingsUpdateResponse> {
     const poller = await this.beginUpdate(
+      resourceName,
+      resourceGroupName,
       fabricName,
       networkName,
       networkMappingName,
@@ -475,16 +635,27 @@ export class ReplicationNetworkMappingsImpl
 
   /**
    * Lists all ASR network mappings in the vault.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param options The options parameters.
    */
   private _list(
+    resourceName: string,
+    resourceGroupName: string,
     options?: ReplicationNetworkMappingsListOptionalParams
   ): Promise<ReplicationNetworkMappingsListResponse> {
-    return this.client.sendOperationRequest({ options }, listOperationSpec);
+    return this.client.sendOperationRequest(
+      { resourceName, resourceGroupName, options },
+      listOperationSpec
+    );
   }
 
   /**
    * ListByReplicationNetworksNext
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Primary fabric name.
    * @param networkName Primary network name.
    * @param nextLink The nextLink from the previous successful call to the ListByReplicationNetworks
@@ -492,28 +663,42 @@ export class ReplicationNetworkMappingsImpl
    * @param options The options parameters.
    */
   private _listByReplicationNetworksNext(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     networkName: string,
     nextLink: string,
     options?: ReplicationNetworkMappingsListByReplicationNetworksNextOptionalParams
   ): Promise<ReplicationNetworkMappingsListByReplicationNetworksNextResponse> {
     return this.client.sendOperationRequest(
-      { fabricName, networkName, nextLink, options },
+      {
+        resourceName,
+        resourceGroupName,
+        fabricName,
+        networkName,
+        nextLink,
+        options
+      },
       listByReplicationNetworksNextOperationSpec
     );
   }
 
   /**
    * ListNext
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param nextLink The nextLink from the previous successful call to the List method.
    * @param options The options parameters.
    */
   private _listNext(
+    resourceName: string,
+    resourceGroupName: string,
     nextLink: string,
     options?: ReplicationNetworkMappingsListNextOptionalParams
   ): Promise<ReplicationNetworkMappingsListNextResponse> {
     return this.client.sendOperationRequest(
-      { nextLink, options },
+      { resourceName, resourceGroupName, nextLink, options },
       listNextOperationSpec
     );
   }
@@ -674,7 +859,6 @@ const listByReplicationNetworksNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.NetworkMappingCollection
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.resourceGroupName,
@@ -695,7 +879,6 @@ const listNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.NetworkMappingCollection
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.resourceGroupName,

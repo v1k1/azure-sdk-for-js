@@ -6,7 +6,9 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { tracingClient } from "../tracing";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { JobRouter } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
@@ -16,9 +18,11 @@ import {
   RouterJobItem,
   JobRouterListJobsNextOptionalParams,
   JobRouterListJobsOptionalParams,
+  JobRouterListJobsResponse,
   RouterWorkerItem,
   JobRouterListWorkersNextOptionalParams,
   JobRouterListWorkersOptionalParams,
+  JobRouterListWorkersResponse,
   RouterJob,
   JobRouterUpsertJobOptionalParams,
   JobRouterUpsertJobResponse,
@@ -33,7 +37,6 @@ import {
   JobRouterCompleteJobActionResponse,
   JobRouterCloseJobActionOptionalParams,
   JobRouterCloseJobActionResponse,
-  JobRouterListJobsResponse,
   JobRouterGetInQueuePositionOptionalParams,
   JobRouterGetInQueuePositionResponse,
   JobRouterUnassignJobActionOptionalParams,
@@ -50,7 +53,6 @@ import {
   JobRouterGetWorkerOptionalParams,
   JobRouterGetWorkerResponse,
   JobRouterDeleteWorkerOptionalParams,
-  JobRouterListWorkersResponse,
   JobRouterListJobsNextResponse,
   JobRouterListWorkersNextResponse
 } from "../models";
@@ -83,22 +85,34 @@ export class JobRouterImpl implements JobRouter {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listJobsPagingPage(options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listJobsPagingPage(options, settings);
       }
     };
   }
 
   private async *listJobsPagingPage(
-    options?: JobRouterListJobsOptionalParams
+    options?: JobRouterListJobsOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<RouterJobItem[]> {
-    let result = await this._listJobs(options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: JobRouterListJobsResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listJobs(options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listJobsNext(continuationToken, options);
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -125,22 +139,34 @@ export class JobRouterImpl implements JobRouter {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listWorkersPagingPage(options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listWorkersPagingPage(options, settings);
       }
     };
   }
 
   private async *listWorkersPagingPage(
-    options?: JobRouterListWorkersOptionalParams
+    options?: JobRouterListWorkersOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<RouterWorkerItem[]> {
-    let result = await this._listWorkers(options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: JobRouterListWorkersResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listWorkers(options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listWorkersNext(continuationToken, options);
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -159,14 +185,20 @@ export class JobRouterImpl implements JobRouter {
    *              https://datatracker.ietf.org/doc/html/rfc7386.
    * @param options The options parameters.
    */
-  upsertJob(
+  async upsertJob(
     id: string,
     patch: RouterJob,
     options?: JobRouterUpsertJobOptionalParams
   ): Promise<JobRouterUpsertJobResponse> {
-    return this.client.sendOperationRequest(
-      { id, patch, options },
-      upsertJobOperationSpec
+    return tracingClient.withSpan(
+      "JobRouterApiClient.upsertJob",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { id, patch, options },
+          upsertJobOperationSpec
+        ) as Promise<JobRouterUpsertJobResponse>;
+      }
     );
   }
 
@@ -175,28 +207,40 @@ export class JobRouterImpl implements JobRouter {
    * @param id Id of the job to retrieve
    * @param options The options parameters.
    */
-  getJob(
+  async getJob(
     id: string,
     options?: JobRouterGetJobOptionalParams
   ): Promise<JobRouterGetJobResponse> {
-    return this.client.sendOperationRequest(
-      { id, options },
-      getJobOperationSpec
+    return tracingClient.withSpan(
+      "JobRouterApiClient.getJob",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { id, options },
+          getJobOperationSpec
+        ) as Promise<JobRouterGetJobResponse>;
+      }
     );
   }
 
   /**
    * Deletes a job and all of its traces.
-   * @param id Id of the job.
+   * @param id Id of the job
    * @param options The options parameters.
    */
-  deleteJob(
+  async deleteJob(
     id: string,
     options?: JobRouterDeleteJobOptionalParams
   ): Promise<void> {
-    return this.client.sendOperationRequest(
-      { id, options },
-      deleteJobOperationSpec
+    return tracingClient.withSpan(
+      "JobRouterApiClient.deleteJob",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { id, options },
+          deleteJobOperationSpec
+        ) as Promise<void>;
+      }
     );
   }
 
@@ -205,13 +249,19 @@ export class JobRouterImpl implements JobRouter {
    * @param id Id of the job
    * @param options The options parameters.
    */
-  reclassifyJobAction(
+  async reclassifyJobAction(
     id: string,
     options?: JobRouterReclassifyJobActionOptionalParams
   ): Promise<JobRouterReclassifyJobActionResponse> {
-    return this.client.sendOperationRequest(
-      { id, options },
-      reclassifyJobActionOperationSpec
+    return tracingClient.withSpan(
+      "JobRouterApiClient.reclassifyJobAction",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { id, options },
+          reclassifyJobActionOperationSpec
+        ) as Promise<JobRouterReclassifyJobActionResponse>;
+      }
     );
   }
 
@@ -220,13 +270,19 @@ export class JobRouterImpl implements JobRouter {
    * @param id Id of the job
    * @param options The options parameters.
    */
-  cancelJobAction(
+  async cancelJobAction(
     id: string,
     options?: JobRouterCancelJobActionOptionalParams
   ): Promise<JobRouterCancelJobActionResponse> {
-    return this.client.sendOperationRequest(
-      { id, options },
-      cancelJobActionOperationSpec
+    return tracingClient.withSpan(
+      "JobRouterApiClient.cancelJobAction",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { id, options },
+          cancelJobActionOperationSpec
+        ) as Promise<JobRouterCancelJobActionResponse>;
+      }
     );
   }
 
@@ -236,14 +292,20 @@ export class JobRouterImpl implements JobRouter {
    * @param assignmentId The assignment within the job to complete.
    * @param options The options parameters.
    */
-  completeJobAction(
+  async completeJobAction(
     id: string,
     assignmentId: string,
     options?: JobRouterCompleteJobActionOptionalParams
   ): Promise<JobRouterCompleteJobActionResponse> {
-    return this.client.sendOperationRequest(
-      { id, assignmentId, options },
-      completeJobActionOperationSpec
+    return tracingClient.withSpan(
+      "JobRouterApiClient.completeJobAction",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { id, assignmentId, options },
+          completeJobActionOperationSpec
+        ) as Promise<JobRouterCompleteJobActionResponse>;
+      }
     );
   }
 
@@ -253,14 +315,20 @@ export class JobRouterImpl implements JobRouter {
    * @param assignmentId The assignment within which the job is to be closed.
    * @param options The options parameters.
    */
-  closeJobAction(
+  async closeJobAction(
     id: string,
     assignmentId: string,
     options?: JobRouterCloseJobActionOptionalParams
   ): Promise<JobRouterCloseJobActionResponse> {
-    return this.client.sendOperationRequest(
-      { id, assignmentId, options },
-      closeJobActionOperationSpec
+    return tracingClient.withSpan(
+      "JobRouterApiClient.closeJobAction",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { id, assignmentId, options },
+          closeJobActionOperationSpec
+        ) as Promise<JobRouterCloseJobActionResponse>;
+      }
     );
   }
 
@@ -268,10 +336,19 @@ export class JobRouterImpl implements JobRouter {
    * Retrieves list of jobs based on filter parameters
    * @param options The options parameters.
    */
-  private _listJobs(
+  private async _listJobs(
     options?: JobRouterListJobsOptionalParams
   ): Promise<JobRouterListJobsResponse> {
-    return this.client.sendOperationRequest({ options }, listJobsOperationSpec);
+    return tracingClient.withSpan(
+      "JobRouterApiClient._listJobs",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { options },
+          listJobsOperationSpec
+        ) as Promise<JobRouterListJobsResponse>;
+      }
+    );
   }
 
   /**
@@ -279,13 +356,19 @@ export class JobRouterImpl implements JobRouter {
    * @param id Id of the job
    * @param options The options parameters.
    */
-  getInQueuePosition(
+  async getInQueuePosition(
     id: string,
     options?: JobRouterGetInQueuePositionOptionalParams
   ): Promise<JobRouterGetInQueuePositionResponse> {
-    return this.client.sendOperationRequest(
-      { id, options },
-      getInQueuePositionOperationSpec
+    return tracingClient.withSpan(
+      "JobRouterApiClient.getInQueuePosition",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { id, options },
+          getInQueuePositionOperationSpec
+        ) as Promise<JobRouterGetInQueuePositionResponse>;
+      }
     );
   }
 
@@ -295,14 +378,20 @@ export class JobRouterImpl implements JobRouter {
    * @param assignmentId Id of the assignment to un-assign
    * @param options The options parameters.
    */
-  unassignJobAction(
+  async unassignJobAction(
     id: string,
     assignmentId: string,
     options?: JobRouterUnassignJobActionOptionalParams
   ): Promise<JobRouterUnassignJobActionResponse> {
-    return this.client.sendOperationRequest(
-      { id, assignmentId, options },
-      unassignJobActionOperationSpec
+    return tracingClient.withSpan(
+      "JobRouterApiClient.unassignJobAction",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { id, assignmentId, options },
+          unassignJobActionOperationSpec
+        ) as Promise<JobRouterUnassignJobActionResponse>;
+      }
     );
   }
 
@@ -313,14 +402,20 @@ export class JobRouterImpl implements JobRouter {
    * @param offerId Id of the offer
    * @param options The options parameters.
    */
-  acceptJobAction(
+  async acceptJobAction(
     workerId: string,
     offerId: string,
     options?: JobRouterAcceptJobActionOptionalParams
   ): Promise<JobRouterAcceptJobActionResponse> {
-    return this.client.sendOperationRequest(
-      { workerId, offerId, options },
-      acceptJobActionOperationSpec
+    return tracingClient.withSpan(
+      "JobRouterApiClient.acceptJobAction",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { workerId, offerId, options },
+          acceptJobActionOperationSpec
+        ) as Promise<JobRouterAcceptJobActionResponse>;
+      }
     );
   }
 
@@ -330,14 +425,20 @@ export class JobRouterImpl implements JobRouter {
    * @param offerId Id of the offer
    * @param options The options parameters.
    */
-  declineJobAction(
+  async declineJobAction(
     workerId: string,
     offerId: string,
     options?: JobRouterDeclineJobActionOptionalParams
   ): Promise<JobRouterDeclineJobActionResponse> {
-    return this.client.sendOperationRequest(
-      { workerId, offerId, options },
-      declineJobActionOperationSpec
+    return tracingClient.withSpan(
+      "JobRouterApiClient.declineJobAction",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { workerId, offerId, options },
+          declineJobActionOperationSpec
+        ) as Promise<JobRouterDeclineJobActionResponse>;
+      }
     );
   }
 
@@ -346,31 +447,43 @@ export class JobRouterImpl implements JobRouter {
    * @param id Id of the queue to retrieve statistics
    * @param options The options parameters.
    */
-  getQueueStatistics(
+  async getQueueStatistics(
     id: string,
     options?: JobRouterGetQueueStatisticsOptionalParams
   ): Promise<JobRouterGetQueueStatisticsResponse> {
-    return this.client.sendOperationRequest(
-      { id, options },
-      getQueueStatisticsOperationSpec
+    return tracingClient.withSpan(
+      "JobRouterApiClient.getQueueStatistics",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { id, options },
+          getQueueStatisticsOperationSpec
+        ) as Promise<JobRouterGetQueueStatisticsResponse>;
+      }
     );
   }
 
   /**
    * Creates or updates a worker.
    * @param workerId Id of the worker
-   * @param patch Model of worker properties to be patched. See also:
+   * @param patch Model of worker properties to be created or patched. See also:
    *              https://datatracker.ietf.org/doc/html/rfc7386
    * @param options The options parameters.
    */
-  upsertWorker(
+  async upsertWorker(
     workerId: string,
     patch: RouterWorker,
     options?: JobRouterUpsertWorkerOptionalParams
   ): Promise<JobRouterUpsertWorkerResponse> {
-    return this.client.sendOperationRequest(
-      { workerId, patch, options },
-      upsertWorkerOperationSpec
+    return tracingClient.withSpan(
+      "JobRouterApiClient.upsertWorker",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { workerId, patch, options },
+          upsertWorkerOperationSpec
+        ) as Promise<JobRouterUpsertWorkerResponse>;
+      }
     );
   }
 
@@ -379,13 +492,19 @@ export class JobRouterImpl implements JobRouter {
    * @param workerId Id of the worker to retrieve
    * @param options The options parameters.
    */
-  getWorker(
+  async getWorker(
     workerId: string,
     options?: JobRouterGetWorkerOptionalParams
   ): Promise<JobRouterGetWorkerResponse> {
-    return this.client.sendOperationRequest(
-      { workerId, options },
-      getWorkerOperationSpec
+    return tracingClient.withSpan(
+      "JobRouterApiClient.getWorker",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { workerId, options },
+          getWorkerOperationSpec
+        ) as Promise<JobRouterGetWorkerResponse>;
+      }
     );
   }
 
@@ -394,13 +513,19 @@ export class JobRouterImpl implements JobRouter {
    * @param workerId Id of the worker to delete
    * @param options The options parameters.
    */
-  deleteWorker(
+  async deleteWorker(
     workerId: string,
     options?: JobRouterDeleteWorkerOptionalParams
   ): Promise<void> {
-    return this.client.sendOperationRequest(
-      { workerId, options },
-      deleteWorkerOperationSpec
+    return tracingClient.withSpan(
+      "JobRouterApiClient.deleteWorker",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { workerId, options },
+          deleteWorkerOperationSpec
+        ) as Promise<void>;
+      }
     );
   }
 
@@ -408,12 +533,18 @@ export class JobRouterImpl implements JobRouter {
    * Retrieves existing workers.
    * @param options The options parameters.
    */
-  private _listWorkers(
+  private async _listWorkers(
     options?: JobRouterListWorkersOptionalParams
   ): Promise<JobRouterListWorkersResponse> {
-    return this.client.sendOperationRequest(
-      { options },
-      listWorkersOperationSpec
+    return tracingClient.withSpan(
+      "JobRouterApiClient._listWorkers",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { options },
+          listWorkersOperationSpec
+        ) as Promise<JobRouterListWorkersResponse>;
+      }
     );
   }
 
@@ -422,13 +553,19 @@ export class JobRouterImpl implements JobRouter {
    * @param nextLink The nextLink from the previous successful call to the ListJobs method.
    * @param options The options parameters.
    */
-  private _listJobsNext(
+  private async _listJobsNext(
     nextLink: string,
     options?: JobRouterListJobsNextOptionalParams
   ): Promise<JobRouterListJobsNextResponse> {
-    return this.client.sendOperationRequest(
-      { nextLink, options },
-      listJobsNextOperationSpec
+    return tracingClient.withSpan(
+      "JobRouterApiClient._listJobsNext",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { nextLink, options },
+          listJobsNextOperationSpec
+        ) as Promise<JobRouterListJobsNextResponse>;
+      }
     );
   }
 
@@ -437,13 +574,19 @@ export class JobRouterImpl implements JobRouter {
    * @param nextLink The nextLink from the previous successful call to the ListWorkers method.
    * @param options The options parameters.
    */
-  private _listWorkersNext(
+  private async _listWorkersNext(
     nextLink: string,
     options?: JobRouterListWorkersNextOptionalParams
   ): Promise<JobRouterListWorkersNextResponse> {
-    return this.client.sendOperationRequest(
-      { nextLink, options },
-      listWorkersNextOperationSpec
+    return tracingClient.withSpan(
+      "JobRouterApiClient._listWorkersNext",
+      options ?? {},
+      async (options) => {
+        return this.client.sendOperationRequest(
+          { nextLink, options },
+          listWorkersNextOperationSpec
+        ) as Promise<JobRouterListWorkersNextResponse>;
+      }
     );
   }
 }
@@ -455,6 +598,9 @@ const upsertJobOperationSpec: coreClient.OperationSpec = {
   httpMethod: "PATCH",
   responses: {
     200: {
+      bodyMapper: Mappers.RouterJob
+    },
+    201: {
       bodyMapper: Mappers.RouterJob
     },
     default: {
@@ -503,9 +649,7 @@ const reclassifyJobActionOperationSpec: coreClient.OperationSpec = {
   httpMethod: "POST",
   responses: {
     200: {
-      bodyMapper: {
-        type: { name: "Dictionary", value: { type: { name: "any" } } }
-      }
+      bodyMapper: { type: { name: "any" } }
     },
     default: {
       bodyMapper: Mappers.CommunicationErrorResponse
@@ -523,9 +667,7 @@ const cancelJobActionOperationSpec: coreClient.OperationSpec = {
   httpMethod: "POST",
   responses: {
     200: {
-      bodyMapper: {
-        type: { name: "Dictionary", value: { type: { name: "any" } } }
-      }
+      bodyMapper: { type: { name: "any" } }
     },
     default: {
       bodyMapper: Mappers.CommunicationErrorResponse
@@ -549,9 +691,7 @@ const completeJobActionOperationSpec: coreClient.OperationSpec = {
   httpMethod: "POST",
   responses: {
     200: {
-      bodyMapper: {
-        type: { name: "Dictionary", value: { type: { name: "any" } } }
-      }
+      bodyMapper: { type: { name: "any" } }
     },
     default: {
       bodyMapper: Mappers.CommunicationErrorResponse
@@ -575,14 +715,10 @@ const closeJobActionOperationSpec: coreClient.OperationSpec = {
   httpMethod: "POST",
   responses: {
     200: {
-      bodyMapper: {
-        type: { name: "Dictionary", value: { type: { name: "any" } } }
-      }
+      bodyMapper: { type: { name: "any" } }
     },
     202: {
-      bodyMapper: {
-        type: { name: "Dictionary", value: { type: { name: "any" } } }
-      }
+      bodyMapper: { type: { name: "any" } }
     },
     default: {
       bodyMapper: Mappers.CommunicationErrorResponse
@@ -592,7 +728,7 @@ const closeJobActionOperationSpec: coreClient.OperationSpec = {
     parameterPath: {
       assignmentId: ["assignmentId"],
       dispositionCode: ["options", "dispositionCode"],
-      closeTime: ["options", "closeTime"],
+      closeAt: ["options", "closeAt"],
       note: ["options", "note"]
     },
     mapper: { ...Mappers.CloseJobRequest, required: true }
@@ -608,7 +744,7 @@ const listJobsOperationSpec: coreClient.OperationSpec = {
   httpMethod: "GET",
   responses: {
     200: {
-      bodyMapper: Mappers.JobCollection
+      bodyMapper: Mappers.RouterJobCollection
     },
     default: {
       bodyMapper: Mappers.CommunicationErrorResponse
@@ -620,7 +756,9 @@ const listJobsOperationSpec: coreClient.OperationSpec = {
     Parameters.status,
     Parameters.queueId,
     Parameters.channelId,
-    Parameters.classificationPolicyId
+    Parameters.classificationPolicyId,
+    Parameters.scheduledBefore,
+    Parameters.scheduledAfter
   ],
   urlParameters: [Parameters.endpoint],
   headerParameters: [Parameters.accept],
@@ -631,7 +769,7 @@ const getInQueuePositionOperationSpec: coreClient.OperationSpec = {
   httpMethod: "GET",
   responses: {
     200: {
-      bodyMapper: Mappers.JobPositionDetails
+      bodyMapper: Mappers.RouterJobPositionDetails
     },
     default: {
       bodyMapper: Mappers.CommunicationErrorResponse
@@ -653,9 +791,11 @@ const unassignJobActionOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.CommunicationErrorResponse
     }
   },
+  requestBody: Parameters.unassignJobRequest,
   queryParameters: [Parameters.apiVersion],
   urlParameters: [Parameters.endpoint, Parameters.id, Parameters.assignmentId2],
-  headerParameters: [Parameters.accept],
+  headerParameters: [Parameters.accept, Parameters.contentType1],
+  mediaType: "json",
   serializer
 };
 const acceptJobActionOperationSpec: coreClient.OperationSpec = {
@@ -679,17 +819,17 @@ const declineJobActionOperationSpec: coreClient.OperationSpec = {
   httpMethod: "POST",
   responses: {
     200: {
-      bodyMapper: {
-        type: { name: "Dictionary", value: { type: { name: "any" } } }
-      }
+      bodyMapper: { type: { name: "any" } }
     },
     default: {
       bodyMapper: Mappers.CommunicationErrorResponse
     }
   },
+  requestBody: Parameters.declineJobOfferRequest,
   queryParameters: [Parameters.apiVersion],
   urlParameters: [Parameters.endpoint, Parameters.workerId, Parameters.offerId],
-  headerParameters: [Parameters.accept],
+  headerParameters: [Parameters.accept, Parameters.contentType1],
+  mediaType: "json",
   serializer
 };
 const getQueueStatisticsOperationSpec: coreClient.OperationSpec = {
@@ -697,7 +837,7 @@ const getQueueStatisticsOperationSpec: coreClient.OperationSpec = {
   httpMethod: "GET",
   responses: {
     200: {
-      bodyMapper: Mappers.QueueStatistics
+      bodyMapper: Mappers.RouterQueueStatistics
     },
     default: {
       bodyMapper: Mappers.CommunicationErrorResponse
@@ -713,6 +853,9 @@ const upsertWorkerOperationSpec: coreClient.OperationSpec = {
   httpMethod: "PATCH",
   responses: {
     200: {
+      bodyMapper: Mappers.RouterWorker
+    },
+    201: {
       bodyMapper: Mappers.RouterWorker
     },
     default: {
@@ -761,7 +904,7 @@ const listWorkersOperationSpec: coreClient.OperationSpec = {
   httpMethod: "GET",
   responses: {
     200: {
-      bodyMapper: Mappers.WorkerCollection
+      bodyMapper: Mappers.RouterWorkerCollection
     },
     default: {
       bodyMapper: Mappers.CommunicationErrorResponse
@@ -772,7 +915,7 @@ const listWorkersOperationSpec: coreClient.OperationSpec = {
     Parameters.maxpagesize,
     Parameters.queueId,
     Parameters.channelId,
-    Parameters.status1,
+    Parameters.state,
     Parameters.hasCapacity
   ],
   urlParameters: [Parameters.endpoint],
@@ -784,20 +927,12 @@ const listJobsNextOperationSpec: coreClient.OperationSpec = {
   httpMethod: "GET",
   responses: {
     200: {
-      bodyMapper: Mappers.JobCollection
+      bodyMapper: Mappers.RouterJobCollection
     },
     default: {
       bodyMapper: Mappers.CommunicationErrorResponse
     }
   },
-  queryParameters: [
-    Parameters.apiVersion,
-    Parameters.maxpagesize,
-    Parameters.status,
-    Parameters.queueId,
-    Parameters.channelId,
-    Parameters.classificationPolicyId
-  ],
   urlParameters: [Parameters.endpoint, Parameters.nextLink],
   headerParameters: [Parameters.accept],
   serializer
@@ -807,20 +942,12 @@ const listWorkersNextOperationSpec: coreClient.OperationSpec = {
   httpMethod: "GET",
   responses: {
     200: {
-      bodyMapper: Mappers.WorkerCollection
+      bodyMapper: Mappers.RouterWorkerCollection
     },
     default: {
       bodyMapper: Mappers.CommunicationErrorResponse
     }
   },
-  queryParameters: [
-    Parameters.apiVersion,
-    Parameters.maxpagesize,
-    Parameters.queueId,
-    Parameters.channelId,
-    Parameters.status1,
-    Parameters.hasCapacity
-  ],
   urlParameters: [Parameters.endpoint, Parameters.nextLink],
   headerParameters: [Parameters.accept],
   serializer

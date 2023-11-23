@@ -22,9 +22,11 @@ import { assertError } from "./utils/assertError";
 import { createEventHubsClient } from "./clients/eventHubs";
 import { createMockedMessagingClient } from "./clients/mocked";
 import { createTestSerializer } from "./utils/mockedSerializer";
-import { env } from "./utils/env";
 import { matrix } from "@azure/test-utils";
 import { testGroup } from "./utils/dummies";
+import { Recorder, env } from "@azure-tools/test-recorder";
+import { createPipelineWithCredential, removeSchemas } from "./utils/mockedRegistryClient";
+import { HttpClient, Pipeline, createDefaultHttpClient } from "@azure/core-rest-pipeline";
 
 /**
  * An interface to group different bits needed by the tests for each messaging service
@@ -42,7 +44,7 @@ interface ScenariosTestInfo<T> {
 }
 
 describe("With messaging clients", function () {
-  const eventHubsConnectionString = env.EVENTHUB_CONNECTION_STRING || "";
+  const eventHubsConnectionString = env.EVENTHUB_AVRO_CONNECTION_STRING || "";
   const eventHubName = env.EVENTHUB_NAME || "";
   const alreadyEnqueued = env.CROSS_LANGUAGE !== undefined;
 
@@ -95,7 +97,12 @@ describe("With messaging clients", function () {
       createScenario4Client,
     } = testInfo;
     describe(messagingServiceName, async function () {
+      let recorder: Recorder;
       let serializer: AvroSerializer<any>;
+      let schemaName: string;
+      const schemaList: string[] = [];
+      let httpClient: HttpClient;
+      let pipeline: Pipeline;
 
       async function roundtrip(settings: {
         client: MessagingTestClient<any>;
@@ -157,16 +164,29 @@ describe("With messaging clients", function () {
       }
 
       before(async function () {
+        httpClient = createDefaultHttpClient();
+        pipeline = createPipelineWithCredential();
+      });
+
+      beforeEach(async function () {
+        recorder = new Recorder(this.currentTest);
         serializer = await createTestSerializer({
           serializerOptions: {
             autoRegisterSchemas: true,
             groupName: testGroup,
             messageAdapter,
           },
+          recorder,
         });
       });
 
+      afterEach(async function () {
+        schemaList.push(schemaName);
+        await removeSchemas(schemaList, pipeline, httpClient);
+      });
+
       it("Test schema with fields of type int/string/boolean/float/bytes", async () => {
+        schemaName = "interop.avro.RecordWithFieldTypes";
         const writerSchema = JSON.stringify({
           name: "RecordWithFieldTypes",
           namespace: "interop.avro",
@@ -195,6 +215,7 @@ describe("With messaging clients", function () {
       });
 
       it("Serialize with `Schema`. Deserialize with `Reader Schema`, which is the original schema with a field removed.", async () => {
+        schemaName = "interop.avro.ReaderSchema";
         const writerSchema = JSON.stringify({
           namespace: "interop.avro",
           type: "record",
@@ -227,6 +248,7 @@ describe("With messaging clients", function () {
       });
 
       it("Serialize with `Schema`. Deserialize with `Reader Schema`, which is the original schema with a field added.", async () => {
+        schemaName = "interop.avro.ReaderSchema";
         const writerSchema = JSON.stringify({
           namespace: "interop.avro",
           type: "record",
@@ -260,6 +282,7 @@ describe("With messaging clients", function () {
       });
 
       it("Serialize with `Schema`. Deserialize with `Reader Schema`, which is the original schema with a field (with no default value) added.", async () => {
+        schemaName = "interop.avro.ReaderSchema";
         const writerSchema = JSON.stringify({
           namespace: "interop.avro",
           type: "record",

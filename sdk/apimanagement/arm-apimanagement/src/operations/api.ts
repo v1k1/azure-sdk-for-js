@@ -6,22 +6,28 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { Api } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { ApiManagementClient } from "../apiManagementClient";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   ApiContract,
   ApiListByServiceNextOptionalParams,
   ApiListByServiceOptionalParams,
+  ApiListByServiceResponse,
   TagResourceContract,
   ApiListByTagsNextOptionalParams,
   ApiListByTagsOptionalParams,
-  ApiListByServiceResponse,
+  ApiListByTagsResponse,
   ApiGetEntityTagOptionalParams,
   ApiGetEntityTagResponse,
   ApiGetOptionalParams,
@@ -33,7 +39,6 @@ import {
   ApiUpdateOptionalParams,
   ApiUpdateResponse,
   ApiDeleteOptionalParams,
-  ApiListByTagsResponse,
   ApiListByServiceNextResponse,
   ApiListByTagsNextResponse
 } from "../models";
@@ -53,7 +58,7 @@ export class ApiImpl implements Api {
 
   /**
    * Lists all APIs of the API Management service instance.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param options The options parameters.
    */
@@ -74,11 +79,15 @@ export class ApiImpl implements Api {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listByServicePagingPage(
           resourceGroupName,
           serviceName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -87,15 +96,22 @@ export class ApiImpl implements Api {
   private async *listByServicePagingPage(
     resourceGroupName: string,
     serviceName: string,
-    options?: ApiListByServiceOptionalParams
+    options?: ApiListByServiceOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<ApiContract[]> {
-    let result = await this._listByService(
-      resourceGroupName,
-      serviceName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: ApiListByServiceResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listByService(
+        resourceGroupName,
+        serviceName,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listByServiceNext(
         resourceGroupName,
@@ -104,7 +120,9 @@ export class ApiImpl implements Api {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -124,7 +142,7 @@ export class ApiImpl implements Api {
 
   /**
    * Lists a collection of apis associated with tags.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param options The options parameters.
    */
@@ -145,11 +163,15 @@ export class ApiImpl implements Api {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listByTagsPagingPage(
           resourceGroupName,
           serviceName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -158,15 +180,18 @@ export class ApiImpl implements Api {
   private async *listByTagsPagingPage(
     resourceGroupName: string,
     serviceName: string,
-    options?: ApiListByTagsOptionalParams
+    options?: ApiListByTagsOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<TagResourceContract[]> {
-    let result = await this._listByTags(
-      resourceGroupName,
-      serviceName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: ApiListByTagsResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listByTags(resourceGroupName, serviceName, options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listByTagsNext(
         resourceGroupName,
@@ -175,7 +200,9 @@ export class ApiImpl implements Api {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -195,7 +222,7 @@ export class ApiImpl implements Api {
 
   /**
    * Lists all APIs of the API Management service instance.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param options The options parameters.
    */
@@ -212,7 +239,7 @@ export class ApiImpl implements Api {
 
   /**
    * Gets the entity state (Etag) version of the API specified by its identifier.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param apiId API revision identifier. Must be unique in the current API Management service instance.
    *              Non-current revision has ;rev=n as a suffix where n is the revision number.
@@ -232,7 +259,7 @@ export class ApiImpl implements Api {
 
   /**
    * Gets the details of the API specified by its identifier.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param apiId API revision identifier. Must be unique in the current API Management service instance.
    *              Non-current revision has ;rev=n as a suffix where n is the revision number.
@@ -252,7 +279,7 @@ export class ApiImpl implements Api {
 
   /**
    * Creates new or updates existing specified API of the API Management service instance.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param apiId API revision identifier. Must be unique in the current API Management service instance.
    *              Non-current revision has ;rev=n as a suffix where n is the revision number.
@@ -266,8 +293,8 @@ export class ApiImpl implements Api {
     parameters: ApiCreateOrUpdateParameter,
     options?: ApiCreateOrUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ApiCreateOrUpdateResponse>,
+    SimplePollerLike<
+      OperationState<ApiCreateOrUpdateResponse>,
       ApiCreateOrUpdateResponse
     >
   > {
@@ -277,7 +304,7 @@ export class ApiImpl implements Api {
     ): Promise<ApiCreateOrUpdateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -310,15 +337,18 @@ export class ApiImpl implements Api {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, serviceName, apiId, parameters, options },
-      createOrUpdateOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, serviceName, apiId, parameters, options },
+      spec: createOrUpdateOperationSpec
+    });
+    const poller = await createHttpPoller<
+      ApiCreateOrUpdateResponse,
+      OperationState<ApiCreateOrUpdateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "location"
+      resourceLocationConfig: "location"
     });
     await poller.poll();
     return poller;
@@ -326,7 +356,7 @@ export class ApiImpl implements Api {
 
   /**
    * Creates new or updates existing specified API of the API Management service instance.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param apiId API revision identifier. Must be unique in the current API Management service instance.
    *              Non-current revision has ;rev=n as a suffix where n is the revision number.
@@ -352,7 +382,7 @@ export class ApiImpl implements Api {
 
   /**
    * Updates the specified API of the API Management service instance.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param apiId API revision identifier. Must be unique in the current API Management service instance.
    *              Non-current revision has ;rev=n as a suffix where n is the revision number.
@@ -377,7 +407,7 @@ export class ApiImpl implements Api {
 
   /**
    * Deletes the specified API of the API Management service instance.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param apiId API revision identifier. Must be unique in the current API Management service instance.
    *              Non-current revision has ;rev=n as a suffix where n is the revision number.
@@ -400,7 +430,7 @@ export class ApiImpl implements Api {
 
   /**
    * Lists a collection of apis associated with tags.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param options The options parameters.
    */
@@ -417,7 +447,7 @@ export class ApiImpl implements Api {
 
   /**
    * ListByServiceNext
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param nextLink The nextLink from the previous successful call to the ListByService method.
    * @param options The options parameters.
@@ -436,7 +466,7 @@ export class ApiImpl implements Api {
 
   /**
    * ListByTagsNext
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param serviceName The name of the API Management service.
    * @param nextLink The nextLink from the previous successful call to the ListByTags method.
    * @param options The options parameters.
@@ -665,14 +695,6 @@ const listByServiceNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [
-    Parameters.filter,
-    Parameters.top,
-    Parameters.skip,
-    Parameters.tags,
-    Parameters.expandApiVersionSet,
-    Parameters.apiVersion
-  ],
   urlParameters: [
     Parameters.$host,
     Parameters.resourceGroupName,
@@ -694,13 +716,6 @@ const listByTagsNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [
-    Parameters.filter,
-    Parameters.top,
-    Parameters.skip,
-    Parameters.apiVersion,
-    Parameters.includeNotTaggedApis
-  ],
   urlParameters: [
     Parameters.$host,
     Parameters.resourceGroupName,

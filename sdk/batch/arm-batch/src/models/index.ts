@@ -91,7 +91,7 @@ export interface EncryptionProperties {
 /** KeyVault configuration when using an encryption KeySource of Microsoft.KeyVault. */
 export interface KeyVaultProperties {
   /**
-   * Full path to the versioned secret. Example https://mykeyvault.vault.azure.net/keys/testkey/6e34a81fef704045975661e297a4c053. To be usable the following prerequisites must be met:
+   * Full path to the secret with or without version. Example https://mykeyvault.vault.azure.net/keys/testkey/6e34a81fef704045975661e297a4c053. or https://mykeyvault.vault.azure.net/keys/testkey. To be usable the following prerequisites must be met:
    *
    *  The Batch Account has a System Assigned identity
    *  The account identity has been granted Key/Get, Key/Unwrap and Key/Wrap permissions
@@ -151,7 +151,7 @@ export interface PrivateLinkServiceConnectionState {
    * Action required on the private connection state
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
-  readonly actionRequired?: string;
+  readonly actionsRequired?: string;
 }
 
 /** A definition of an Azure resource. */
@@ -582,7 +582,7 @@ export interface DataDisk {
 /** The configuration for container-enabled pools. */
 export interface ContainerConfiguration {
   /** The container technology to be used. */
-  type: "DockerCompatible";
+  type: ContainerType;
   /** This is the full image reference, as would be specified to "docker pull". An image will be sourced from the default Docker registry unless the image is fully qualified with an alternative registry. */
   containerImageNames?: string[];
   /** If any images must be downloaded from a private registry which requires credentials, then those credentials must be provided here. */
@@ -625,6 +625,8 @@ export interface VMExtension {
   typeHandlerVersion?: string;
   /** Indicates whether the extension should use a newer minor version if one is available at deployment time. Once deployed, however, the extension will not upgrade minor versions unless redeployed, even with this property set to true. */
   autoUpgradeMinorVersion?: boolean;
+  /** Indicates whether the extension should be automatically upgraded by the platform if there is a newer version of the extension available. */
+  enableAutomaticUpgrade?: boolean;
   /** JSON formatted public settings for the extension. */
   settings?: Record<string, unknown>;
   /** The extension can contain either protectedSettings or protectedSettingsFromKeyVault or no protected settings at all. */
@@ -698,11 +700,13 @@ export interface NetworkConfiguration {
   /** The virtual network must be in the same region and subscription as the Azure Batch account. The specified subnet should have enough free IP addresses to accommodate the number of nodes in the pool. If the subnet doesn't have enough free IP addresses, the pool will partially allocate compute nodes and a resize error will occur. The 'MicrosoftAzureBatch' service principal must have the 'Classic Virtual Machine Contributor' Role-Based Access Control (RBAC) role for the specified VNet. The specified subnet must allow communication from the Azure Batch service to be able to schedule tasks on the compute nodes. This can be verified by checking if the specified VNet has any associated Network Security Groups (NSG). If communication to the compute nodes in the specified subnet is denied by an NSG, then the Batch service will set the state of the compute nodes to unusable. If the specified VNet has any associated Network Security Groups (NSG), then a few reserved system ports must be enabled for inbound communication. For pools created with a virtual machine configuration, enable ports 29876 and 29877, as well as port 22 for Linux and port 3389 for Windows. For pools created with a cloud service configuration, enable ports 10100, 20100, and 30100. Also enable outbound connections to Azure Storage on port 443. For cloudServiceConfiguration pools, only 'classic' VNETs are supported. For more details see: https://docs.microsoft.com/en-us/azure/batch/batch-api-basics#virtual-network-vnet-and-firewall-configuration */
   subnetId?: string;
   /** The scope of dynamic vnet assignment. */
-  dynamicVNetAssignmentScope?: DynamicVNetAssignmentScope;
+  dynamicVnetAssignmentScope?: DynamicVNetAssignmentScope;
   /** Pool endpoint configuration is only supported on pools with the virtualMachineConfiguration property. */
   endpointConfiguration?: PoolEndpointConfiguration;
   /** This property is only supported on Pools with the virtualMachineConfiguration property. */
   publicIPAddressConfiguration?: PublicIPAddressConfiguration;
+  /** Accelerated networking enables single root I/O virtualization (SR-IOV) to a VM, which may lead to improved networking performance. For more details, see: https://learn.microsoft.com/azure/virtual-network/accelerated-networking-overview. */
+  enableAcceleratedNetworking?: boolean;
 }
 
 /** The endpoint configuration for a pool. */
@@ -755,7 +759,7 @@ export interface TaskSchedulingPolicy {
 
 /** Properties used to create a user on an Azure Batch node. */
 export interface UserAccount {
-  /** The name of the user account. */
+  /** The name of the user account. Names can contain any Unicode characters up to a maximum length of 20. */
   name: string;
   /** The password for the user account. */
   password: string;
@@ -863,7 +867,7 @@ export interface TaskContainerSettings {
   workingDirectory?: ContainerWorkingDirectory;
 }
 
-/** A reference to a certificate to be installed on compute nodes in a pool. This must exist inside the same account as the pool. */
+/** Warning: This object is deprecated and will be removed after February, 2024. Please use the [Azure KeyVault Extension](https://learn.microsoft.com/azure/batch/batch-certificate-migration-guide) instead. */
 export interface CertificateReference {
   /** The fully qualified ID of the certificate to install on the pool. This must be inside the same batch account as the pool. */
   id: string;
@@ -952,7 +956,7 @@ export interface NFSMountConfiguration {
 /** Information used to connect to a CIFS file system. */
 export interface CifsMountConfiguration {
   /** The user to use for authentication against the CIFS file system. */
-  username: string;
+  userName: string;
   /** The URI of the file system to mount. */
   source: string;
   /** All file systems are mounted relative to the Batch mounts directory, accessible via the AZ_BATCH_NODE_MOUNTS_DIR environment variable. */
@@ -1221,7 +1225,7 @@ export interface Pool extends ProxyResource {
   /** Using CloudServiceConfiguration specifies that the nodes should be creating using Azure Cloud Services (PaaS), while VirtualMachineConfiguration uses Azure Virtual Machines (IaaS). */
   deploymentConfiguration?: DeploymentConfiguration;
   /**
-   * The number of compute nodes currently in the pool.
+   * The number of dedicated compute nodes currently in the pool.
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
   readonly currentDedicatedNodes?: number;
@@ -1251,7 +1255,11 @@ export interface Pool extends ProxyResource {
   metadata?: MetadataItem[];
   /** In an PATCH (update) operation, this property can be set to an empty object to remove the start task from the pool. */
   startTask?: StartTask;
-  /** For Windows compute nodes, the Batch service installs the certificates to the specified certificate store and location. For Linux compute nodes, the certificates are stored in a directory inside the task working directory and an environment variable AZ_BATCH_CERTIFICATES_DIR is supplied to the task to query for this location. For certificates with visibility of 'remoteUser', a 'certs' directory is created in the user's home directory (e.g., /home/{user-name}/certs) and certificates are placed in that directory. */
+  /**
+   * For Windows compute nodes, the Batch service installs the certificates to the specified certificate store and location. For Linux compute nodes, the certificates are stored in a directory inside the task working directory and an environment variable AZ_BATCH_CERTIFICATES_DIR is supplied to the task to query for this location. For certificates with visibility of 'remoteUser', a 'certs' directory is created in the user's home directory (e.g., /home/{user-name}/certs) and certificates are placed in that directory.
+   *
+   * Warning: This property is deprecated and will be removed after February, 2024. Please use the [Azure KeyVault Extension](https://learn.microsoft.com/azure/batch/batch-certificate-migration-guide) instead.
+   */
   certificates?: CertificateReference[];
   /** Changes to application package references affect all new compute nodes joining the pool, but do not affect compute nodes that are already in the pool until they are rebooted or reimaged. There is a maximum of 10 application package references on any given pool. */
   applicationPackages?: ApplicationPackageReference[];
@@ -1264,6 +1272,13 @@ export interface Pool extends ProxyResource {
   readonly resizeOperationStatus?: ResizeOperationStatus;
   /** This supports Azure Files, NFS, CIFS/SMB, and Blobfuse. */
   mountConfiguration?: MountConfiguration[];
+  /** If omitted, the default value is Default. */
+  targetNodeCommunicationMode?: NodeCommunicationMode;
+  /**
+   * Determines how a pool communicates with the Batch service.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly currentNodeCommunicationMode?: NodeCommunicationMode;
 }
 
 /** Contains information about an Azure Batch account. */
@@ -1493,6 +1508,23 @@ export interface PoolStopResizeHeaders {
   eTag?: string;
 }
 
+/** Known values of {@link ContainerType} that the service accepts. */
+export enum KnownContainerType {
+  /** A Docker compatible container technology will be used to launch the containers. */
+  DockerCompatible = "DockerCompatible",
+  /** A CRI based technology will be used to launch the containers. */
+  CriCompatible = "CriCompatible"
+}
+
+/**
+ * Defines values for ContainerType. \
+ * {@link KnownContainerType} can be used interchangeably with ContainerType,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **DockerCompatible**: A Docker compatible container technology will be used to launch the containers. \
+ * **CriCompatible**: A CRI based technology will be used to launch the containers.
+ */
+export type ContainerType = string;
 /** Defines values for AutoStorageAuthenticationMode. */
 export type AutoStorageAuthenticationMode =
   | "StorageKeys"
@@ -1591,6 +1623,8 @@ export type ContainerWorkingDirectory =
 export type CertificateStoreLocation = "CurrentUser" | "LocalMachine";
 /** Defines values for CertificateVisibility. */
 export type CertificateVisibility = "StartTask" | "Task" | "RemoteUser";
+/** Defines values for NodeCommunicationMode. */
+export type NodeCommunicationMode = "Default" | "Classic" | "Simplified";
 /** Defines values for PoolIdentityType. */
 export type PoolIdentityType = "UserAssigned" | "None";
 
@@ -1750,10 +1784,7 @@ export type ApplicationPackageListResponse = ListApplicationPackagesResult;
 
 /** Optional parameters. */
 export interface ApplicationPackageListNextOptionalParams
-  extends coreClient.OperationOptions {
-  /** The maximum number of items to return in the response. */
-  maxresults?: number;
-}
+  extends coreClient.OperationOptions {}
 
 /** Contains response data for the listNext operation. */
 export type ApplicationPackageListNextResponse = ListApplicationPackagesResult;
@@ -1798,10 +1829,7 @@ export type ApplicationListResponse = ListApplicationsResult;
 
 /** Optional parameters. */
 export interface ApplicationListNextOptionalParams
-  extends coreClient.OperationOptions {
-  /** The maximum number of items to return in the response. */
-  maxresults?: number;
-}
+  extends coreClient.OperationOptions {}
 
 /** Contains response data for the listNext operation. */
 export type ApplicationListNextResponse = ListApplicationsResult;
@@ -1846,24 +1874,14 @@ export type LocationCheckNameAvailabilityResponse = CheckNameAvailabilityResult;
 
 /** Optional parameters. */
 export interface LocationListSupportedVirtualMachineSkusNextOptionalParams
-  extends coreClient.OperationOptions {
-  /** The maximum number of items to return in the response. */
-  maxresults?: number;
-  /** OData filter expression. Valid properties for filtering are "familyName". */
-  filter?: string;
-}
+  extends coreClient.OperationOptions {}
 
 /** Contains response data for the listSupportedVirtualMachineSkusNext operation. */
 export type LocationListSupportedVirtualMachineSkusNextResponse = SupportedSkusResult;
 
 /** Optional parameters. */
 export interface LocationListSupportedCloudServiceSkusNextOptionalParams
-  extends coreClient.OperationOptions {
-  /** The maximum number of items to return in the response. */
-  maxresults?: number;
-  /** OData filter expression. Valid properties for filtering are "familyName". */
-  filter?: string;
-}
+  extends coreClient.OperationOptions {}
 
 /** Contains response data for the listSupportedCloudServiceSkusNext operation. */
 export type LocationListSupportedCloudServiceSkusNextResponse = SupportedSkusResult;
@@ -1944,14 +1962,7 @@ export type CertificateCancelDeletionResponse = CertificateCancelDeletionHeaders
 
 /** Optional parameters. */
 export interface CertificateListByBatchAccountNextOptionalParams
-  extends coreClient.OperationOptions {
-  /** The maximum number of items to return in the response. */
-  maxresults?: number;
-  /** OData filter expression. Valid properties for filtering are "properties/provisioningState", "properties/provisioningStateTransitionTime", "name". */
-  filter?: string;
-  /** Comma separated list of properties that should be returned. e.g. "properties/provisioningState". Only top level properties under properties/ are valid for selection. */
-  select?: string;
-}
+  extends coreClient.OperationOptions {}
 
 /** Contains response data for the listByBatchAccountNext operation. */
 export type CertificateListByBatchAccountNextResponse = ListCertificatesResult;
@@ -1975,10 +1986,7 @@ export type PrivateLinkResourceGetResponse = PrivateLinkResource;
 
 /** Optional parameters. */
 export interface PrivateLinkResourceListByBatchAccountNextOptionalParams
-  extends coreClient.OperationOptions {
-  /** The maximum number of items to return in the response. */
-  maxresults?: number;
-}
+  extends coreClient.OperationOptions {}
 
 /** Contains response data for the listByBatchAccountNext operation. */
 export type PrivateLinkResourceListByBatchAccountNextResponse = ListPrivateLinkResourcesResult;
@@ -2028,10 +2036,7 @@ export type PrivateEndpointConnectionDeleteResponse = PrivateEndpointConnectionD
 
 /** Optional parameters. */
 export interface PrivateEndpointConnectionListByBatchAccountNextOptionalParams
-  extends coreClient.OperationOptions {
-  /** The maximum number of items to return in the response. */
-  maxresults?: number;
-}
+  extends coreClient.OperationOptions {}
 
 /** Contains response data for the listByBatchAccountNext operation. */
 export type PrivateEndpointConnectionListByBatchAccountNextResponse = ListPrivateEndpointConnectionsResult;
@@ -2114,28 +2119,7 @@ export type PoolStopResizeResponse = PoolStopResizeHeaders & Pool;
 
 /** Optional parameters. */
 export interface PoolListByBatchAccountNextOptionalParams
-  extends coreClient.OperationOptions {
-  /** The maximum number of items to return in the response. */
-  maxresults?: number;
-  /**
-   * OData filter expression. Valid properties for filtering are:
-   *
-   *  name
-   *  properties/allocationState
-   *  properties/allocationStateTransitionTime
-   *  properties/creationTime
-   *  properties/provisioningState
-   *  properties/provisioningStateTransitionTime
-   *  properties/lastModified
-   *  properties/vmSize
-   *  properties/interNodeCommunication
-   *  properties/scaleSettings/autoScale
-   *  properties/scaleSettings/fixedScale
-   */
-  filter?: string;
-  /** Comma separated list of properties that should be returned. e.g. "properties/provisioningState". Only top level properties under properties/ are valid for selection. */
-  select?: string;
-}
+  extends coreClient.OperationOptions {}
 
 /** Contains response data for the listByBatchAccountNext operation. */
 export type PoolListByBatchAccountNextResponse = ListPoolsResult;

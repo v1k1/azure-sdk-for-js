@@ -1,17 +1,70 @@
 # Release History
 
-## 12.11.1 (Unreleased)
+## 12.23.0-beta.1 (2023-11-01)
+
+### Other Changes
+
+- Migrated dependency on `@azure/core-http` to `@azure/core-rest-pipeline`.
+
+## 12.15.0 (2023-07-12)
 
 ### Features Added
 
-### Breaking Changes
+- Includes all features released in 12.15.0.
+
+## 12.15.0-beta.1 (2023-05-31)
+
+### Features Added
+
+- Added support for service version 2023-01-03.
+- Added access rights in each handles returned by ShareDirectoryClient.listHandles()/ShareFileClient.listHandles().
+
+## 12.14.0 (2023-04-13)
+
+### Features Added
+
+- Includes all features released in 12.14.0-beta.1.
+
+## 12.14.0-beta.1 (2023-03-29)
+
+### Features Added
+
+- Added support for service version 2022-11-02.
+- Added support OAuth.
+- Added support for Trailing Dot.
+
+## 12.13.0 (2023-02-23)
+
+### Features Added
+
+- Includes all features released in 12.13.0-beta.1.
+
+### Bugs Fixed
+
+- Fixed an issue of getting 403 error for blob name with './' or '../'
+
+## 12.13.0-beta.1 (2023-02-09)
+
+### Features Added
+
+- Added support for service version 2021-12-02.
+- Added support for invalid XML characters in file and directory names for ShareDirectoryClient.listFilesAndDirectories(), .listHandles(), and ShareFileClient.listHandles().
+
+### Other Changes
+
+- Update dependency `@azure/core-http` version to `^3.0.0`.
+
+## 12.12.0 (2022-10-14)
+
+### Features Added
+
+- Added support for service version 2021-10-04.
 
 ### Bugs Fixed
 
 - Fixed a hang issue in ShareFileClient.downloadToBuffer when encountering transient network failure.
 - Refined URL parsing method to let it be able to correctly parse URLs with account name in path.
-
-### Other Changes
+- Fixed an issue of escaping slashes in file or directory path unnecessarily.
 
 ## 12.11.0 (2022-07-08)
 

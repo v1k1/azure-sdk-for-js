@@ -10,16 +10,18 @@
 // Licensed under the MIT License.
 const { TrafficManagerManagementClient } = require("@azure/arm-trafficmanager");
 const { DefaultAzureCredential } = require("@azure/identity");
+require("dotenv").config();
 
 /**
  * This sample demonstrates how to Gets a Traffic Manager endpoint.
  *
  * @summary Gets a Traffic Manager endpoint.
- * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2018-08-01/examples/Endpoint-GET-External-WithGeoMapping.json
+ * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2022-04-01/examples/Endpoint-GET-External-WithGeoMapping.json
  */
 async function endpointGetExternalWithGeoMapping() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "azuresdkfornetautoresttrafficmanager2191";
+  const subscriptionId = process.env["TRAFFICMANAGER_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName =
+    process.env["TRAFFICMANAGER_RESOURCE_GROUP"] || "azuresdkfornetautoresttrafficmanager2191";
   const profileName = "azuresdkfornetautoresttrafficmanager8224";
   const endpointType = "ExternalEndpoints";
   const endpointName = "My%20external%20endpoint";
@@ -34,17 +36,16 @@ async function endpointGetExternalWithGeoMapping() {
   console.log(result);
 }
 
-endpointGetExternalWithGeoMapping().catch(console.error);
-
 /**
  * This sample demonstrates how to Gets a Traffic Manager endpoint.
  *
  * @summary Gets a Traffic Manager endpoint.
- * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2018-08-01/examples/Endpoint-GET-External-WithLocation.json
+ * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2022-04-01/examples/Endpoint-GET-External-WithLocation.json
  */
 async function endpointGetExternalWithLocation() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "azuresdkfornetautoresttrafficmanager1421";
+  const subscriptionId = process.env["TRAFFICMANAGER_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName =
+    process.env["TRAFFICMANAGER_RESOURCE_GROUP"] || "azuresdkfornetautoresttrafficmanager1421";
   const profileName = "azsmnet6386";
   const endpointType = "ExternalEndpoints";
   const endpointName = "azsmnet7187";
@@ -59,17 +60,16 @@ async function endpointGetExternalWithLocation() {
   console.log(result);
 }
 
-endpointGetExternalWithLocation().catch(console.error);
-
 /**
  * This sample demonstrates how to Gets a Traffic Manager endpoint.
  *
  * @summary Gets a Traffic Manager endpoint.
- * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2018-08-01/examples/Endpoint-GET-External-WithSubnetMapping.json
+ * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2022-04-01/examples/Endpoint-GET-External-WithSubnetMapping.json
  */
 async function endpointGetExternalWithSubnetMapping() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "azuresdkfornetautoresttrafficmanager2191";
+  const subscriptionId = process.env["TRAFFICMANAGER_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName =
+    process.env["TRAFFICMANAGER_RESOURCE_GROUP"] || "azuresdkfornetautoresttrafficmanager2191";
   const profileName = "azuresdkfornetautoresttrafficmanager8224";
   const endpointType = "ExternalEndpoints";
   const endpointName = "My%20external%20endpoint";
@@ -84,4 +84,10 @@ async function endpointGetExternalWithSubnetMapping() {
   console.log(result);
 }
 
-endpointGetExternalWithSubnetMapping().catch(console.error);
+async function main() {
+  endpointGetExternalWithGeoMapping();
+  endpointGetExternalWithLocation();
+  endpointGetExternalWithSubnetMapping();
+}
+
+main().catch(console.error);

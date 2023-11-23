@@ -3,10 +3,10 @@
 
 import { assert } from "@azure/test-utils";
 import { Context } from "mocha";
-import { Recorder, env, isRecordMode } from "@azure-tools/test-recorder";
+import { Recorder, env, isRecordMode, isLiveMode } from "@azure-tools/test-recorder";
 
 import { SecretClient } from "../../src";
-import { assertThrowsAbortError, getServiceVersion } from "./utils/common";
+import { getServiceVersion } from "./utils/common";
 import { testPollerProperties } from "./utils/recorderUtils";
 import { authenticate } from "./utils/testAuthentication";
 import TestClient from "./utils/testClient";
@@ -76,17 +76,6 @@ describe("Secret client - list secrets in various ways", () => {
     assert.equal(found, 2, "Unexpected number of secrets found by getSecrets.");
   });
 
-  // On playback mode, the tests happen too fast for the timeout to work
-  it("can get secret properties with requestOptions timeout", async function (this: Context) {
-    recorder.skip(undefined, "Timeout tests don't work on playback mode.");
-    const iter = client.listPropertiesOfSecrets({
-      requestOptions: { timeout: 1 },
-    });
-    await assertThrowsAbortError(async () => {
-      await iter.next();
-    });
-  });
-
   it("can list deleted secrets", async function (this: Context) {
     const secretName = testClient.formatName(
       `${secretPrefix}-${this!.test!.title}-${secretSuffix}`
@@ -110,20 +99,11 @@ describe("Secret client - list secrets in various ways", () => {
     assert.equal(found, 2, "Unexpected number of secrets found by getDeletedSecrets.");
   });
 
-  // On playback mode, the tests happen too fast for the timeout to work
-  it("can get the deleted secrets with requestOptions timeout", async function () {
-    recorder.skip(undefined, "Timeout tests don't work on playback mode.");
-
-    const iter = client.listDeletedSecrets({
-      requestOptions: { timeout: 1 },
-    });
-    await assertThrowsAbortError(async () => {
-      await iter.next();
-    });
-  });
-
   it("can retrieve all versions of a secret", async function (this: Context) {
-    recorder.skip(undefined, "Timeout tests don't work on playback mode.");
+    if (!isLiveMode()) {
+      this.skip();
+    }
+
     const secretName = testClient.formatName(
       `${secretPrefix}-${this!.test!.title}-${secretSuffix}`
     );
@@ -151,17 +131,6 @@ describe("Secret client - list secrets in various ways", () => {
     versions.sort(comp);
 
     assert.deepEqual(results, versions);
-  });
-
-  // On playback mode, the tests happen too fast for the timeout to work
-  it("can get versions of a secret with requestOptions timeout", async function () {
-    recorder.skip(undefined, "Timeout tests don't work on playback mode.");
-    const iter = client.listPropertiesOfSecretVersions("doesntmatter", {
-      requestOptions: { timeout: 1 },
-    });
-    await assertThrowsAbortError(async () => {
-      await iter.next();
-    });
   });
 
   it("can list secret versions (non existing)", async function (this: Context) {

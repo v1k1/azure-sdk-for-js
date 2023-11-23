@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
 
 import * as path from "path";
-import { MsalTestCleanup, msalNodeTestSetup } from "../../msalTestUtils";
+import { MsalTestCleanup, msalNodeTestSetup } from "../../node/msalNodeTestSetup";
 import { Recorder, delay, env, isPlaybackMode } from "@azure-tools/test-recorder";
 import { AbortController } from "@azure/abort-controller";
 import { ClientCertificateCredential } from "../../../src";
@@ -118,7 +118,7 @@ describe("ClientCertificateCredential", function () {
       error = e;
     }
     assert.equal(error?.name, "CredentialUnavailableError");
-    assert.ok(error?.message.includes("could not resolve endpoints"));
+    assert.ok(error?.message.includes("endpoints_resolution_error"));
   });
 
   it("supports tracing", async function (this: Context) {

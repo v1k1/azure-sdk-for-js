@@ -6,25 +6,30 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { LinkedServer } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { RedisManagementClient } from "../redisManagementClient";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   RedisLinkedServerWithProperties,
   LinkedServerListNextOptionalParams,
   LinkedServerListOptionalParams,
+  LinkedServerListResponse,
   RedisLinkedServerCreateParameters,
   LinkedServerCreateOptionalParams,
   LinkedServerCreateResponse,
   LinkedServerDeleteOptionalParams,
   LinkedServerGetOptionalParams,
   LinkedServerGetResponse,
-  LinkedServerListResponse,
   LinkedServerListNextResponse
 } from "../models";
 
@@ -43,7 +48,7 @@ export class LinkedServerImpl implements LinkedServer {
 
   /**
    * Gets the list of linked servers associated with this redis cache (requires Premium SKU).
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param name The name of the redis cache.
    * @param options The options parameters.
    */
@@ -60,8 +65,11 @@ export class LinkedServerImpl implements LinkedServer {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listPagingPage(resourceGroupName, name, options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listPagingPage(resourceGroupName, name, options, settings);
       }
     };
   }
@@ -69,11 +77,18 @@ export class LinkedServerImpl implements LinkedServer {
   private async *listPagingPage(
     resourceGroupName: string,
     name: string,
-    options?: LinkedServerListOptionalParams
+    options?: LinkedServerListOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<RedisLinkedServerWithProperties[]> {
-    let result = await this._list(resourceGroupName, name, options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: LinkedServerListResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._list(resourceGroupName, name, options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listNext(
         resourceGroupName,
@@ -82,7 +97,9 @@ export class LinkedServerImpl implements LinkedServer {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -102,7 +119,7 @@ export class LinkedServerImpl implements LinkedServer {
 
   /**
    * Adds a linked server to the Redis cache (requires Premium SKU).
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param name The name of the Redis cache.
    * @param linkedServerName The name of the linked server that is being added to the Redis cache.
    * @param parameters Parameters supplied to the Create Linked server operation.
@@ -115,8 +132,8 @@ export class LinkedServerImpl implements LinkedServer {
     parameters: RedisLinkedServerCreateParameters,
     options?: LinkedServerCreateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<LinkedServerCreateResponse>,
+    SimplePollerLike<
+      OperationState<LinkedServerCreateResponse>,
       LinkedServerCreateResponse
     >
   > {
@@ -126,7 +143,7 @@ export class LinkedServerImpl implements LinkedServer {
     ): Promise<LinkedServerCreateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -159,13 +176,16 @@ export class LinkedServerImpl implements LinkedServer {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, name, linkedServerName, parameters, options },
-      createOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, name, linkedServerName, parameters, options },
+      spec: createOperationSpec
+    });
+    const poller = await createHttpPoller<
+      LinkedServerCreateResponse,
+      OperationState<LinkedServerCreateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -174,7 +194,7 @@ export class LinkedServerImpl implements LinkedServer {
 
   /**
    * Adds a linked server to the Redis cache (requires Premium SKU).
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param name The name of the Redis cache.
    * @param linkedServerName The name of the linked server that is being added to the Redis cache.
    * @param parameters Parameters supplied to the Create Linked server operation.
@@ -199,7 +219,7 @@ export class LinkedServerImpl implements LinkedServer {
 
   /**
    * Deletes the linked server from a redis cache (requires Premium SKU).
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param name The name of the redis cache.
    * @param linkedServerName The name of the linked server that is being added to the Redis cache.
    * @param options The options parameters.
@@ -209,14 +229,14 @@ export class LinkedServerImpl implements LinkedServer {
     name: string,
     linkedServerName: string,
     options?: LinkedServerDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -249,13 +269,13 @@ export class LinkedServerImpl implements LinkedServer {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, name, linkedServerName, options },
-      deleteOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, name, linkedServerName, options },
+      spec: deleteOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -264,7 +284,7 @@ export class LinkedServerImpl implements LinkedServer {
 
   /**
    * Deletes the linked server from a redis cache (requires Premium SKU).
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param name The name of the redis cache.
    * @param linkedServerName The name of the linked server that is being added to the Redis cache.
    * @param options The options parameters.
@@ -286,7 +306,7 @@ export class LinkedServerImpl implements LinkedServer {
 
   /**
    * Gets the detailed information about a linked server of a redis cache (requires Premium SKU).
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param name The name of the redis cache.
    * @param linkedServerName The name of the linked server.
    * @param options The options parameters.
@@ -305,7 +325,7 @@ export class LinkedServerImpl implements LinkedServer {
 
   /**
    * Gets the list of linked servers associated with this redis cache (requires Premium SKU).
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param name The name of the redis cache.
    * @param options The options parameters.
    */
@@ -322,7 +342,7 @@ export class LinkedServerImpl implements LinkedServer {
 
   /**
    * ListNext
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param name The name of the redis cache.
    * @param nextLink The nextLink from the previous successful call to the List method.
    * @param options The options parameters.
@@ -456,7 +476,6 @@ const listNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.nextLink,

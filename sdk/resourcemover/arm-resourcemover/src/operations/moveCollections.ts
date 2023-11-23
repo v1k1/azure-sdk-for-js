@@ -6,20 +6,27 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { MoveCollections } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { ResourceMoverServiceAPI } from "../resourceMoverServiceAPI";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   MoveCollection,
   MoveCollectionsListMoveCollectionsBySubscriptionNextOptionalParams,
   MoveCollectionsListMoveCollectionsBySubscriptionOptionalParams,
+  MoveCollectionsListMoveCollectionsBySubscriptionResponse,
   MoveCollectionsListMoveCollectionsByResourceGroupNextOptionalParams,
   MoveCollectionsListMoveCollectionsByResourceGroupOptionalParams,
+  MoveCollectionsListMoveCollectionsByResourceGroupResponse,
   MoveCollectionsCreateOptionalParams,
   MoveCollectionsCreateResponse,
   MoveCollectionsUpdateOptionalParams,
@@ -40,8 +47,6 @@ import {
   MoveCollectionsResolveDependenciesResponse,
   MoveCollectionsBulkRemoveOptionalParams,
   MoveCollectionsBulkRemoveResponse,
-  MoveCollectionsListMoveCollectionsBySubscriptionResponse,
-  MoveCollectionsListMoveCollectionsByResourceGroupResponse,
   MoveCollectionsListRequiredForOptionalParams,
   MoveCollectionsListRequiredForResponse,
   MoveCollectionsListMoveCollectionsBySubscriptionNextResponse,
@@ -76,25 +81,40 @@ export class MoveCollectionsImpl implements MoveCollections {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listMoveCollectionsBySubscriptionPagingPage(options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listMoveCollectionsBySubscriptionPagingPage(
+          options,
+          settings
+        );
       }
     };
   }
 
   private async *listMoveCollectionsBySubscriptionPagingPage(
-    options?: MoveCollectionsListMoveCollectionsBySubscriptionOptionalParams
+    options?: MoveCollectionsListMoveCollectionsBySubscriptionOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<MoveCollection[]> {
-    let result = await this._listMoveCollectionsBySubscription(options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: MoveCollectionsListMoveCollectionsBySubscriptionResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listMoveCollectionsBySubscription(options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listMoveCollectionsBySubscriptionNext(
         continuationToken,
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -128,10 +148,14 @@ export class MoveCollectionsImpl implements MoveCollections {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listMoveCollectionsByResourceGroupPagingPage(
           resourceGroupName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -139,14 +163,21 @@ export class MoveCollectionsImpl implements MoveCollections {
 
   private async *listMoveCollectionsByResourceGroupPagingPage(
     resourceGroupName: string,
-    options?: MoveCollectionsListMoveCollectionsByResourceGroupOptionalParams
+    options?: MoveCollectionsListMoveCollectionsByResourceGroupOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<MoveCollection[]> {
-    let result = await this._listMoveCollectionsByResourceGroup(
-      resourceGroupName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: MoveCollectionsListMoveCollectionsByResourceGroupResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listMoveCollectionsByResourceGroup(
+        resourceGroupName,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listMoveCollectionsByResourceGroupNext(
         resourceGroupName,
@@ -154,7 +185,9 @@ export class MoveCollectionsImpl implements MoveCollections {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -215,8 +248,8 @@ export class MoveCollectionsImpl implements MoveCollections {
     moveCollectionName: string,
     options?: MoveCollectionsDeleteOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<MoveCollectionsDeleteResponse>,
+    SimplePollerLike<
+      OperationState<MoveCollectionsDeleteResponse>,
       MoveCollectionsDeleteResponse
     >
   > {
@@ -226,7 +259,7 @@ export class MoveCollectionsImpl implements MoveCollections {
     ): Promise<MoveCollectionsDeleteResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -259,15 +292,18 @@ export class MoveCollectionsImpl implements MoveCollections {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, moveCollectionName, options },
-      deleteOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, moveCollectionName, options },
+      spec: deleteOperationSpec
+    });
+    const poller = await createHttpPoller<
+      MoveCollectionsDeleteResponse,
+      OperationState<MoveCollectionsDeleteResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -323,8 +359,8 @@ export class MoveCollectionsImpl implements MoveCollections {
     moveCollectionName: string,
     options?: MoveCollectionsPrepareOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<MoveCollectionsPrepareResponse>,
+    SimplePollerLike<
+      OperationState<MoveCollectionsPrepareResponse>,
       MoveCollectionsPrepareResponse
     >
   > {
@@ -334,7 +370,7 @@ export class MoveCollectionsImpl implements MoveCollections {
     ): Promise<MoveCollectionsPrepareResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -367,15 +403,18 @@ export class MoveCollectionsImpl implements MoveCollections {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, moveCollectionName, options },
-      prepareOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, moveCollectionName, options },
+      spec: prepareOperationSpec
+    });
+    const poller = await createHttpPoller<
+      MoveCollectionsPrepareResponse,
+      OperationState<MoveCollectionsPrepareResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -417,8 +456,8 @@ export class MoveCollectionsImpl implements MoveCollections {
     moveCollectionName: string,
     options?: MoveCollectionsInitiateMoveOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<MoveCollectionsInitiateMoveResponse>,
+    SimplePollerLike<
+      OperationState<MoveCollectionsInitiateMoveResponse>,
       MoveCollectionsInitiateMoveResponse
     >
   > {
@@ -428,7 +467,7 @@ export class MoveCollectionsImpl implements MoveCollections {
     ): Promise<MoveCollectionsInitiateMoveResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -461,15 +500,18 @@ export class MoveCollectionsImpl implements MoveCollections {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, moveCollectionName, options },
-      initiateMoveOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, moveCollectionName, options },
+      spec: initiateMoveOperationSpec
+    });
+    const poller = await createHttpPoller<
+      MoveCollectionsInitiateMoveResponse,
+      OperationState<MoveCollectionsInitiateMoveResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -511,8 +553,8 @@ export class MoveCollectionsImpl implements MoveCollections {
     moveCollectionName: string,
     options?: MoveCollectionsCommitOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<MoveCollectionsCommitResponse>,
+    SimplePollerLike<
+      OperationState<MoveCollectionsCommitResponse>,
       MoveCollectionsCommitResponse
     >
   > {
@@ -522,7 +564,7 @@ export class MoveCollectionsImpl implements MoveCollections {
     ): Promise<MoveCollectionsCommitResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -555,15 +597,18 @@ export class MoveCollectionsImpl implements MoveCollections {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, moveCollectionName, options },
-      commitOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, moveCollectionName, options },
+      spec: commitOperationSpec
+    });
+    const poller = await createHttpPoller<
+      MoveCollectionsCommitResponse,
+      OperationState<MoveCollectionsCommitResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -605,8 +650,8 @@ export class MoveCollectionsImpl implements MoveCollections {
     moveCollectionName: string,
     options?: MoveCollectionsDiscardOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<MoveCollectionsDiscardResponse>,
+    SimplePollerLike<
+      OperationState<MoveCollectionsDiscardResponse>,
       MoveCollectionsDiscardResponse
     >
   > {
@@ -616,7 +661,7 @@ export class MoveCollectionsImpl implements MoveCollections {
     ): Promise<MoveCollectionsDiscardResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -649,15 +694,18 @@ export class MoveCollectionsImpl implements MoveCollections {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, moveCollectionName, options },
-      discardOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, moveCollectionName, options },
+      spec: discardOperationSpec
+    });
+    const poller = await createHttpPoller<
+      MoveCollectionsDiscardResponse,
+      OperationState<MoveCollectionsDiscardResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -696,8 +744,8 @@ export class MoveCollectionsImpl implements MoveCollections {
     moveCollectionName: string,
     options?: MoveCollectionsResolveDependenciesOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<MoveCollectionsResolveDependenciesResponse>,
+    SimplePollerLike<
+      OperationState<MoveCollectionsResolveDependenciesResponse>,
       MoveCollectionsResolveDependenciesResponse
     >
   > {
@@ -707,7 +755,7 @@ export class MoveCollectionsImpl implements MoveCollections {
     ): Promise<MoveCollectionsResolveDependenciesResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -740,15 +788,18 @@ export class MoveCollectionsImpl implements MoveCollections {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, moveCollectionName, options },
-      resolveDependenciesOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, moveCollectionName, options },
+      spec: resolveDependenciesOperationSpec
+    });
+    const poller = await createHttpPoller<
+      MoveCollectionsResolveDependenciesResponse,
+      OperationState<MoveCollectionsResolveDependenciesResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -786,8 +837,8 @@ export class MoveCollectionsImpl implements MoveCollections {
     moveCollectionName: string,
     options?: MoveCollectionsBulkRemoveOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<MoveCollectionsBulkRemoveResponse>,
+    SimplePollerLike<
+      OperationState<MoveCollectionsBulkRemoveResponse>,
       MoveCollectionsBulkRemoveResponse
     >
   > {
@@ -797,7 +848,7 @@ export class MoveCollectionsImpl implements MoveCollections {
     ): Promise<MoveCollectionsBulkRemoveResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -830,15 +881,18 @@ export class MoveCollectionsImpl implements MoveCollections {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, moveCollectionName, options },
-      bulkRemoveOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, moveCollectionName, options },
+      spec: bulkRemoveOperationSpec
+    });
+    const poller = await createHttpPoller<
+      MoveCollectionsBulkRemoveResponse,
+      OperationState<MoveCollectionsBulkRemoveResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -1320,7 +1374,6 @@ const listMoveCollectionsBySubscriptionNextOperationSpec: coreClient.OperationSp
       bodyMapper: Mappers.CloudError
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,
@@ -1340,7 +1393,6 @@ const listMoveCollectionsByResourceGroupNextOperationSpec: coreClient.OperationS
       bodyMapper: Mappers.CloudError
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,

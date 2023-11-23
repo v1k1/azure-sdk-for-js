@@ -6,7 +6,8 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { FirewallRules } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
@@ -40,7 +41,7 @@ export class FirewallRulesImpl implements FirewallRules {
 
   /**
    * Gets all firewall rules in the specified redis cache.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param cacheName The name of the Redis cache.
    * @param options The options parameters.
    */
@@ -57,8 +58,16 @@ export class FirewallRulesImpl implements FirewallRules {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listPagingPage(resourceGroupName, cacheName, options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listPagingPage(
+          resourceGroupName,
+          cacheName,
+          options,
+          settings
+        );
       }
     };
   }
@@ -66,11 +75,18 @@ export class FirewallRulesImpl implements FirewallRules {
   private async *listPagingPage(
     resourceGroupName: string,
     cacheName: string,
-    options?: FirewallRulesListOptionalParams
+    options?: FirewallRulesListOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<RedisFirewallRule[]> {
-    let result = await this._list(resourceGroupName, cacheName, options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: FirewallRulesListResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._list(resourceGroupName, cacheName, options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listNext(
         resourceGroupName,
@@ -79,7 +95,9 @@ export class FirewallRulesImpl implements FirewallRules {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -99,7 +117,7 @@ export class FirewallRulesImpl implements FirewallRules {
 
   /**
    * Gets all firewall rules in the specified redis cache.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param cacheName The name of the Redis cache.
    * @param options The options parameters.
    */
@@ -116,7 +134,7 @@ export class FirewallRulesImpl implements FirewallRules {
 
   /**
    * Create or update a redis cache firewall rule
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param cacheName The name of the Redis cache.
    * @param ruleName The name of the firewall rule.
    * @param parameters Parameters supplied to the create or update redis firewall rule operation.
@@ -137,7 +155,7 @@ export class FirewallRulesImpl implements FirewallRules {
 
   /**
    * Gets a single firewall rule in a specified redis cache.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param cacheName The name of the Redis cache.
    * @param ruleName The name of the firewall rule.
    * @param options The options parameters.
@@ -156,7 +174,7 @@ export class FirewallRulesImpl implements FirewallRules {
 
   /**
    * Deletes a single firewall rule in a specified redis cache.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param cacheName The name of the Redis cache.
    * @param ruleName The name of the firewall rule.
    * @param options The options parameters.
@@ -175,7 +193,7 @@ export class FirewallRulesImpl implements FirewallRules {
 
   /**
    * ListNext
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param cacheName The name of the Redis cache.
    * @param nextLink The nextLink from the previous successful call to the List method.
    * @param options The options parameters.
@@ -301,7 +319,6 @@ const listNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.nextLink,

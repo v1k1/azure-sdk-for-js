@@ -59,6 +59,7 @@ describe("Monitor test", () => {
   let storageId: string;
   let authorizationId: string;
   let workspaceId: string;
+  let azureMonitorWorkspaceName: string;
 
   beforeEach(async function (this: Context) {
     recorder = new Recorder(this.currentTest);
@@ -81,6 +82,7 @@ describe("Monitor test", () => {
     authorizationRuleName = "myauthorizationRulexxx";
     logProfileName = "mylogProfilexxx";
     diagnosticName = "mydiagnosticxxxx";
+    azureMonitorWorkspaceName = "myAzureMonitorWorkspace"
   });
 
   afterEach(async function () {
@@ -126,7 +128,7 @@ describe("Monitor test", () => {
         key1: "value1",
         key2: "value2",
       }
-    });
+    }, testPollingOptions);
     storageId = storageaccount.id || "";
 
     //namespaces.beginCreateOrUpdateAndWait
@@ -140,7 +142,7 @@ describe("Monitor test", () => {
         tag1: "value1",
         tag2: "value2",
       }
-    })
+    }, testPollingOptions)
     //namespaces.createOrUpdateAuthorizationRule
     const authorization = await eventhub_client.namespaces.createOrUpdateAuthorizationRule(resourceGroup, namespaceName, authorizationRuleName, { rights: ["Listen", "Send", "Manage"] });
     //eventHubs.createOrUpdate
@@ -173,7 +175,7 @@ describe("Monitor test", () => {
       tags: {
         tag1: "value1"
       }
-    })
+    }, testPollingOptions)
     workspaceId = workspace.id || "";
   });
 
@@ -252,11 +254,43 @@ describe("Monitor test", () => {
     assert.equal(resArray.length, 1);
   });
 
+  it("workspace create test", async function () {
+    const res = await client.azureMonitorWorkspaces.create(
+      resourceGroup,
+      azureMonitorWorkspaceName,
+      {
+        location
+      });
+    assert.equal(res.name, azureMonitorWorkspaceName);
+  });
+
+  it("workspace get test", async function () {
+    const res = await client.azureMonitorWorkspaces.get(resourceGroup, azureMonitorWorkspaceName);
+    assert.equal(res.name, azureMonitorWorkspaceName);
+  });
+
+  it("workspace list test", async function () {
+    const resArray = new Array();
+    for await (let item of client.azureMonitorWorkspaces.listByResourceGroup(resourceGroup)) {
+      resArray.push(item);
+    }
+    assert.equal(resArray.length, 1);
+  });
+
+  it("workspace delete test", async function () {
+    const resArray = new Array();
+    const res = await client.azureMonitorWorkspaces.delete(resourceGroup, azureMonitorWorkspaceName)
+    for await (let item of client.azureMonitorWorkspaces.listByResourceGroup(resourceGroup)) {
+      resArray.push(item);
+    }
+    assert.equal(resArray.length, 0);
+  });
+
   it("delete parameters for diagnosticSettings", async function () {
     const workflowDlete = await logic_client.workflows.delete(resourceGroup, workflowName);
     const storageDelete = await storage_client.storageAccounts.delete(resourceGroup, storageAccountName);
-    const namespaceDelete = await eventhub_client.namespaces.beginDeleteAndWait(resourceGroup, namespaceName);
-    const workspaceDelete = await op_client.workspaces.beginDeleteAndWait(resourceGroup, workspaceName);
+    const namespaceDelete = await eventhub_client.namespaces.beginDeleteAndWait(resourceGroup, namespaceName, testPollingOptions);
+    const workspaceDelete = await op_client.workspaces.beginDeleteAndWait(resourceGroup, workspaceName, testPollingOptions);
   });
 
   it("logProfiles delete test", async function () {

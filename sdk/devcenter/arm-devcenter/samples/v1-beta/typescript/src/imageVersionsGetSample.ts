@@ -10,20 +10,25 @@
 // Licensed under the MIT License.
 import { DevCenterClient } from "@azure/arm-devcenter";
 import { DefaultAzureCredential } from "@azure/identity";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 /**
  * This sample demonstrates how to Gets an image version.
  *
  * @summary Gets an image version.
- * x-ms-original-file: specification/devcenter/resource-manager/Microsoft.DevCenter/preview/2022-09-01-preview/examples/ImageVersions_Get.json
+ * x-ms-original-file: specification/devcenter/resource-manager/Microsoft.DevCenter/preview/2023-10-01-preview/examples/ImageVersions_Get.json
  */
 async function versionsGet() {
-  const subscriptionId = "{subscriptionId}";
-  const resourceGroupName = "rg1";
+  const subscriptionId =
+    process.env["DEVCENTER_SUBSCRIPTION_ID"] ||
+    "0ac520ee-14c0-480f-b6c9-0a90c58ffff";
+  const resourceGroupName = process.env["DEVCENTER_RESOURCE_GROUP"] || "rg1";
   const devCenterName = "Contoso";
   const galleryName = "DefaultDevGallery";
   const imageName = "Win11";
-  const versionName = "{versionName}";
+  const versionName = "1.0.0";
   const credential = new DefaultAzureCredential();
   const client = new DevCenterClient(credential, subscriptionId);
   const result = await client.imageVersions.get(
@@ -36,4 +41,8 @@ async function versionsGet() {
   console.log(result);
 }
 
-versionsGet().catch(console.error);
+async function main() {
+  versionsGet();
+}
+
+main().catch(console.error);

@@ -1,6 +1,6 @@
 # Release History
 
-## 3.1.0-beta.2 (Unreleased)
+## 3.1.0-beta.3 (Unreleased)
 
 ### Features Added
 
@@ -10,13 +10,22 @@
 
 ### Other Changes
 
-## 3.1.0-beta.1 (2022-04-26)
+## 3.1.0-beta.2 (2022-11-25)
     
 **Features**
 
+  - Added Interface HybridComputePrivateLinkScope
+  - Added Interface Machine
+  - Added Interface MachineExtension
+  - Added Interface MachineExtensionUpdate
+  - Added Interface MachineUpdate
   - Added Interface OSProfileLinuxConfiguration
   - Added Interface OSProfileWindowsConfiguration
+  - Added Interface PrivateEndpointConnection
   - Added Interface PrivateEndpointConnectionDataModel
+  - Added Interface PrivateLinkResource
+  - Added Interface ProxyResource
+  - Added Interface TrackedResource
   - Interface HybridComputePrivateLinkScopeProperties has a new optional parameter privateEndpointConnections
   - Interface MachineProperties has a new optional parameter mssqlDiscovered
   - Interface MachineProperties has a new optional parameter osType
@@ -33,4 +42,4 @@ To understand the detail of the change, please refer to [Changelog](https://aka.
 
 To migrate the existing applications to the latest version, please refer to [Migration Guide](https://aka.ms/js-track2-migration-guide).
 
-To learn more, please refer to our documentation [Quick Start](https://aka.ms/js-track2-quickstart).
+To learn more, please refer to our documentation [Quick Start](https://aka.ms/azsdk/js/mgmt/quickstart ).

@@ -6,30 +6,38 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { ApplicationDefinitions } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { ApplicationClient } from "../applicationClient";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
 import {
   ApplicationDefinition,
   ApplicationDefinitionsListByResourceGroupNextOptionalParams,
   ApplicationDefinitionsListByResourceGroupOptionalParams,
+  ApplicationDefinitionsListByResourceGroupResponse,
+  ApplicationDefinitionsListBySubscriptionNextOptionalParams,
+  ApplicationDefinitionsListBySubscriptionOptionalParams,
+  ApplicationDefinitionsListBySubscriptionResponse,
   ApplicationDefinitionsGetOptionalParams,
   ApplicationDefinitionsGetResponse,
   ApplicationDefinitionsDeleteOptionalParams,
   ApplicationDefinitionsCreateOrUpdateOptionalParams,
   ApplicationDefinitionsCreateOrUpdateResponse,
-  ApplicationDefinitionsListByResourceGroupResponse,
+  ApplicationDefinitionPatchable,
+  ApplicationDefinitionsUpdateOptionalParams,
+  ApplicationDefinitionsUpdateResponse,
   ApplicationDefinitionsGetByIdOptionalParams,
   ApplicationDefinitionsGetByIdResponse,
   ApplicationDefinitionsDeleteByIdOptionalParams,
   ApplicationDefinitionsCreateOrUpdateByIdOptionalParams,
   ApplicationDefinitionsCreateOrUpdateByIdResponse,
-  ApplicationDefinitionsListByResourceGroupNextResponse
+  ApplicationDefinitionsUpdateByIdOptionalParams,
+  ApplicationDefinitionsUpdateByIdResponse,
+  ApplicationDefinitionsListByResourceGroupNextResponse,
+  ApplicationDefinitionsListBySubscriptionNextResponse
 } from "../models";
 
 /// <reference lib="esnext.asynciterable" />
@@ -62,19 +70,33 @@ export class ApplicationDefinitionsImpl implements ApplicationDefinitions {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listByResourceGroupPagingPage(resourceGroupName, options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listByResourceGroupPagingPage(
+          resourceGroupName,
+          options,
+          settings
+        );
       }
     };
   }
 
   private async *listByResourceGroupPagingPage(
     resourceGroupName: string,
-    options?: ApplicationDefinitionsListByResourceGroupOptionalParams
+    options?: ApplicationDefinitionsListByResourceGroupOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<ApplicationDefinition[]> {
-    let result = await this._listByResourceGroup(resourceGroupName, options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: ApplicationDefinitionsListByResourceGroupResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listByResourceGroup(resourceGroupName, options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listByResourceGroupNext(
         resourceGroupName,
@@ -82,7 +104,9 @@ export class ApplicationDefinitionsImpl implements ApplicationDefinitions {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -94,6 +118,60 @@ export class ApplicationDefinitionsImpl implements ApplicationDefinitions {
       resourceGroupName,
       options
     )) {
+      yield* page;
+    }
+  }
+
+  /**
+   * Lists all the application definitions within a subscription.
+   * @param options The options parameters.
+   */
+  public listBySubscription(
+    options?: ApplicationDefinitionsListBySubscriptionOptionalParams
+  ): PagedAsyncIterableIterator<ApplicationDefinition> {
+    const iter = this.listBySubscriptionPagingAll(options);
+    return {
+      next() {
+        return iter.next();
+      },
+      [Symbol.asyncIterator]() {
+        return this;
+      },
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listBySubscriptionPagingPage(options, settings);
+      }
+    };
+  }
+
+  private async *listBySubscriptionPagingPage(
+    options?: ApplicationDefinitionsListBySubscriptionOptionalParams,
+    settings?: PageSettings
+  ): AsyncIterableIterator<ApplicationDefinition[]> {
+    let result: ApplicationDefinitionsListBySubscriptionResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listBySubscription(options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
+    while (continuationToken) {
+      result = await this._listBySubscriptionNext(continuationToken, options);
+      continuationToken = result.nextLink;
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
+  }
+
+  private async *listBySubscriptionPagingAll(
+    options?: ApplicationDefinitionsListBySubscriptionOptionalParams
+  ): AsyncIterableIterator<ApplicationDefinition> {
+    for await (const page of this.listBySubscriptionPagingPage(options)) {
       yield* page;
     }
   }
@@ -118,175 +196,56 @@ export class ApplicationDefinitionsImpl implements ApplicationDefinitions {
   /**
    * Deletes the managed application definition.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
-   * @param applicationDefinitionName The name of the managed application definition to delete.
+   * @param applicationDefinitionName The name of the managed application definition.
    * @param options The options parameters.
    */
-  async beginDelete(
-    resourceGroupName: string,
-    applicationDefinitionName: string,
-    options?: ApplicationDefinitionsDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
-    const directSendOperation = async (
-      args: coreClient.OperationArguments,
-      spec: coreClient.OperationSpec
-    ): Promise<void> => {
-      return this.client.sendOperationRequest(args, spec);
-    };
-    const sendOperation = async (
-      args: coreClient.OperationArguments,
-      spec: coreClient.OperationSpec
-    ) => {
-      let currentRawResponse:
-        | coreClient.FullOperationResponse
-        | undefined = undefined;
-      const providedCallback = args.options?.onResponse;
-      const callback: coreClient.RawResponseCallback = (
-        rawResponse: coreClient.FullOperationResponse,
-        flatResponse: unknown
-      ) => {
-        currentRawResponse = rawResponse;
-        providedCallback?.(rawResponse, flatResponse);
-      };
-      const updatedArgs = {
-        ...args,
-        options: {
-          ...args.options,
-          onResponse: callback
-        }
-      };
-      const flatResponse = await directSendOperation(updatedArgs, spec);
-      return {
-        flatResponse,
-        rawResponse: {
-          statusCode: currentRawResponse!.status,
-          body: currentRawResponse!.parsedBody,
-          headers: currentRawResponse!.headers.toJSON()
-        }
-      };
-    };
-
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, applicationDefinitionName, options },
-      deleteOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
-      intervalInMs: options?.updateIntervalInMs
-    });
-    await poller.poll();
-    return poller;
-  }
-
-  /**
-   * Deletes the managed application definition.
-   * @param resourceGroupName The name of the resource group. The name is case insensitive.
-   * @param applicationDefinitionName The name of the managed application definition to delete.
-   * @param options The options parameters.
-   */
-  async beginDeleteAndWait(
+  delete(
     resourceGroupName: string,
     applicationDefinitionName: string,
     options?: ApplicationDefinitionsDeleteOptionalParams
   ): Promise<void> {
-    const poller = await this.beginDelete(
-      resourceGroupName,
-      applicationDefinitionName,
-      options
+    return this.client.sendOperationRequest(
+      { resourceGroupName, applicationDefinitionName, options },
+      deleteOperationSpec
     );
-    return poller.pollUntilDone();
   }
 
   /**
-   * Creates a new managed application definition.
+   * Creates or updates a managed application definition.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param applicationDefinitionName The name of the managed application definition.
    * @param parameters Parameters supplied to the create or update an managed application definition.
    * @param options The options parameters.
    */
-  async beginCreateOrUpdate(
-    resourceGroupName: string,
-    applicationDefinitionName: string,
-    parameters: ApplicationDefinition,
-    options?: ApplicationDefinitionsCreateOrUpdateOptionalParams
-  ): Promise<
-    PollerLike<
-      PollOperationState<ApplicationDefinitionsCreateOrUpdateResponse>,
-      ApplicationDefinitionsCreateOrUpdateResponse
-    >
-  > {
-    const directSendOperation = async (
-      args: coreClient.OperationArguments,
-      spec: coreClient.OperationSpec
-    ): Promise<ApplicationDefinitionsCreateOrUpdateResponse> => {
-      return this.client.sendOperationRequest(args, spec);
-    };
-    const sendOperation = async (
-      args: coreClient.OperationArguments,
-      spec: coreClient.OperationSpec
-    ) => {
-      let currentRawResponse:
-        | coreClient.FullOperationResponse
-        | undefined = undefined;
-      const providedCallback = args.options?.onResponse;
-      const callback: coreClient.RawResponseCallback = (
-        rawResponse: coreClient.FullOperationResponse,
-        flatResponse: unknown
-      ) => {
-        currentRawResponse = rawResponse;
-        providedCallback?.(rawResponse, flatResponse);
-      };
-      const updatedArgs = {
-        ...args,
-        options: {
-          ...args.options,
-          onResponse: callback
-        }
-      };
-      const flatResponse = await directSendOperation(updatedArgs, spec);
-      return {
-        flatResponse,
-        rawResponse: {
-          statusCode: currentRawResponse!.status,
-          body: currentRawResponse!.parsedBody,
-          headers: currentRawResponse!.headers.toJSON()
-        }
-      };
-    };
-
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, applicationDefinitionName, parameters, options },
-      createOrUpdateOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
-      intervalInMs: options?.updateIntervalInMs
-    });
-    await poller.poll();
-    return poller;
-  }
-
-  /**
-   * Creates a new managed application definition.
-   * @param resourceGroupName The name of the resource group. The name is case insensitive.
-   * @param applicationDefinitionName The name of the managed application definition.
-   * @param parameters Parameters supplied to the create or update an managed application definition.
-   * @param options The options parameters.
-   */
-  async beginCreateOrUpdateAndWait(
+  createOrUpdate(
     resourceGroupName: string,
     applicationDefinitionName: string,
     parameters: ApplicationDefinition,
     options?: ApplicationDefinitionsCreateOrUpdateOptionalParams
   ): Promise<ApplicationDefinitionsCreateOrUpdateResponse> {
-    const poller = await this.beginCreateOrUpdate(
-      resourceGroupName,
-      applicationDefinitionName,
-      parameters,
-      options
+    return this.client.sendOperationRequest(
+      { resourceGroupName, applicationDefinitionName, parameters, options },
+      createOrUpdateOperationSpec
     );
-    return poller.pollUntilDone();
+  }
+
+  /**
+   * Updates the managed application definition.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
+   * @param applicationDefinitionName The name of the managed application definition.
+   * @param parameters Parameters supplied to the update a managed application definition.
+   * @param options The options parameters.
+   */
+  update(
+    resourceGroupName: string,
+    applicationDefinitionName: string,
+    parameters: ApplicationDefinitionPatchable,
+    options?: ApplicationDefinitionsUpdateOptionalParams
+  ): Promise<ApplicationDefinitionsUpdateResponse> {
+    return this.client.sendOperationRequest(
+      { resourceGroupName, applicationDefinitionName, parameters, options },
+      updateOperationSpec
+    );
   }
 
   /**
@@ -301,6 +260,19 @@ export class ApplicationDefinitionsImpl implements ApplicationDefinitions {
     return this.client.sendOperationRequest(
       { resourceGroupName, options },
       listByResourceGroupOperationSpec
+    );
+  }
+
+  /**
+   * Lists all the application definitions within a subscription.
+   * @param options The options parameters.
+   */
+  private _listBySubscription(
+    options?: ApplicationDefinitionsListBySubscriptionOptionalParams
+  ): Promise<ApplicationDefinitionsListBySubscriptionResponse> {
+    return this.client.sendOperationRequest(
+      { options },
+      listBySubscriptionOperationSpec
     );
   }
 
@@ -327,172 +299,53 @@ export class ApplicationDefinitionsImpl implements ApplicationDefinitions {
    * @param applicationDefinitionName The name of the managed application definition.
    * @param options The options parameters.
    */
-  async beginDeleteById(
-    resourceGroupName: string,
-    applicationDefinitionName: string,
-    options?: ApplicationDefinitionsDeleteByIdOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
-    const directSendOperation = async (
-      args: coreClient.OperationArguments,
-      spec: coreClient.OperationSpec
-    ): Promise<void> => {
-      return this.client.sendOperationRequest(args, spec);
-    };
-    const sendOperation = async (
-      args: coreClient.OperationArguments,
-      spec: coreClient.OperationSpec
-    ) => {
-      let currentRawResponse:
-        | coreClient.FullOperationResponse
-        | undefined = undefined;
-      const providedCallback = args.options?.onResponse;
-      const callback: coreClient.RawResponseCallback = (
-        rawResponse: coreClient.FullOperationResponse,
-        flatResponse: unknown
-      ) => {
-        currentRawResponse = rawResponse;
-        providedCallback?.(rawResponse, flatResponse);
-      };
-      const updatedArgs = {
-        ...args,
-        options: {
-          ...args.options,
-          onResponse: callback
-        }
-      };
-      const flatResponse = await directSendOperation(updatedArgs, spec);
-      return {
-        flatResponse,
-        rawResponse: {
-          statusCode: currentRawResponse!.status,
-          body: currentRawResponse!.parsedBody,
-          headers: currentRawResponse!.headers.toJSON()
-        }
-      };
-    };
-
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, applicationDefinitionName, options },
-      deleteByIdOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
-      intervalInMs: options?.updateIntervalInMs
-    });
-    await poller.poll();
-    return poller;
-  }
-
-  /**
-   * Deletes the managed application definition.
-   * @param resourceGroupName The name of the resource group. The name is case insensitive.
-   * @param applicationDefinitionName The name of the managed application definition.
-   * @param options The options parameters.
-   */
-  async beginDeleteByIdAndWait(
+  deleteById(
     resourceGroupName: string,
     applicationDefinitionName: string,
     options?: ApplicationDefinitionsDeleteByIdOptionalParams
   ): Promise<void> {
-    const poller = await this.beginDeleteById(
-      resourceGroupName,
-      applicationDefinitionName,
-      options
+    return this.client.sendOperationRequest(
+      { resourceGroupName, applicationDefinitionName, options },
+      deleteByIdOperationSpec
     );
-    return poller.pollUntilDone();
   }
 
   /**
-   * Creates a new managed application definition.
+   * Creates or updates a managed application definition.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param applicationDefinitionName The name of the managed application definition.
    * @param parameters Parameters supplied to the create or update a managed application definition.
    * @param options The options parameters.
    */
-  async beginCreateOrUpdateById(
-    resourceGroupName: string,
-    applicationDefinitionName: string,
-    parameters: ApplicationDefinition,
-    options?: ApplicationDefinitionsCreateOrUpdateByIdOptionalParams
-  ): Promise<
-    PollerLike<
-      PollOperationState<ApplicationDefinitionsCreateOrUpdateByIdResponse>,
-      ApplicationDefinitionsCreateOrUpdateByIdResponse
-    >
-  > {
-    const directSendOperation = async (
-      args: coreClient.OperationArguments,
-      spec: coreClient.OperationSpec
-    ): Promise<ApplicationDefinitionsCreateOrUpdateByIdResponse> => {
-      return this.client.sendOperationRequest(args, spec);
-    };
-    const sendOperation = async (
-      args: coreClient.OperationArguments,
-      spec: coreClient.OperationSpec
-    ) => {
-      let currentRawResponse:
-        | coreClient.FullOperationResponse
-        | undefined = undefined;
-      const providedCallback = args.options?.onResponse;
-      const callback: coreClient.RawResponseCallback = (
-        rawResponse: coreClient.FullOperationResponse,
-        flatResponse: unknown
-      ) => {
-        currentRawResponse = rawResponse;
-        providedCallback?.(rawResponse, flatResponse);
-      };
-      const updatedArgs = {
-        ...args,
-        options: {
-          ...args.options,
-          onResponse: callback
-        }
-      };
-      const flatResponse = await directSendOperation(updatedArgs, spec);
-      return {
-        flatResponse,
-        rawResponse: {
-          statusCode: currentRawResponse!.status,
-          body: currentRawResponse!.parsedBody,
-          headers: currentRawResponse!.headers.toJSON()
-        }
-      };
-    };
-
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, applicationDefinitionName, parameters, options },
-      createOrUpdateByIdOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
-      intervalInMs: options?.updateIntervalInMs
-    });
-    await poller.poll();
-    return poller;
-  }
-
-  /**
-   * Creates a new managed application definition.
-   * @param resourceGroupName The name of the resource group. The name is case insensitive.
-   * @param applicationDefinitionName The name of the managed application definition.
-   * @param parameters Parameters supplied to the create or update a managed application definition.
-   * @param options The options parameters.
-   */
-  async beginCreateOrUpdateByIdAndWait(
+  createOrUpdateById(
     resourceGroupName: string,
     applicationDefinitionName: string,
     parameters: ApplicationDefinition,
     options?: ApplicationDefinitionsCreateOrUpdateByIdOptionalParams
   ): Promise<ApplicationDefinitionsCreateOrUpdateByIdResponse> {
-    const poller = await this.beginCreateOrUpdateById(
-      resourceGroupName,
-      applicationDefinitionName,
-      parameters,
-      options
+    return this.client.sendOperationRequest(
+      { resourceGroupName, applicationDefinitionName, parameters, options },
+      createOrUpdateByIdOperationSpec
     );
-    return poller.pollUntilDone();
+  }
+
+  /**
+   * Updates the managed application definition.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
+   * @param applicationDefinitionName The name of the managed application definition.
+   * @param parameters Parameters supplied to the update a managed application definition.
+   * @param options The options parameters.
+   */
+  updateById(
+    resourceGroupName: string,
+    applicationDefinitionName: string,
+    parameters: ApplicationDefinitionPatchable,
+    options?: ApplicationDefinitionsUpdateByIdOptionalParams
+  ): Promise<ApplicationDefinitionsUpdateByIdResponse> {
+    return this.client.sendOperationRequest(
+      { resourceGroupName, applicationDefinitionName, parameters, options },
+      updateByIdOperationSpec
+    );
   }
 
   /**
@@ -509,6 +362,21 @@ export class ApplicationDefinitionsImpl implements ApplicationDefinitions {
     return this.client.sendOperationRequest(
       { resourceGroupName, nextLink, options },
       listByResourceGroupNextOperationSpec
+    );
+  }
+
+  /**
+   * ListBySubscriptionNext
+   * @param nextLink The nextLink from the previous successful call to the ListBySubscription method.
+   * @param options The options parameters.
+   */
+  private _listBySubscriptionNext(
+    nextLink: string,
+    options?: ApplicationDefinitionsListBySubscriptionNextOptionalParams
+  ): Promise<ApplicationDefinitionsListBySubscriptionNextResponse> {
+    return this.client.sendOperationRequest(
+      { nextLink, options },
+      listBySubscriptionNextOperationSpec
     );
   }
 }
@@ -531,8 +399,8 @@ const getOperationSpec: coreClient.OperationSpec = {
   queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
-    Parameters.resourceGroupName,
     Parameters.subscriptionId,
+    Parameters.resourceGroupName,
     Parameters.applicationDefinitionName
   ],
   headerParameters: [Parameters.accept],
@@ -544,8 +412,6 @@ const deleteOperationSpec: coreClient.OperationSpec = {
   httpMethod: "DELETE",
   responses: {
     200: {},
-    201: {},
-    202: {},
     204: {},
     default: {
       bodyMapper: Mappers.ErrorResponse
@@ -554,8 +420,8 @@ const deleteOperationSpec: coreClient.OperationSpec = {
   queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
-    Parameters.resourceGroupName,
     Parameters.subscriptionId,
+    Parameters.resourceGroupName,
     Parameters.applicationDefinitionName
   ],
   headerParameters: [Parameters.accept],
@@ -572,22 +438,40 @@ const createOrUpdateOperationSpec: coreClient.OperationSpec = {
     201: {
       bodyMapper: Mappers.ApplicationDefinition
     },
-    202: {
-      bodyMapper: Mappers.ApplicationDefinition
-    },
-    204: {
+    default: {
+      bodyMapper: Mappers.ErrorResponse
+    }
+  },
+  requestBody: Parameters.parameters4,
+  queryParameters: [Parameters.apiVersion],
+  urlParameters: [
+    Parameters.$host,
+    Parameters.subscriptionId,
+    Parameters.resourceGroupName,
+    Parameters.applicationDefinitionName
+  ],
+  headerParameters: [Parameters.accept, Parameters.contentType],
+  mediaType: "json",
+  serializer
+};
+const updateOperationSpec: coreClient.OperationSpec = {
+  path:
+    "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Solutions/applicationDefinitions/{applicationDefinitionName}",
+  httpMethod: "PATCH",
+  responses: {
+    200: {
       bodyMapper: Mappers.ApplicationDefinition
     },
     default: {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  requestBody: Parameters.parameters3,
+  requestBody: Parameters.parameters5,
   queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
-    Parameters.resourceGroupName,
     Parameters.subscriptionId,
+    Parameters.resourceGroupName,
     Parameters.applicationDefinitionName
   ],
   headerParameters: [Parameters.accept, Parameters.contentType],
@@ -609,9 +493,26 @@ const listByResourceGroupOperationSpec: coreClient.OperationSpec = {
   queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
-    Parameters.resourceGroupName,
-    Parameters.subscriptionId
+    Parameters.subscriptionId,
+    Parameters.resourceGroupName
   ],
+  headerParameters: [Parameters.accept],
+  serializer
+};
+const listBySubscriptionOperationSpec: coreClient.OperationSpec = {
+  path:
+    "/subscriptions/{subscriptionId}/providers/Microsoft.Solutions/applicationDefinitions",
+  httpMethod: "GET",
+  responses: {
+    200: {
+      bodyMapper: Mappers.ApplicationDefinitionListResult
+    },
+    default: {
+      bodyMapper: Mappers.ErrorResponse
+    }
+  },
+  queryParameters: [Parameters.apiVersion],
+  urlParameters: [Parameters.$host, Parameters.subscriptionId],
   headerParameters: [Parameters.accept],
   serializer
 };
@@ -631,9 +532,9 @@ const getByIdOperationSpec: coreClient.OperationSpec = {
   queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
-    Parameters.resourceGroupName,
     Parameters.subscriptionId,
-    Parameters.applicationDefinitionName
+    Parameters.applicationDefinitionName,
+    Parameters.resourceGroupName1
   ],
   headerParameters: [Parameters.accept],
   serializer
@@ -644,8 +545,6 @@ const deleteByIdOperationSpec: coreClient.OperationSpec = {
   httpMethod: "DELETE",
   responses: {
     200: {},
-    201: {},
-    202: {},
     204: {},
     default: {
       bodyMapper: Mappers.ErrorResponse
@@ -654,9 +553,9 @@ const deleteByIdOperationSpec: coreClient.OperationSpec = {
   queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
-    Parameters.resourceGroupName,
     Parameters.subscriptionId,
-    Parameters.applicationDefinitionName
+    Parameters.applicationDefinitionName,
+    Parameters.resourceGroupName1
   ],
   headerParameters: [Parameters.accept],
   serializer
@@ -672,22 +571,40 @@ const createOrUpdateByIdOperationSpec: coreClient.OperationSpec = {
     201: {
       bodyMapper: Mappers.ApplicationDefinition
     },
-    202: {
-      bodyMapper: Mappers.ApplicationDefinition
-    },
-    204: {
+    default: {
+      bodyMapper: Mappers.ErrorResponse
+    }
+  },
+  requestBody: Parameters.parameters4,
+  queryParameters: [Parameters.apiVersion],
+  urlParameters: [
+    Parameters.$host,
+    Parameters.subscriptionId,
+    Parameters.applicationDefinitionName,
+    Parameters.resourceGroupName1
+  ],
+  headerParameters: [Parameters.accept, Parameters.contentType],
+  mediaType: "json",
+  serializer
+};
+const updateByIdOperationSpec: coreClient.OperationSpec = {
+  path:
+    "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Solutions/applicationDefinitions/{applicationDefinitionName}",
+  httpMethod: "PATCH",
+  responses: {
+    200: {
       bodyMapper: Mappers.ApplicationDefinition
     },
     default: {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  requestBody: Parameters.parameters3,
+  requestBody: Parameters.parameters5,
   queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
-    Parameters.resourceGroupName,
     Parameters.subscriptionId,
+    Parameters.resourceGroupName,
     Parameters.applicationDefinitionName
   ],
   headerParameters: [Parameters.accept, Parameters.contentType],
@@ -705,11 +622,29 @@ const listByResourceGroupNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.nextLink,
-    Parameters.resourceGroupName,
+    Parameters.subscriptionId,
+    Parameters.resourceGroupName
+  ],
+  headerParameters: [Parameters.accept],
+  serializer
+};
+const listBySubscriptionNextOperationSpec: coreClient.OperationSpec = {
+  path: "{nextLink}",
+  httpMethod: "GET",
+  responses: {
+    200: {
+      bodyMapper: Mappers.ApplicationDefinitionListResult
+    },
+    default: {
+      bodyMapper: Mappers.ErrorResponse
+    }
+  },
+  urlParameters: [
+    Parameters.$host,
+    Parameters.nextLink,
     Parameters.subscriptionId
   ],
   headerParameters: [Parameters.accept],

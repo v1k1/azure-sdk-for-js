@@ -33,7 +33,7 @@ export const testPollingOptions = {
   updateIntervalInMs: isPlaybackMode() ? 0 : undefined,
 };
 
-describe("My test", () => {
+describe("Network test", () => {
   let recorder: Recorder;
   let subscriptionId: string;
   let client: NetworkManagementClient;
@@ -50,7 +50,7 @@ describe("My test", () => {
     const credential = createTestCredential();
     client = new NetworkManagementClient(credential, subscriptionId, recorder.configureClientOptions({}));
     location = "eastus";
-    resourceGroupName = "myjstest";
+    resourceGroupName = "czwjstest";
     virtualNetworkName = "virtualnetworkzzz";
     subnetName = "subnetzzz";
     ipGroupName = "ipgroupyyy";

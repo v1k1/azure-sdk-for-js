@@ -1,14 +1,35 @@
 # Release History
 
-## 4.3.1 (Unreleased)
+## 4.5.0-beta.1 (Unreleased)
 
 ### Features Added
+
+- Managed Identity can now be used in place of a SAS token to access the blob storage resource when performing backup and restore operations.
 
 ### Breaking Changes
 
 ### Bugs Fixed
 
 ### Other Changes
+
+- The default service version is now `7.5-preview.1`.
+
+## 4.4.0 (2023-03-09)
+
+### Features Added
+
+- Added `KeyVaultSettingsClient` to get and update Managed HSM settings.
+
+### Other Changes
+
+- `KeyVaultAccessControlClient`, `KeyVaultBackupClient`, and `KeyVaultSettingsClient` now support service version 7.4 by default.
+
+## 4.4.0-beta.1 (2022-11-10)
+
+### Features Added
+
+- Added `KeyVaultSettingsClient` to get and update Managed HSM settings.
+- Added support for service version `7.4-preview.1`.
 
 ## 4.3.0 (2022-09-20)
 

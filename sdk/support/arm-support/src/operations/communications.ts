@@ -6,22 +6,27 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { Communications } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { MicrosoftSupport } from "../microsoftSupport";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   CommunicationDetails,
   CommunicationsListNextOptionalParams,
   CommunicationsListOptionalParams,
+  CommunicationsListResponse,
   CheckNameAvailabilityInput,
   CommunicationsCheckNameAvailabilityOptionalParams,
   CommunicationsCheckNameAvailabilityResponse,
-  CommunicationsListResponse,
   CommunicationsGetOptionalParams,
   CommunicationsGetResponse,
   CommunicationsCreateOptionalParams,
@@ -64,19 +69,29 @@ export class CommunicationsImpl implements Communications {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listPagingPage(supportTicketName, options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listPagingPage(supportTicketName, options, settings);
       }
     };
   }
 
   private async *listPagingPage(
     supportTicketName: string,
-    options?: CommunicationsListOptionalParams
+    options?: CommunicationsListOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<CommunicationDetails[]> {
-    let result = await this._list(supportTicketName, options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: CommunicationsListResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._list(supportTicketName, options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listNext(
         supportTicketName,
@@ -84,7 +99,9 @@ export class CommunicationsImpl implements Communications {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -165,8 +182,8 @@ export class CommunicationsImpl implements Communications {
     createCommunicationParameters: CommunicationDetails,
     options?: CommunicationsCreateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<CommunicationsCreateResponse>,
+    SimplePollerLike<
+      OperationState<CommunicationsCreateResponse>,
       CommunicationsCreateResponse
     >
   > {
@@ -176,7 +193,7 @@ export class CommunicationsImpl implements Communications {
     ): Promise<CommunicationsCreateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -209,20 +226,23 @@ export class CommunicationsImpl implements Communications {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
         supportTicketName,
         communicationName,
         createCommunicationParameters,
         options
       },
-      createOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: createOperationSpec
+    });
+    const poller = await createHttpPoller<
+      CommunicationsCreateResponse,
+      OperationState<CommunicationsCreateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -279,7 +299,7 @@ const checkNameAvailabilityOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.CheckNameAvailabilityOutput
     },
     default: {
-      bodyMapper: Mappers.ExceptionResponse
+      bodyMapper: Mappers.ErrorResponse
     }
   },
   requestBody: Parameters.checkNameAvailabilityInput,
@@ -302,7 +322,7 @@ const listOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.CommunicationsListResult
     },
     default: {
-      bodyMapper: Mappers.ExceptionResponse
+      bodyMapper: Mappers.ErrorResponse
     }
   },
   queryParameters: [Parameters.apiVersion, Parameters.top, Parameters.filter],
@@ -323,7 +343,7 @@ const getOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.CommunicationDetails
     },
     default: {
-      bodyMapper: Mappers.ExceptionResponse
+      bodyMapper: Mappers.ErrorResponse
     }
   },
   queryParameters: [Parameters.apiVersion],
@@ -354,7 +374,7 @@ const createOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.CommunicationDetails
     },
     default: {
-      bodyMapper: Mappers.ExceptionResponse
+      bodyMapper: Mappers.ErrorResponse
     }
   },
   requestBody: Parameters.createCommunicationParameters,
@@ -377,10 +397,9 @@ const listNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.CommunicationsListResult
     },
     default: {
-      bodyMapper: Mappers.ExceptionResponse
+      bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion, Parameters.top, Parameters.filter],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,

@@ -10,16 +10,18 @@
 // Licensed under the MIT License.
 const { DevCenterClient } = require("@azure/arm-devcenter");
 const { DefaultAzureCredential } = require("@azure/identity");
+require("dotenv").config();
 
 /**
  * This sample demonstrates how to Gets a Dev Box definition
  *
  * @summary Gets a Dev Box definition
- * x-ms-original-file: specification/devcenter/resource-manager/Microsoft.DevCenter/preview/2022-09-01-preview/examples/DevBoxDefinitions_Get.json
+ * x-ms-original-file: specification/devcenter/resource-manager/Microsoft.DevCenter/preview/2023-10-01-preview/examples/DevBoxDefinitions_Get.json
  */
 async function devBoxDefinitionsGet() {
-  const subscriptionId = "{subscriptionId}";
-  const resourceGroupName = "rg1";
+  const subscriptionId =
+    process.env["DEVCENTER_SUBSCRIPTION_ID"] || "0ac520ee-14c0-480f-b6c9-0a90c58ffff";
+  const resourceGroupName = process.env["DEVCENTER_RESOURCE_GROUP"] || "rg1";
   const devCenterName = "Contoso";
   const devBoxDefinitionName = "WebDevBox";
   const credential = new DefaultAzureCredential();
@@ -32,4 +34,8 @@ async function devBoxDefinitionsGet() {
   console.log(result);
 }
 
-devBoxDefinitionsGet().catch(console.error);
+async function main() {
+  devBoxDefinitionsGet();
+}
+
+main().catch(console.error);

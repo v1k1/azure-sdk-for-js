@@ -1,6 +1,6 @@
 # Release History
 
-## 4.1.3 (Unreleased)
+## 4.1.4 (Unreleased)
 
 ### Features Added
 
@@ -9,6 +9,10 @@
 ### Bugs Fixed
 
 ### Other Changes
+
+## 4.1.3 (2022-11-14)
+
+-  Bugs Fixed
 
 ## 4.1.2 (2022-10-08)
 
@@ -38,4 +42,4 @@ To understand the detail of the change, please refer to [Changelog](https://aka.
 
 To migrate the existing applications to the latest version, please refer to [Migration Guide](https://aka.ms/js-track2-migration-guide).
 
-To learn more, please refer to our documentation [Quick Start](https://aka.ms/js-track2-quickstart).
+To learn more, please refer to our documentation [Quick Start](https://aka.ms/azsdk/js/mgmt/quickstart ).

@@ -7,7 +7,7 @@
  */
 
 import { PagedAsyncIterableIterator } from "@azure/core-paging";
-import { PollerLike, PollOperationState } from "@azure/core-lro";
+import { SimplePollerLike, OperationState } from "@azure/core-lro";
 import {
   StorageAccount,
   StorageAccountsListOptionalParams,
@@ -38,6 +38,11 @@ import {
   StorageAccountsFailoverOptionalParams,
   StorageAccountsHierarchicalNamespaceMigrationOptionalParams,
   StorageAccountsAbortHierarchicalNamespaceMigrationOptionalParams,
+  StorageAccountMigration,
+  StorageAccountsCustomerInitiatedMigrationOptionalParams,
+  MigrationName,
+  StorageAccountsGetCustomerInitiatedMigrationOptionalParams,
+  StorageAccountsGetCustomerInitiatedMigrationResponse,
   BlobRestoreParameters,
   StorageAccountsRestoreBlobRangesOptionalParams,
   StorageAccountsRestoreBlobRangesResponse,
@@ -96,8 +101,8 @@ export interface StorageAccounts {
     parameters: StorageAccountCreateParameters,
     options?: StorageAccountsCreateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<StorageAccountsCreateResponse>,
+    SimplePollerLike<
+      OperationState<StorageAccountsCreateResponse>,
       StorageAccountsCreateResponse
     >
   >;
@@ -236,9 +241,16 @@ export interface StorageAccounts {
     options?: StorageAccountsListServiceSASOptionalParams
   ): Promise<StorageAccountsListServiceSASResponse>;
   /**
-   * Failover request can be triggered for a storage account in case of availability issues. The failover
-   * occurs from the storage account's primary cluster to secondary cluster for RA-GRS accounts. The
-   * secondary cluster will become primary after failover.
+   * A failover request can be triggered for a storage account in the event a primary endpoint becomes
+   * unavailable for any reason. The failover occurs from the storage account's primary cluster to the
+   * secondary cluster for RA-GRS accounts. The secondary cluster will become primary after failover and
+   * the account is converted to LRS. In the case of a Planned Failover, the primary and secondary
+   * clusters are swapped after failover and the account remains geo-replicated. Failover should continue
+   * to be used in the event of availability issues as Planned failover is only available while the
+   * primary and secondary endpoints are available. The primary use case of a Planned Failover is
+   * disaster recovery testing drills. This type of failover is invoked by setting FailoverType parameter
+   * to 'Planned'. Learn more about the failover options here-
+   * https://learn.microsoft.com/azure/storage/common/storage-disaster-recovery-guidance
    * @param resourceGroupName The name of the resource group within the user's subscription. The name is
    *                          case insensitive.
    * @param accountName The name of the storage account within the specified resource group. Storage
@@ -250,11 +262,18 @@ export interface StorageAccounts {
     resourceGroupName: string,
     accountName: string,
     options?: StorageAccountsFailoverOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<SimplePollerLike<OperationState<void>, void>>;
   /**
-   * Failover request can be triggered for a storage account in case of availability issues. The failover
-   * occurs from the storage account's primary cluster to secondary cluster for RA-GRS accounts. The
-   * secondary cluster will become primary after failover.
+   * A failover request can be triggered for a storage account in the event a primary endpoint becomes
+   * unavailable for any reason. The failover occurs from the storage account's primary cluster to the
+   * secondary cluster for RA-GRS accounts. The secondary cluster will become primary after failover and
+   * the account is converted to LRS. In the case of a Planned Failover, the primary and secondary
+   * clusters are swapped after failover and the account remains geo-replicated. Failover should continue
+   * to be used in the event of availability issues as Planned failover is only available while the
+   * primary and secondary endpoints are available. The primary use case of a Planned Failover is
+   * disaster recovery testing drills. This type of failover is invoked by setting FailoverType parameter
+   * to 'Planned'. Learn more about the failover options here-
+   * https://learn.microsoft.com/azure/storage/common/storage-disaster-recovery-guidance
    * @param resourceGroupName The name of the resource group within the user's subscription. The name is
    *                          case insensitive.
    * @param accountName The name of the storage account within the specified resource group. Storage
@@ -285,7 +304,7 @@ export interface StorageAccounts {
     accountName: string,
     requestType: string,
     options?: StorageAccountsHierarchicalNamespaceMigrationOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<SimplePollerLike<OperationState<void>, void>>;
   /**
    * Live Migration of storage account to enable Hns
    * @param resourceGroupName The name of the resource group within the user's subscription. The name is
@@ -318,7 +337,7 @@ export interface StorageAccounts {
     resourceGroupName: string,
     accountName: string,
     options?: StorageAccountsAbortHierarchicalNamespaceMigrationOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<SimplePollerLike<OperationState<void>, void>>;
   /**
    * Abort live Migration of storage account to enable Hns
    * @param resourceGroupName The name of the resource group within the user's subscription. The name is
@@ -333,6 +352,60 @@ export interface StorageAccounts {
     accountName: string,
     options?: StorageAccountsAbortHierarchicalNamespaceMigrationOptionalParams
   ): Promise<void>;
+  /**
+   * Account Migration request can be triggered for a storage account to change its redundancy level. The
+   * migration updates the non-zonal redundant storage account to a zonal redundant account or vice-versa
+   * in order to have better reliability and availability. Zone-redundant storage (ZRS) replicates your
+   * storage account synchronously across three Azure availability zones in the primary region.
+   * @param resourceGroupName The name of the resource group within the user's subscription. The name is
+   *                          case insensitive.
+   * @param accountName The name of the storage account within the specified resource group. Storage
+   *                    account names must be between 3 and 24 characters in length and use numbers and lower-case letters
+   *                    only.
+   * @param parameters The request parameters required to perform storage account migration.
+   * @param options The options parameters.
+   */
+  beginCustomerInitiatedMigration(
+    resourceGroupName: string,
+    accountName: string,
+    parameters: StorageAccountMigration,
+    options?: StorageAccountsCustomerInitiatedMigrationOptionalParams
+  ): Promise<SimplePollerLike<OperationState<void>, void>>;
+  /**
+   * Account Migration request can be triggered for a storage account to change its redundancy level. The
+   * migration updates the non-zonal redundant storage account to a zonal redundant account or vice-versa
+   * in order to have better reliability and availability. Zone-redundant storage (ZRS) replicates your
+   * storage account synchronously across three Azure availability zones in the primary region.
+   * @param resourceGroupName The name of the resource group within the user's subscription. The name is
+   *                          case insensitive.
+   * @param accountName The name of the storage account within the specified resource group. Storage
+   *                    account names must be between 3 and 24 characters in length and use numbers and lower-case letters
+   *                    only.
+   * @param parameters The request parameters required to perform storage account migration.
+   * @param options The options parameters.
+   */
+  beginCustomerInitiatedMigrationAndWait(
+    resourceGroupName: string,
+    accountName: string,
+    parameters: StorageAccountMigration,
+    options?: StorageAccountsCustomerInitiatedMigrationOptionalParams
+  ): Promise<void>;
+  /**
+   * Gets the status of the ongoing migration for the specified storage account.
+   * @param resourceGroupName The name of the resource group within the user's subscription. The name is
+   *                          case insensitive.
+   * @param accountName The name of the storage account within the specified resource group. Storage
+   *                    account names must be between 3 and 24 characters in length and use numbers and lower-case letters
+   *                    only.
+   * @param migrationName The name of the Storage Account Migration. It should always be 'default'
+   * @param options The options parameters.
+   */
+  getCustomerInitiatedMigration(
+    resourceGroupName: string,
+    accountName: string,
+    migrationName: MigrationName,
+    options?: StorageAccountsGetCustomerInitiatedMigrationOptionalParams
+  ): Promise<StorageAccountsGetCustomerInitiatedMigrationResponse>;
   /**
    * Restore blobs in the specified blob ranges
    * @param resourceGroupName The name of the resource group within the user's subscription. The name is
@@ -349,8 +422,8 @@ export interface StorageAccounts {
     parameters: BlobRestoreParameters,
     options?: StorageAccountsRestoreBlobRangesOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<StorageAccountsRestoreBlobRangesResponse>,
+    SimplePollerLike<
+      OperationState<StorageAccountsRestoreBlobRangesResponse>,
       StorageAccountsRestoreBlobRangesResponse
     >
   >;

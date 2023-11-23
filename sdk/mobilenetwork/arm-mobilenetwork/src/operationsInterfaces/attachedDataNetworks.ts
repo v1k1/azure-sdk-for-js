@@ -7,7 +7,7 @@
  */
 
 import { PagedAsyncIterableIterator } from "@azure/core-paging";
-import { PollerLike, PollOperationState } from "@azure/core-lro";
+import { SimplePollerLike, OperationState } from "@azure/core-lro";
 import {
   AttachedDataNetwork,
   AttachedDataNetworksListByPacketCoreDataPlaneOptionalParams,
@@ -51,7 +51,7 @@ export interface AttachedDataNetworks {
     packetCoreDataPlaneName: string,
     attachedDataNetworkName: string,
     options?: AttachedDataNetworksDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<SimplePollerLike<OperationState<void>, void>>;
   /**
    * Deletes the specified attached data network.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
@@ -83,7 +83,8 @@ export interface AttachedDataNetworks {
     options?: AttachedDataNetworksGetOptionalParams
   ): Promise<AttachedDataNetworksGetResponse>;
   /**
-   * Creates or updates an attached data network.
+   * Creates or updates an attached data network. Must be created in the same location as its parent
+   * packet core data plane.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param packetCoreControlPlaneName The name of the packet core control plane.
    * @param packetCoreDataPlaneName The name of the packet core data plane.
@@ -99,13 +100,14 @@ export interface AttachedDataNetworks {
     parameters: AttachedDataNetwork,
     options?: AttachedDataNetworksCreateOrUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<AttachedDataNetworksCreateOrUpdateResponse>,
+    SimplePollerLike<
+      OperationState<AttachedDataNetworksCreateOrUpdateResponse>,
       AttachedDataNetworksCreateOrUpdateResponse
     >
   >;
   /**
-   * Creates or updates an attached data network.
+   * Creates or updates an attached data network. Must be created in the same location as its parent
+   * packet core data plane.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param packetCoreControlPlaneName The name of the packet core control plane.
    * @param packetCoreDataPlaneName The name of the packet core data plane.

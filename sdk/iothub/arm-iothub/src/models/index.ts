@@ -264,7 +264,7 @@ export interface RoutingProperties {
   endpoints?: RoutingEndpoints;
   /** The list of user-provided routing rules that the IoT hub uses to route messages to built-in and custom endpoints. A maximum of 100 routing rules are allowed for paid hubs and a maximum of 5 routing rules are allowed for free hubs. */
   routes?: RouteProperties[];
-  /** The properties of the route that is used as a fall-back route when none of the conditions specified in the 'routes' section are met. This is an optional parameter. When this property is not set, the messages which do not meet any of the conditions specified in the 'routes' section get routed to the built-in eventhub endpoint. */
+  /** The properties of the route that is used as a fall-back route when none of the conditions specified in the 'routes' section are met. This is an optional parameter. When this property is not present in the template, the fallback route is disabled by default. */
   fallbackRoute?: FallbackRouteProperties;
   /** The list of user-provided enrichments that the IoT hub applies to messages to be delivered to built-in and custom endpoints. See: https://aka.ms/telemetryoneventgrid */
   enrichments?: EnrichmentProperties[];
@@ -280,6 +280,8 @@ export interface RoutingEndpoints {
   eventHubs?: RoutingEventHubProperties[];
   /** The list of storage container endpoints that IoT hub routes messages to, based on the routing rules. */
   storageContainers?: RoutingStorageContainerProperties[];
+  /** The list of Cosmos DB container endpoints that IoT hub routes messages to, based on the routing rules. */
+  cosmosDBSqlContainers?: RoutingCosmosDBSqlApiProperties[];
 }
 
 /** The properties related to service bus queue endpoint types. */
@@ -382,6 +384,39 @@ export interface RoutingStorageContainerProperties {
   maxChunkSizeInBytes?: number;
   /** Encoding that is used to serialize messages to blobs. Supported values are 'avro', 'avrodeflate', and 'JSON'. Default value is 'avro'. */
   encoding?: RoutingStorageContainerPropertiesEncoding;
+}
+
+/** The properties related to a cosmos DB sql container endpoint. */
+export interface RoutingCosmosDBSqlApiProperties {
+  /** The name that identifies this endpoint. The name can only include alphanumeric characters, periods, underscores, hyphens and has a maximum length of 64 characters. The following names are reserved:  events, fileNotifications, $default. Endpoint names must be unique across endpoint types. */
+  name: string;
+  /**
+   * Id of the cosmos DB sql container endpoint
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly id?: string;
+  /** The subscription identifier of the cosmos DB account. */
+  subscriptionId?: string;
+  /** The name of the resource group of the cosmos DB account. */
+  resourceGroup?: string;
+  /** The url of the cosmos DB account. It must include the protocol https:// */
+  endpointUri: string;
+  /** Method used to authenticate against the cosmos DB sql container endpoint */
+  authenticationType?: AuthenticationType;
+  /** Managed identity properties of routing cosmos DB container endpoint. */
+  identity?: ManagedIdentity;
+  /** The primary key of the cosmos DB account. */
+  primaryKey?: string;
+  /** The secondary key of the cosmos DB account. */
+  secondaryKey?: string;
+  /** The name of the cosmos DB database in the cosmos DB account. */
+  databaseName: string;
+  /** The name of the cosmos DB sql container in the cosmos DB database. */
+  containerName: string;
+  /** The name of the partition key associated with this cosmos DB sql container if one exists. This is an optional parameter. */
+  partitionKeyName?: string;
+  /** The template for generating a synthetic partition key value for use with this cosmos DB sql container. The template must include at least one of the following placeholders: {iothub}, {deviceid}, {DD}, {MM}, and {YYYY}. Any one placeholder may be specified at most once, but order and non-placeholder components are arbitrary. This parameter is only required if PartitionKeyName is specified. */
+  partitionKeyTemplate?: string;
 }
 
 /** The properties of a routing rule that your IoT hub uses to route messages to endpoints. */
@@ -1200,6 +1235,27 @@ export interface IotHubDescription extends Resource {
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
   readonly systemData?: SystemData;
+}
+
+/** Defines headers for IotHubResource_delete operation. */
+export interface IotHubResourceDeleteHeaders {
+  /** URL to query for status of the operation. */
+  azureAsyncOperation?: string;
+  location?: string;
+}
+
+/** Defines headers for IotHub_manualFailover operation. */
+export interface IotHubManualFailoverHeaders {
+  /** URL to query for status of the operation. */
+  azureAsyncOperation?: string;
+  location?: string;
+}
+
+/** Defines headers for PrivateEndpointConnections_delete operation. */
+export interface PrivateEndpointConnectionsDeleteHeaders {
+  /** URL to query for status of the operation. */
+  azureAsyncOperation?: string;
+  location?: string;
 }
 
 /** Known values of {@link PublicNetworkAccess} that the service accepts. */

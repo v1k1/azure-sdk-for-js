@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { MetricAttributes } from "@opentelemetry/api-metrics";
+import { Attributes } from "@opentelemetry/api";
 import { DataPointType, Histogram, ResourceMetrics } from "@opentelemetry/sdk-metrics";
 import { TelemetryItem as Envelope, MetricsData, MetricDataPoint } from "../generated";
-import { createTagsFromResource } from "./resourceUtils";
+import { createTagsFromResource } from "./common";
 
-function createPropertiesFromMetricAttributes(attributes?: MetricAttributes): {
+function createPropertiesFromMetricAttributes(attributes?: Attributes): {
   [propertyName: string]: string;
 } {
   const properties: { [propertyName: string]: string } = {};
@@ -22,29 +22,40 @@ function createPropertiesFromMetricAttributes(attributes?: MetricAttributes): {
  * Metric to Azure envelope parsing.
  * @internal
  */
-export function resourceMetricsToEnvelope(metrics: ResourceMetrics, ikey: string): Envelope[] {
-  let envelopes: Envelope[] = [];
+export function resourceMetricsToEnvelope(
+  metrics: ResourceMetrics,
+  ikey: string,
+  isStatsbeat?: boolean
+): Envelope[] {
+  const envelopes: Envelope[] = [];
   const time = new Date();
   const instrumentationKey = ikey;
   const tags = createTagsFromResource(metrics.resource);
+  let envelopeName: string;
+
+  if (isStatsbeat) {
+    envelopeName = "Microsoft.ApplicationInsights.Statsbeat";
+  } else {
+    envelopeName = "Microsoft.ApplicationInsights.Metric";
+  }
 
   metrics.scopeMetrics.forEach((scopeMetric) => {
     scopeMetric.metrics.forEach((metric) => {
       metric.dataPoints.forEach((dataPoint) => {
-        let baseData: MetricsData = {
+        const baseData: MetricsData = {
           metrics: [],
           version: 2,
           properties: {},
         };
         baseData.properties = createPropertiesFromMetricAttributes(dataPoint.attributes);
-        var metricDataPoint: MetricDataPoint = {
+        const metricDataPoint: MetricDataPoint = {
           name: metric.descriptor.name,
           value: 0,
           dataPointType: "Aggregation",
         };
         if (
-          metric.dataPointType == DataPointType.SUM ||
-          metric.dataPointType == DataPointType.GAUGE
+          metric.dataPointType === DataPointType.SUM ||
+          metric.dataPointType === DataPointType.GAUGE
         ) {
           metricDataPoint.value = dataPoint.value as number;
           metricDataPoint.count = 1;
@@ -55,10 +66,10 @@ export function resourceMetricsToEnvelope(metrics: ResourceMetrics, ikey: string
           metricDataPoint.min = (dataPoint.value as Histogram).min;
         }
         baseData.metrics.push(metricDataPoint);
-        let envelope: Envelope = {
-          name: "Microsoft.ApplicationInsights.Metric",
+        const envelope: Envelope = {
+          name: envelopeName,
           time: time,
-          sampleRate: 100,
+          sampleRate: 100, // Metrics are never sampled
           instrumentationKey: instrumentationKey,
           tags: tags,
           version: 1,

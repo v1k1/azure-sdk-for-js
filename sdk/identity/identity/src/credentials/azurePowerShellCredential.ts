@@ -3,12 +3,13 @@
 
 import { AccessToken, GetTokenOptions, TokenCredential } from "@azure/core-auth";
 import { credentialLogger, formatError, formatSuccess } from "../util/logging";
-import { ensureValidScope, getScopeResource } from "../util/scopeUtils";
+import { ensureValidScopeForDevTimeCreds, getScopeResource } from "../util/scopeUtils";
 import { AzurePowerShellCredentialOptions } from "./azurePowerShellCredentialOptions";
 import { CredentialUnavailableError } from "../errors";
 import {
+  checkTenantId,
   processMultiTenantRequest,
-  resolveAddionallyAllowedTenantIds,
+  resolveAdditionallyAllowedTenantIds,
 } from "../util/tenantIdUtils";
 import { processUtils } from "../util/processUtils";
 import { tracingClient } from "../util/tracing";
@@ -35,12 +36,15 @@ export function formatCommand(commandName: string): string {
  * If anything fails, an error is thrown.
  * @internal
  */
-async function runCommands(commands: string[][]): Promise<string[]> {
+async function runCommands(commands: string[][], timeout?: number): Promise<string[]> {
   const results: string[] = [];
 
   for (const command of commands) {
     const [file, ...parameters] = command;
-    const result = (await processUtils.execFile(file, parameters, { encoding: "utf8" })) as string;
+    const result = (await processUtils.execFile(file, parameters, {
+      encoding: "utf8",
+      timeout,
+    })) as string;
     results.push(result);
   }
 
@@ -95,6 +99,7 @@ if (isWindows) {
 export class AzurePowerShellCredential implements TokenCredential {
   private tenantId?: string;
   private additionallyAllowedTenantIds: string[];
+  private timeout?: number;
 
   /**
    * Creates an instance of the {@link AzurePowerShellCredential}.
@@ -108,10 +113,14 @@ export class AzurePowerShellCredential implements TokenCredential {
    * @param options - Options, to optionally allow multi-tenant requests.
    */
   constructor(options?: AzurePowerShellCredentialOptions) {
-    this.tenantId = options?.tenantId;
-    this.additionallyAllowedTenantIds = resolveAddionallyAllowedTenantIds(
+    if (options?.tenantId) {
+      checkTenantId(logger, options?.tenantId);
+      this.tenantId = options?.tenantId;
+    }
+    this.additionallyAllowedTenantIds = resolveAdditionallyAllowedTenantIds(
       options?.additionallyAllowedTenants
     );
+    this.timeout = options?.processTimeoutInMs;
   }
 
   /**
@@ -120,12 +129,13 @@ export class AzurePowerShellCredential implements TokenCredential {
    */
   private async getAzurePowerShellAccessToken(
     resource: string,
-    tenantId?: string
+    tenantId?: string,
+    timeout?: number
   ): Promise<{ Token: string; ExpiresOn: string }> {
     // Clone the stack to avoid mutating it while iterating
     for (const powerShellCommand of [...commandStack]) {
       try {
-        await runCommands([[powerShellCommand, "/?"]]);
+        await runCommands([[powerShellCommand, "/?"]], timeout);
       } catch (e: any) {
         // Remove this credential from the original stack so that we don't try it again.
         commandStack.shift();
@@ -140,11 +150,15 @@ export class AzurePowerShellCredential implements TokenCredential {
       const results = await runCommands([
         [
           powerShellCommand,
+          "-NoProfile",
+          "-NonInteractive",
           "-Command",
           "Import-Module Az.Accounts -MinimumVersion 2.2.0 -PassThru",
         ],
         [
           powerShellCommand,
+          "-NoProfile",
+          "-NonInteractive",
           "-Command",
           `Get-AzAccessToken ${tenantSection} -ResourceUrl "${resource}" | ConvertTo-Json`,
         ],
@@ -162,7 +176,7 @@ export class AzurePowerShellCredential implements TokenCredential {
   }
 
   /**
-   * Authenticates with Azure Active Directory and returns an access token if successful.
+   * Authenticates with Microsoft Entra ID and returns an access token if successful.
    * If the authentication cannot be performed through PowerShell, a {@link CredentialUnavailableError} will be thrown.
    *
    * @param scopes - The list of scopes for which the token will have access.
@@ -179,12 +193,14 @@ export class AzurePowerShellCredential implements TokenCredential {
         this.additionallyAllowedTenantIds
       );
       const scope = typeof scopes === "string" ? scopes : scopes[0];
-      ensureValidScope(scope, logger);
-      logger.getToken.info(`Using the scope ${scope}`);
-      const resource = getScopeResource(scope);
-
+      if (tenantId) {
+        checkTenantId(logger, tenantId);
+      }
       try {
-        const response = await this.getAzurePowerShellAccessToken(resource, tenantId);
+        ensureValidScopeForDevTimeCreds(scope, logger);
+        logger.getToken.info(`Using the scope ${scope}`);
+        const resource = getScopeResource(scope);
+        const response = await this.getAzurePowerShellAccessToken(resource, tenantId, this.timeout);
         logger.getToken.info(formatSuccess(scopes));
         return {
           token: response.Token,

@@ -6,7 +6,8 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { Experiments } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
@@ -16,29 +17,32 @@ import {
   Experiment,
   ExperimentsListAllNextOptionalParams,
   ExperimentsListAllOptionalParams,
+  ExperimentsListAllResponse,
   ExperimentsListNextOptionalParams,
   ExperimentsListOptionalParams,
+  ExperimentsListResponse,
   ExperimentStatus,
   ExperimentsListAllStatusesNextOptionalParams,
   ExperimentsListAllStatusesOptionalParams,
+  ExperimentsListAllStatusesResponse,
   ExperimentExecutionDetails,
   ExperimentsListExecutionDetailsNextOptionalParams,
   ExperimentsListExecutionDetailsOptionalParams,
-  ExperimentsListAllResponse,
-  ExperimentsListResponse,
+  ExperimentsListExecutionDetailsResponse,
   ExperimentsDeleteOptionalParams,
   ExperimentsGetOptionalParams,
   ExperimentsGetResponse,
   ExperimentsCreateOrUpdateOptionalParams,
   ExperimentsCreateOrUpdateResponse,
+  ExperimentUpdate,
+  ExperimentsUpdateOptionalParams,
+  ExperimentsUpdateResponse,
   ExperimentsCancelOptionalParams,
   ExperimentsCancelResponse,
   ExperimentsStartOptionalParams,
   ExperimentsStartResponse,
-  ExperimentsListAllStatusesResponse,
   ExperimentsGetStatusOptionalParams,
   ExperimentsGetStatusResponse,
-  ExperimentsListExecutionDetailsResponse,
   ExperimentsGetExecutionDetailsOptionalParams,
   ExperimentsGetExecutionDetailsResponse,
   ExperimentsListAllNextResponse,
@@ -75,22 +79,34 @@ export class ExperimentsImpl implements Experiments {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listAllPagingPage(options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listAllPagingPage(options, settings);
       }
     };
   }
 
   private async *listAllPagingPage(
-    options?: ExperimentsListAllOptionalParams
+    options?: ExperimentsListAllOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<Experiment[]> {
-    let result = await this._listAll(options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: ExperimentsListAllResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listAll(options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listAllNext(continuationToken, options);
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -119,19 +135,29 @@ export class ExperimentsImpl implements Experiments {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listPagingPage(resourceGroupName, options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listPagingPage(resourceGroupName, options, settings);
       }
     };
   }
 
   private async *listPagingPage(
     resourceGroupName: string,
-    options?: ExperimentsListOptionalParams
+    options?: ExperimentsListOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<Experiment[]> {
-    let result = await this._list(resourceGroupName, options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: ExperimentsListResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._list(resourceGroupName, options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listNext(
         resourceGroupName,
@@ -139,7 +165,9 @@ export class ExperimentsImpl implements Experiments {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -175,11 +203,15 @@ export class ExperimentsImpl implements Experiments {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listAllStatusesPagingPage(
           resourceGroupName,
           experimentName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -188,15 +220,22 @@ export class ExperimentsImpl implements Experiments {
   private async *listAllStatusesPagingPage(
     resourceGroupName: string,
     experimentName: string,
-    options?: ExperimentsListAllStatusesOptionalParams
+    options?: ExperimentsListAllStatusesOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<ExperimentStatus[]> {
-    let result = await this._listAllStatuses(
-      resourceGroupName,
-      experimentName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: ExperimentsListAllStatusesResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listAllStatuses(
+        resourceGroupName,
+        experimentName,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listAllStatusesNext(
         resourceGroupName,
@@ -205,7 +244,9 @@ export class ExperimentsImpl implements Experiments {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -246,11 +287,15 @@ export class ExperimentsImpl implements Experiments {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listExecutionDetailsPagingPage(
           resourceGroupName,
           experimentName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -259,15 +304,22 @@ export class ExperimentsImpl implements Experiments {
   private async *listExecutionDetailsPagingPage(
     resourceGroupName: string,
     experimentName: string,
-    options?: ExperimentsListExecutionDetailsOptionalParams
+    options?: ExperimentsListExecutionDetailsOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<ExperimentExecutionDetails[]> {
-    let result = await this._listExecutionDetails(
-      resourceGroupName,
-      experimentName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: ExperimentsListExecutionDetailsResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listExecutionDetails(
+        resourceGroupName,
+        experimentName,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listExecutionDetailsNext(
         resourceGroupName,
@@ -276,7 +328,9 @@ export class ExperimentsImpl implements Experiments {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -369,6 +423,25 @@ export class ExperimentsImpl implements Experiments {
     return this.client.sendOperationRequest(
       { resourceGroupName, experimentName, experiment, options },
       createOrUpdateOperationSpec
+    );
+  }
+
+  /**
+   * The operation to update an experiment.
+   * @param resourceGroupName String that represents an Azure resource group.
+   * @param experimentName String that represents a Experiment resource name.
+   * @param experiment Parameters supplied to the Update experiment operation.
+   * @param options The options parameters.
+   */
+  update(
+    resourceGroupName: string,
+    experimentName: string,
+    experiment: ExperimentUpdate,
+    options?: ExperimentsUpdateOptionalParams
+  ): Promise<ExperimentsUpdateResponse> {
+    return this.client.sendOperationRequest(
+      { resourceGroupName, experimentName, experiment, options },
+      updateOperationSpec
     );
   }
 
@@ -663,6 +736,30 @@ const createOrUpdateOperationSpec: coreClient.OperationSpec = {
   mediaType: "json",
   serializer
 };
+const updateOperationSpec: coreClient.OperationSpec = {
+  path:
+    "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Chaos/experiments/{experimentName}",
+  httpMethod: "PATCH",
+  responses: {
+    200: {
+      bodyMapper: Mappers.Experiment
+    },
+    default: {
+      bodyMapper: Mappers.ErrorResponse
+    }
+  },
+  requestBody: Parameters.experiment1,
+  queryParameters: [Parameters.apiVersion],
+  urlParameters: [
+    Parameters.$host,
+    Parameters.subscriptionId,
+    Parameters.resourceGroupName,
+    Parameters.experimentName
+  ],
+  headerParameters: [Parameters.accept, Parameters.contentType],
+  mediaType: "json",
+  serializer
+};
 const cancelOperationSpec: coreClient.OperationSpec = {
   path:
     "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Chaos/experiments/{experimentName}/cancel",
@@ -808,11 +905,6 @@ const listAllNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [
-    Parameters.apiVersion,
-    Parameters.continuationToken,
-    Parameters.running
-  ],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,
@@ -832,11 +924,6 @@ const listNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [
-    Parameters.apiVersion,
-    Parameters.continuationToken,
-    Parameters.running
-  ],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,
@@ -857,7 +944,6 @@ const listAllStatusesNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,
@@ -879,7 +965,6 @@ const listExecutionDetailsNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,

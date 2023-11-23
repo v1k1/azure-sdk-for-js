@@ -6,9 +6,9 @@
 
 import * as coreAuth from '@azure/core-auth';
 import * as coreClient from '@azure/core-client';
+import { OperationState } from '@azure/core-lro';
 import { PagedAsyncIterableIterator } from '@azure/core-paging';
-import { PollerLike } from '@azure/core-lro';
-import { PollOperationState } from '@azure/core-lro';
+import { SimplePollerLike } from '@azure/core-lro';
 
 // @public
 export interface AffectedMoveResource {
@@ -23,14 +23,14 @@ export interface AutomaticResolutionProperties {
 }
 
 // @public
-export type AvailabilitySetResourceSettings = ResourceSettings & {
+export interface AvailabilitySetResourceSettings extends ResourceSettings {
+    faultDomain?: number;
     resourceType: "Microsoft.Compute/availabilitySets";
     tags?: {
         [propertyName: string]: string;
     };
-    faultDomain?: number;
     updateDomain?: number;
-};
+}
 
 // @public
 export interface AzureResourceReference {
@@ -81,9 +81,9 @@ export interface DiscardRequest {
 }
 
 // @public
-export type DiskEncryptionSetResourceSettings = ResourceSettings & {
+export interface DiskEncryptionSetResourceSettings extends ResourceSettings {
     resourceType: "Microsoft.Compute/diskEncryptionSets";
-};
+}
 
 // @public
 export interface Display {
@@ -92,6 +92,9 @@ export interface Display {
     provider?: string;
     resource?: string;
 }
+
+// @public
+export function getContinuationToken(page: unknown): string | undefined;
 
 // @public
 export interface Identity {
@@ -110,133 +113,98 @@ export interface JobStatus {
 }
 
 // @public
-export type KeyVaultResourceSettings = ResourceSettings & {
+export interface KeyVaultResourceSettings extends ResourceSettings {
     resourceType: "Microsoft.KeyVault/vaults";
-};
+}
 
 // @public
 export enum KnownCreatedByType {
-    // (undocumented)
     Application = "Application",
-    // (undocumented)
     Key = "Key",
-    // (undocumented)
     ManagedIdentity = "ManagedIdentity",
-    // (undocumented)
     User = "User"
 }
 
 // @public
 export enum KnownDependencyLevel {
-    // (undocumented)
     Descendant = "Descendant",
-    // (undocumented)
     Direct = "Direct"
 }
 
 // @public
 export enum KnownDependencyType {
-    // (undocumented)
     RequiredForMove = "RequiredForMove",
-    // (undocumented)
     RequiredForPrepare = "RequiredForPrepare"
 }
 
 // @public
 export enum KnownJobName {
-    // (undocumented)
     InitialSync = "InitialSync"
 }
 
 // @public
 export enum KnownMoveResourceInputType {
-    // (undocumented)
     MoveResourceId = "MoveResourceId",
-    // (undocumented)
     MoveResourceSourceId = "MoveResourceSourceId"
 }
 
 // @public
 export enum KnownMoveState {
-    // (undocumented)
     AssignmentPending = "AssignmentPending",
-    // (undocumented)
     CommitFailed = "CommitFailed",
-    // (undocumented)
     CommitInProgress = "CommitInProgress",
-    // (undocumented)
     CommitPending = "CommitPending",
-    // (undocumented)
     Committed = "Committed",
-    // (undocumented)
     DeleteSourcePending = "DeleteSourcePending",
-    // (undocumented)
     DiscardFailed = "DiscardFailed",
-    // (undocumented)
     DiscardInProgress = "DiscardInProgress",
-    // (undocumented)
     MoveFailed = "MoveFailed",
-    // (undocumented)
     MoveInProgress = "MoveInProgress",
-    // (undocumented)
     MovePending = "MovePending",
-    // (undocumented)
     PrepareFailed = "PrepareFailed",
-    // (undocumented)
     PrepareInProgress = "PrepareInProgress",
-    // (undocumented)
     PreparePending = "PreparePending",
-    // (undocumented)
     ResourceMoveCompleted = "ResourceMoveCompleted"
 }
 
 // @public
+export enum KnownMoveType {
+    RegionToRegion = "RegionToRegion",
+    RegionToZone = "RegionToZone"
+}
+
+// @public
 export enum KnownProvisioningState {
-    // (undocumented)
     Creating = "Creating",
-    // (undocumented)
     Failed = "Failed",
-    // (undocumented)
     Succeeded = "Succeeded",
-    // (undocumented)
     Updating = "Updating"
 }
 
 // @public
 export enum KnownResolutionType {
-    // (undocumented)
     Automatic = "Automatic",
-    // (undocumented)
     Manual = "Manual"
 }
 
 // @public
 export enum KnownResourceIdentityType {
-    // (undocumented)
     None = "None",
-    // (undocumented)
     SystemAssigned = "SystemAssigned",
-    // (undocumented)
     UserAssigned = "UserAssigned"
 }
 
 // @public
 export enum KnownTargetAvailabilityZone {
-    // (undocumented)
     NA = "NA",
-    // (undocumented)
     One = "1",
-    // (undocumented)
     Three = "3",
-    // (undocumented)
     Two = "2"
 }
 
 // @public
 export enum KnownZoneRedundant {
-    // (undocumented)
     Disable = "Disable",
-    // (undocumented)
     Enable = "Enable"
 }
 
@@ -255,22 +223,24 @@ export interface LBFrontendIPConfigurationResourceSettings {
 }
 
 // @public
-export type LoadBalancerBackendAddressPoolReference = ProxyResourceReference & {};
+export interface LoadBalancerBackendAddressPoolReference extends ProxyResourceReference {
+}
 
 // @public
-export type LoadBalancerNatRuleReference = ProxyResourceReference & {};
+export interface LoadBalancerNatRuleReference extends ProxyResourceReference {
+}
 
 // @public
-export type LoadBalancerResourceSettings = ResourceSettings & {
+export interface LoadBalancerResourceSettings extends ResourceSettings {
+    backendAddressPools?: LBBackendAddressPoolResourceSettings[];
+    frontendIPConfigurations?: LBFrontendIPConfigurationResourceSettings[];
     resourceType: "Microsoft.Network/loadBalancers";
+    sku?: string;
     tags?: {
         [propertyName: string]: string;
     };
-    sku?: string;
-    frontendIPConfigurations?: LBFrontendIPConfigurationResourceSettings[];
-    backendAddressPools?: LBBackendAddressPoolResourceSettings[];
     zones?: string;
-};
+}
 
 // @public
 export interface ManualResolutionProperties {
@@ -295,13 +265,17 @@ export interface MoveCollection {
 // @public
 export interface MoveCollectionProperties {
     readonly errors?: MoveCollectionPropertiesErrors;
+    moveRegion?: string;
+    moveType?: MoveType;
     readonly provisioningState?: ProvisioningState;
-    sourceRegion: string;
-    targetRegion: string;
+    sourceRegion?: string;
+    targetRegion?: string;
+    version?: string;
 }
 
 // @public
-export type MoveCollectionPropertiesErrors = MoveResourceError & {};
+export interface MoveCollectionPropertiesErrors extends MoveResourceError {
+}
 
 // @public
 export interface MoveCollectionResultList {
@@ -311,19 +285,19 @@ export interface MoveCollectionResultList {
 
 // @public
 export interface MoveCollections {
-    beginBulkRemove(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsBulkRemoveOptionalParams): Promise<PollerLike<PollOperationState<MoveCollectionsBulkRemoveResponse>, MoveCollectionsBulkRemoveResponse>>;
+    beginBulkRemove(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsBulkRemoveOptionalParams): Promise<SimplePollerLike<OperationState<MoveCollectionsBulkRemoveResponse>, MoveCollectionsBulkRemoveResponse>>;
     beginBulkRemoveAndWait(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsBulkRemoveOptionalParams): Promise<MoveCollectionsBulkRemoveResponse>;
-    beginCommit(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsCommitOptionalParams): Promise<PollerLike<PollOperationState<MoveCollectionsCommitResponse>, MoveCollectionsCommitResponse>>;
+    beginCommit(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsCommitOptionalParams): Promise<SimplePollerLike<OperationState<MoveCollectionsCommitResponse>, MoveCollectionsCommitResponse>>;
     beginCommitAndWait(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsCommitOptionalParams): Promise<MoveCollectionsCommitResponse>;
-    beginDelete(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsDeleteOptionalParams): Promise<PollerLike<PollOperationState<MoveCollectionsDeleteResponse>, MoveCollectionsDeleteResponse>>;
+    beginDelete(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsDeleteOptionalParams): Promise<SimplePollerLike<OperationState<MoveCollectionsDeleteResponse>, MoveCollectionsDeleteResponse>>;
     beginDeleteAndWait(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsDeleteOptionalParams): Promise<MoveCollectionsDeleteResponse>;
-    beginDiscard(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsDiscardOptionalParams): Promise<PollerLike<PollOperationState<MoveCollectionsDiscardResponse>, MoveCollectionsDiscardResponse>>;
+    beginDiscard(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsDiscardOptionalParams): Promise<SimplePollerLike<OperationState<MoveCollectionsDiscardResponse>, MoveCollectionsDiscardResponse>>;
     beginDiscardAndWait(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsDiscardOptionalParams): Promise<MoveCollectionsDiscardResponse>;
-    beginInitiateMove(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsInitiateMoveOptionalParams): Promise<PollerLike<PollOperationState<MoveCollectionsInitiateMoveResponse>, MoveCollectionsInitiateMoveResponse>>;
+    beginInitiateMove(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsInitiateMoveOptionalParams): Promise<SimplePollerLike<OperationState<MoveCollectionsInitiateMoveResponse>, MoveCollectionsInitiateMoveResponse>>;
     beginInitiateMoveAndWait(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsInitiateMoveOptionalParams): Promise<MoveCollectionsInitiateMoveResponse>;
-    beginPrepare(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsPrepareOptionalParams): Promise<PollerLike<PollOperationState<MoveCollectionsPrepareResponse>, MoveCollectionsPrepareResponse>>;
+    beginPrepare(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsPrepareOptionalParams): Promise<SimplePollerLike<OperationState<MoveCollectionsPrepareResponse>, MoveCollectionsPrepareResponse>>;
     beginPrepareAndWait(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsPrepareOptionalParams): Promise<MoveCollectionsPrepareResponse>;
-    beginResolveDependencies(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsResolveDependenciesOptionalParams): Promise<PollerLike<PollOperationState<MoveCollectionsResolveDependenciesResponse>, MoveCollectionsResolveDependenciesResponse>>;
+    beginResolveDependencies(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsResolveDependenciesOptionalParams): Promise<SimplePollerLike<OperationState<MoveCollectionsResolveDependenciesResponse>, MoveCollectionsResolveDependenciesResponse>>;
     beginResolveDependenciesAndWait(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsResolveDependenciesOptionalParams): Promise<MoveCollectionsResolveDependenciesResponse>;
     create(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsCreateOptionalParams): Promise<MoveCollectionsCreateResponse>;
     get(resourceGroupName: string, moveCollectionName: string, options?: MoveCollectionsGetOptionalParams): Promise<MoveCollectionsGetResponse>;
@@ -541,16 +515,18 @@ export interface MoveResourceProperties {
 }
 
 // @public
-export type MoveResourcePropertiesErrors = MoveResourceError & {};
+export interface MoveResourcePropertiesErrors extends MoveResourceError {
+}
 
 // @public
-export type MoveResourcePropertiesMoveStatus = MoveResourceStatus & {};
+export interface MoveResourcePropertiesMoveStatus extends MoveResourceStatus {
+}
 
 // @public
 export interface MoveResources {
-    beginCreate(resourceGroupName: string, moveCollectionName: string, moveResourceName: string, options?: MoveResourcesCreateOptionalParams): Promise<PollerLike<PollOperationState<MoveResourcesCreateResponse>, MoveResourcesCreateResponse>>;
+    beginCreate(resourceGroupName: string, moveCollectionName: string, moveResourceName: string, options?: MoveResourcesCreateOptionalParams): Promise<SimplePollerLike<OperationState<MoveResourcesCreateResponse>, MoveResourcesCreateResponse>>;
     beginCreateAndWait(resourceGroupName: string, moveCollectionName: string, moveResourceName: string, options?: MoveResourcesCreateOptionalParams): Promise<MoveResourcesCreateResponse>;
-    beginDelete(resourceGroupName: string, moveCollectionName: string, moveResourceName: string, options?: MoveResourcesDeleteOptionalParams): Promise<PollerLike<PollOperationState<MoveResourcesDeleteResponse>, MoveResourcesDeleteResponse>>;
+    beginDelete(resourceGroupName: string, moveCollectionName: string, moveResourceName: string, options?: MoveResourcesDeleteOptionalParams): Promise<SimplePollerLike<OperationState<MoveResourcesDeleteResponse>, MoveResourcesDeleteResponse>>;
     beginDeleteAndWait(resourceGroupName: string, moveCollectionName: string, moveResourceName: string, options?: MoveResourcesDeleteOptionalParams): Promise<MoveResourcesDeleteResponse>;
     get(resourceGroupName: string, moveCollectionName: string, moveResourceName: string, options?: MoveResourcesGetOptionalParams): Promise<MoveResourcesGetResponse>;
     list(resourceGroupName: string, moveCollectionName: string, options?: MoveResourcesListOptionalParams): PagedAsyncIterableIterator<MoveResource>;
@@ -584,7 +560,6 @@ export type MoveResourcesGetResponse = MoveResource;
 
 // @public
 export interface MoveResourcesListNextOptionalParams extends coreClient.OperationOptions {
-    filter?: string;
 }
 
 // @public
@@ -609,23 +584,26 @@ export interface MoveResourceStatus {
 export type MoveState = string;
 
 // @public
-export type NetworkInterfaceResourceSettings = ResourceSettings & {
+export type MoveType = string;
+
+// @public
+export interface NetworkInterfaceResourceSettings extends ResourceSettings {
+    enableAcceleratedNetworking?: boolean;
+    ipConfigurations?: NicIpConfigurationResourceSettings[];
     resourceType: "Microsoft.Network/networkInterfaces";
     tags?: {
         [propertyName: string]: string;
     };
-    ipConfigurations?: NicIpConfigurationResourceSettings[];
-    enableAcceleratedNetworking?: boolean;
-};
+}
 
 // @public
-export type NetworkSecurityGroupResourceSettings = ResourceSettings & {
+export interface NetworkSecurityGroupResourceSettings extends ResourceSettings {
     resourceType: "Microsoft.Network/networkSecurityGroups";
+    securityRules?: NsgSecurityRule[];
     tags?: {
         [propertyName: string]: string;
     };
-    securityRules?: NsgSecurityRule[];
-};
+}
 
 // @public
 export interface NicIpConfigurationResourceSettings {
@@ -640,7 +618,8 @@ export interface NicIpConfigurationResourceSettings {
 }
 
 // @public
-export type NsgReference = AzureResourceReference & {};
+export interface NsgReference extends AzureResourceReference {
+}
 
 // @public
 export interface NsgSecurityRule {
@@ -720,25 +699,26 @@ export interface PrepareRequest {
 export type ProvisioningState = string;
 
 // @public
-export type ProxyResourceReference = AzureResourceReference & {
+export interface ProxyResourceReference extends AzureResourceReference {
     name?: string;
-};
+}
 
 // @public
-export type PublicIPAddressResourceSettings = ResourceSettings & {
-    resourceType: "Microsoft.Network/publicIPAddresses";
-    tags?: {
-        [propertyName: string]: string;
-    };
+export interface PublicIPAddressResourceSettings extends ResourceSettings {
     domainNameLabel?: string;
     fqdn?: string;
     publicIpAllocationMethod?: string;
+    resourceType: "Microsoft.Network/publicIPAddresses";
     sku?: string;
+    tags?: {
+        [propertyName: string]: string;
+    };
     zones?: string;
-};
+}
 
 // @public
-export type PublicIpReference = AzureResourceReference & {};
+export interface PublicIpReference extends AzureResourceReference {
+}
 
 // @public
 export interface RequiredForResourcesCollection {
@@ -749,9 +729,9 @@ export interface RequiredForResourcesCollection {
 export type ResolutionType = string;
 
 // @public
-export type ResourceGroupResourceSettings = ResourceSettings & {
+export interface ResourceGroupResourceSettings extends ResourceSettings {
     resourceType: "resourceGroups";
-};
+}
 
 // @public
 export type ResourceIdentityType = string;
@@ -768,6 +748,7 @@ export class ResourceMoverServiceAPI extends coreClient.ServiceClient {
     // (undocumented)
     $host: string;
     constructor(credentials: coreAuth.TokenCredential, subscriptionId: string, options?: ResourceMoverServiceAPIOptionalParams);
+    constructor(credentials: coreAuth.TokenCredential, options?: ResourceMoverServiceAPIOptionalParams);
     // (undocumented)
     apiVersion: string;
     // (undocumented)
@@ -777,7 +758,7 @@ export class ResourceMoverServiceAPI extends coreClient.ServiceClient {
     // (undocumented)
     operationsDiscoveryOperations: OperationsDiscoveryOperations;
     // (undocumented)
-    subscriptionId: string;
+    subscriptionId?: string;
     // (undocumented)
     unresolvedDependencies: UnresolvedDependencies;
 }
@@ -792,37 +773,39 @@ export interface ResourceMoverServiceAPIOptionalParams extends coreClient.Servic
 // @public
 export interface ResourceSettings {
     resourceType: "Microsoft.Compute/virtualMachines" | "Microsoft.Compute/availabilitySets" | "Microsoft.Network/virtualNetworks" | "Microsoft.Network/networkInterfaces" | "Microsoft.Network/networkSecurityGroups" | "Microsoft.Network/loadBalancers" | "Microsoft.Sql/servers" | "Microsoft.Sql/servers/elasticPools" | "Microsoft.Sql/servers/databases" | "resourceGroups" | "Microsoft.Network/publicIPAddresses" | "Microsoft.KeyVault/vaults" | "Microsoft.Compute/diskEncryptionSets";
-    targetResourceName: string;
+    targetResourceGroupName?: string;
+    targetResourceName?: string;
 }
 
 // @public (undocumented)
 export type ResourceSettingsUnion = ResourceSettings | VirtualMachineResourceSettings | AvailabilitySetResourceSettings | VirtualNetworkResourceSettings | NetworkInterfaceResourceSettings | NetworkSecurityGroupResourceSettings | LoadBalancerResourceSettings | SqlServerResourceSettings | SqlElasticPoolResourceSettings | SqlDatabaseResourceSettings | ResourceGroupResourceSettings | PublicIPAddressResourceSettings | KeyVaultResourceSettings | DiskEncryptionSetResourceSettings;
 
 // @public
-export type SqlDatabaseResourceSettings = ResourceSettings & {
+export interface SqlDatabaseResourceSettings extends ResourceSettings {
     resourceType: "Microsoft.Sql/servers/databases";
     tags?: {
         [propertyName: string]: string;
     };
     zoneRedundant?: ZoneRedundant;
-};
+}
 
 // @public
-export type SqlElasticPoolResourceSettings = ResourceSettings & {
+export interface SqlElasticPoolResourceSettings extends ResourceSettings {
     resourceType: "Microsoft.Sql/servers/elasticPools";
     tags?: {
         [propertyName: string]: string;
     };
     zoneRedundant?: ZoneRedundant;
-};
+}
 
 // @public
-export type SqlServerResourceSettings = ResourceSettings & {
+export interface SqlServerResourceSettings extends ResourceSettings {
     resourceType: "Microsoft.Sql/servers";
-};
+}
 
 // @public
-export type SubnetReference = ProxyResourceReference & {};
+export interface SubnetReference extends ProxyResourceReference {
+}
 
 // @public
 export interface SubnetResourceSettings {
@@ -874,9 +857,6 @@ export interface UnresolvedDependenciesFilterProperties {
 
 // @public
 export interface UnresolvedDependenciesGetNextOptionalParams extends coreClient.OperationOptions {
-    dependencyLevel?: DependencyLevel;
-    filter?: string;
-    orderby?: string;
 }
 
 // @public
@@ -915,28 +895,28 @@ export interface UpdateMoveCollectionRequest {
 }
 
 // @public
-export type VirtualMachineResourceSettings = ResourceSettings & {
+export interface VirtualMachineResourceSettings extends ResourceSettings {
     resourceType: "Microsoft.Compute/virtualMachines";
     tags?: {
         [propertyName: string]: string;
     };
-    userManagedIdentities?: string[];
+    targetAvailabilitySetId?: string;
     targetAvailabilityZone?: TargetAvailabilityZone;
     targetVmSize?: string;
-    targetAvailabilitySetId?: string;
-};
+    userManagedIdentities?: string[];
+}
 
 // @public
-export type VirtualNetworkResourceSettings = ResourceSettings & {
+export interface VirtualNetworkResourceSettings extends ResourceSettings {
+    addressSpace?: string[];
+    dnsServers?: string[];
+    enableDdosProtection?: boolean;
     resourceType: "Microsoft.Network/virtualNetworks";
+    subnets?: SubnetResourceSettings[];
     tags?: {
         [propertyName: string]: string;
     };
-    enableDdosProtection?: boolean;
-    addressSpace?: string[];
-    dnsServers?: string[];
-    subnets?: SubnetResourceSettings[];
-};
+}
 
 // @public
 export type ZoneRedundant = string;

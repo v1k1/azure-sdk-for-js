@@ -10,7 +10,7 @@ import {
   createRecordedCommunicationIdentityClient,
   createRecordedCommunicationIdentityClientWithToken,
 } from "./utils/recordedClient";
-import { CommunicationIdentityClient } from "../../src";
+import { CommunicationIdentityClient, TokenScope } from "../../src";
 import { Context } from "mocha";
 import { assert } from "chai";
 import { matrix } from "@azure/test-utils";
@@ -19,6 +19,9 @@ matrix([[true, false]], async function (useAad: boolean) {
   describe(`CommunicationIdentityClient [Playback/Live]${useAad ? " [AAD]" : ""}`, function () {
     let recorder: Recorder;
     let client: CommunicationIdentityClient;
+    const chatScope: TokenScope[] = ["chat"];
+    const voipScope: TokenScope[] = ["voip"];
+    const multipleScopes: TokenScope[] = ["chat", "voip"];
 
     beforeEach(async function (this: Context) {
       if (useAad) {
@@ -39,35 +42,35 @@ matrix([[true, false]], async function (useAad: boolean) {
       assert.isString(user.communicationUserId);
     });
 
-    it("successfully creates a user and token", async function () {
-      const { user: newUser, token } = await client.createUserAndToken(["voip"]);
-      assert.isString(newUser.communicationUserId);
-      assert.isString(token);
-    });
+    [
+      { scopes: chatScope, description: "chat scope" },
+      { scopes: voipScope, description: "voip scope" },
+      { scopes: multipleScopes, description: "multiple scopes" },
+    ].forEach((input) =>
+      it(`successfully creates a user and token <${input.description}>`, async function () {
+        const { user: newUser, token, expiresOn } = await client.createUserAndToken(input.scopes);
+        assert.isTrue(isCommunicationUserIdentifier(newUser));
+        assert.isString(newUser.communicationUserId);
+        assert.isString(token);
+        assert.instanceOf(expiresOn, Date);
+      })
+    );
 
-    it("successfully gets a token for a user [single scope]", async function () {
-      const user: CommunicationUserIdentifier = await client.createUser();
-      const { token, expiresOn } = await client.getToken(user, ["chat"]);
-      assert.isString(token);
-      assert.instanceOf(expiresOn, Date);
-    });
-
-    it("successfully gets a token for a user [multiple scopes]", async function () {
-      const user: CommunicationUserIdentifier = await client.createUser();
-      const { token, expiresOn } = await client.getToken(user, ["chat", "voip"]);
-      assert.isString(token);
-      assert.instanceOf(expiresOn, Date);
-    });
-
-    it("successfully creates a user and gets a token in a single request", async function () {
-      const { user: newUser, token, expiresOn } = await client.createUserAndToken(["chat", "voip"]);
-      assert.isTrue(isCommunicationUserIdentifier(newUser));
-      assert.isString(token);
-      assert.instanceOf(expiresOn, Date);
-    });
+    [
+      { scopes: chatScope, description: "chat scope" },
+      { scopes: voipScope, description: "voip scope" },
+      { scopes: multipleScopes, description: "multiple scopes" },
+    ].forEach((input) =>
+      it(`successfully gets a token for a user <${input.description}>`, async function () {
+        const user: CommunicationUserIdentifier = await client.createUser();
+        const { token, expiresOn } = await client.getToken(user, input.scopes);
+        assert.isString(token);
+        assert.instanceOf(expiresOn, Date);
+      })
+    );
 
     it("successfully revokes tokens issued for a user", async function () {
-      const { user } = await client.createUserAndToken(["chat", "voip"]);
+      const { user } = await client.createUserAndToken(multipleScopes);
       await client.revokeTokens(user);
     });
 
@@ -96,7 +99,7 @@ matrix([[true, false]], async function (useAad: boolean) {
 
       it("throws an error when attempting to issue a token for an invalid user", async function () {
         try {
-          await client.getToken(fakeUser, ["chat", "voip"]);
+          await client.getToken(fakeUser, multipleScopes);
           assert.fail("Should have thrown an error");
         } catch (e: any) {
           assert.equal(e.statusCode, 401);

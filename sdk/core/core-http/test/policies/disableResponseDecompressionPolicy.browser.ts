@@ -1,12 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "chai/register-should";
 import {
   DisableResponseDecompressionPolicy,
   disableResponseDecompressionPolicy,
 } from "../../src/policies/disableResponseDecompressionPolicy";
-import { HttpClient, Serializer, ServiceClient } from "../../src/coreHttp";
+import { HttpClient, Serializer, ServiceClient } from "../../src";
 import { HttpHeaders } from "../../src/httpHeaders";
 import { RequestPolicyOptions } from "../../src/policies/requestPolicy";
 import { WebResource } from "../../src/webResource";

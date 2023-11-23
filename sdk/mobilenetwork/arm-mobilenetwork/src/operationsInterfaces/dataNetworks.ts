@@ -7,7 +7,7 @@
  */
 
 import { PagedAsyncIterableIterator } from "@azure/core-paging";
-import { PollerLike, PollOperationState } from "@azure/core-lro";
+import { SimplePollerLike, OperationState } from "@azure/core-lro";
 import {
   DataNetwork,
   DataNetworksListByMobileNetworkOptionalParams,
@@ -47,7 +47,7 @@ export interface DataNetworks {
     mobileNetworkName: string,
     dataNetworkName: string,
     options?: DataNetworksDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<SimplePollerLike<OperationState<void>, void>>;
   /**
    * Deletes the specified data network.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
@@ -75,7 +75,8 @@ export interface DataNetworks {
     options?: DataNetworksGetOptionalParams
   ): Promise<DataNetworksGetResponse>;
   /**
-   * Creates or updates a data network.
+   * Creates or updates a data network. Must be created in the same location as its parent mobile
+   * network.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param mobileNetworkName The name of the mobile network.
    * @param dataNetworkName The name of the data network.
@@ -89,13 +90,14 @@ export interface DataNetworks {
     parameters: DataNetwork,
     options?: DataNetworksCreateOrUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<DataNetworksCreateOrUpdateResponse>,
+    SimplePollerLike<
+      OperationState<DataNetworksCreateOrUpdateResponse>,
       DataNetworksCreateOrUpdateResponse
     >
   >;
   /**
-   * Creates or updates a data network.
+   * Creates or updates a data network. Must be created in the same location as its parent mobile
+   * network.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param mobileNetworkName The name of the mobile network.
    * @param dataNetworkName The name of the data network.

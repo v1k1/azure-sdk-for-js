@@ -6,24 +6,29 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { SharedPrivateLinkResources } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { SearchManagementClient } from "../searchManagementClient";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   SharedPrivateLinkResource,
   SharedPrivateLinkResourcesListByServiceNextOptionalParams,
   SharedPrivateLinkResourcesListByServiceOptionalParams,
+  SharedPrivateLinkResourcesListByServiceResponse,
   SharedPrivateLinkResourcesCreateOrUpdateOptionalParams,
   SharedPrivateLinkResourcesCreateOrUpdateResponse,
   SharedPrivateLinkResourcesGetOptionalParams,
   SharedPrivateLinkResourcesGetResponse,
   SharedPrivateLinkResourcesDeleteOptionalParams,
-  SharedPrivateLinkResourcesListByServiceResponse,
   SharedPrivateLinkResourcesListByServiceNextResponse
 } from "../models";
 
@@ -66,11 +71,15 @@ export class SharedPrivateLinkResourcesImpl
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listByServicePagingPage(
           resourceGroupName,
           searchServiceName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -79,15 +88,22 @@ export class SharedPrivateLinkResourcesImpl
   private async *listByServicePagingPage(
     resourceGroupName: string,
     searchServiceName: string,
-    options?: SharedPrivateLinkResourcesListByServiceOptionalParams
+    options?: SharedPrivateLinkResourcesListByServiceOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<SharedPrivateLinkResource[]> {
-    let result = await this._listByService(
-      resourceGroupName,
-      searchServiceName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: SharedPrivateLinkResourcesListByServiceResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listByService(
+        resourceGroupName,
+        searchServiceName,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listByServiceNext(
         resourceGroupName,
@@ -96,7 +112,9 @@ export class SharedPrivateLinkResourcesImpl
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -134,8 +152,8 @@ export class SharedPrivateLinkResourcesImpl
     sharedPrivateLinkResource: SharedPrivateLinkResource,
     options?: SharedPrivateLinkResourcesCreateOrUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<SharedPrivateLinkResourcesCreateOrUpdateResponse>,
+    SimplePollerLike<
+      OperationState<SharedPrivateLinkResourcesCreateOrUpdateResponse>,
       SharedPrivateLinkResourcesCreateOrUpdateResponse
     >
   > {
@@ -145,7 +163,7 @@ export class SharedPrivateLinkResourcesImpl
     ): Promise<SharedPrivateLinkResourcesCreateOrUpdateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -178,21 +196,24 @@ export class SharedPrivateLinkResourcesImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
         resourceGroupName,
         searchServiceName,
         sharedPrivateLinkResourceName,
         sharedPrivateLinkResource,
         options
       },
-      createOrUpdateOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: createOrUpdateOperationSpec
+    });
+    const poller = await createHttpPoller<
+      SharedPrivateLinkResourcesCreateOrUpdateResponse,
+      OperationState<SharedPrivateLinkResourcesCreateOrUpdateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -271,14 +292,14 @@ export class SharedPrivateLinkResourcesImpl
     searchServiceName: string,
     sharedPrivateLinkResourceName: string,
     options?: SharedPrivateLinkResourcesDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -311,20 +332,20 @@ export class SharedPrivateLinkResourcesImpl
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
         resourceGroupName,
         searchServiceName,
         sharedPrivateLinkResourceName,
         options
       },
-      deleteOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: deleteOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -516,7 +537,6 @@ const listByServiceNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.CloudError
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.resourceGroupName,

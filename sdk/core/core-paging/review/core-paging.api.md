@@ -8,6 +8,12 @@
 export function getPagedAsyncIterator<TElement, TPage = TElement[], TPageSettings = PageSettings, TLink = string>(pagedResult: PagedResult<TPage, TPageSettings, TLink>): PagedAsyncIterableIterator<TElement, TPage, TPageSettings>;
 
 // @public
+export type Paged<T> = {
+    value: T[];
+    nextLink?: string;
+};
+
+// @public
 export interface PagedAsyncIterableIterator<TElement, TPage = TElement[], TPageSettings = PageSettings> {
     [Symbol.asyncIterator](): PagedAsyncIterableIterator<TElement, TPage, TPageSettings>;
     byPage: (settings?: TPageSettings) => AsyncIterableIterator<TPage>;
@@ -21,7 +27,7 @@ export interface PagedResult<TPage, TPageSettings = PageSettings, TLink = string
     getPage: (pageLink: TLink, maxPageSize?: number) => Promise<{
         page: TPage;
         nextPageLink?: TLink;
-    }>;
+    } | undefined>;
     toElements?: (page: TPage) => unknown[];
 }
 

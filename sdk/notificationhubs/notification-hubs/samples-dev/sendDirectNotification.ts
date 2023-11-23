@@ -14,21 +14,22 @@
  * @azsdk-weight 100
  */
 
+import * as dotenv from "dotenv";
 import {
   NotificationDetails,
   NotificationOutcomeState,
-} from "@azure/notification-hubs/models/notificationDetails";
+  createAppleNotification,
+} from "@azure/notification-hubs/models";
 import {
   NotificationHubsClientContext,
   createClientContext,
-} from "@azure/notification-hubs/client";
-import { createAppleNotification } from "@azure/notification-hubs/models/notification";
+  getNotificationOutcomeDetails,
+  sendNotification,
+} from "@azure/notification-hubs/api";
 import { delay } from "@azure/core-util";
-import { getNotificationOutcomeDetails } from "@azure/notification-hubs/client/getNotificationOutcomeDetails";
-import { sendDirectNotification } from "@azure/notification-hubs/client/sendDirectNotification";
+import { isRestError } from "@azure/core-rest-pipeline";
 
 // Load the .env file if it exists
-import * as dotenv from "dotenv";
 dotenv.config();
 
 // Define connection string and hub name
@@ -37,22 +38,31 @@ const hubName = process.env.NOTIFICATION_HUB_NAME || "<hub name>";
 
 // Define message constants
 const DUMMY_DEVICE = "00fc13adff785122b4ad28809a3420982341241421348097878e577c991de8f0";
-const devicetoken = process.env.APNS_DEVICE_TOKEN || DUMMY_DEVICE;
+const deviceHandle = process.env.APNS_DEVICE_TOKEN || DUMMY_DEVICE;
 
 async function main() {
   const context = createClientContext(connectionString, hubName);
 
-  const messageBody = `{ "aps" : { "alert" : { title: "Hello", body: "Hello there SDK Review!" } } }`;
+  /* Can also send a stringified JSON object
+  const messageBody = `{ "aps" : { "alert" : { title: "Hello", body: "Hello there!" } } }`;
+  */
 
   const notification = createAppleNotification({
-    body: messageBody,
+    body: {
+      aps: {
+        alert: {
+          title: "Hello",
+          body: "Hello there!",
+        },
+      },
+    },
     headers: {
       "apns-priority": "10",
       "apns-push-type": "alert",
     },
   });
 
-  const result = await sendDirectNotification(context, devicetoken, notification);
+  const result = await sendNotification(context, notification, { deviceHandle });
 
   console.log(`Direct send Tracking ID: ${result.trackingId}`);
   console.log(`Direct send Correlation ID: ${result.correlationId}`);
@@ -81,6 +91,11 @@ async function getNotificationDetails(
       state = result.state!;
     } catch (e) {
       // Possible to get 404 for when it doesn't exist yet.
+      if (isRestError(e) && e.statusCode === 404) {
+        continue;
+      } else {
+        throw e;
+      }
     }
 
     await delay(1000);

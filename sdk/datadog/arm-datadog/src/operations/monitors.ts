@@ -6,41 +6,46 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { Monitors } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { MicrosoftDatadogClient } from "../microsoftDatadogClient";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   DatadogApiKey,
   MonitorsListApiKeysNextOptionalParams,
   MonitorsListApiKeysOptionalParams,
+  MonitorsListApiKeysResponse,
   DatadogHost,
   MonitorsListHostsNextOptionalParams,
   MonitorsListHostsOptionalParams,
+  MonitorsListHostsResponse,
   LinkedResource,
   MonitorsListLinkedResourcesNextOptionalParams,
   MonitorsListLinkedResourcesOptionalParams,
+  MonitorsListLinkedResourcesResponse,
   MonitoredResource,
   MonitorsListMonitoredResourcesNextOptionalParams,
   MonitorsListMonitoredResourcesOptionalParams,
+  MonitorsListMonitoredResourcesResponse,
   DatadogMonitorResource,
   MonitorsListNextOptionalParams,
   MonitorsListOptionalParams,
+  MonitorsListResponse,
   MonitorsListByResourceGroupNextOptionalParams,
   MonitorsListByResourceGroupOptionalParams,
-  MonitorsListApiKeysResponse,
+  MonitorsListByResourceGroupResponse,
   MonitorsGetDefaultKeyOptionalParams,
   MonitorsGetDefaultKeyResponse,
   MonitorsSetDefaultKeyOptionalParams,
-  MonitorsListHostsResponse,
-  MonitorsListLinkedResourcesResponse,
-  MonitorsListMonitoredResourcesResponse,
-  MonitorsListResponse,
-  MonitorsListByResourceGroupResponse,
   MonitorsGetOptionalParams,
   MonitorsGetResponse,
   MonitorsCreateOptionalParams,
@@ -94,11 +99,15 @@ export class MonitorsImpl implements Monitors {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listApiKeysPagingPage(
           resourceGroupName,
           monitorName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -107,15 +116,18 @@ export class MonitorsImpl implements Monitors {
   private async *listApiKeysPagingPage(
     resourceGroupName: string,
     monitorName: string,
-    options?: MonitorsListApiKeysOptionalParams
+    options?: MonitorsListApiKeysOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<DatadogApiKey[]> {
-    let result = await this._listApiKeys(
-      resourceGroupName,
-      monitorName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: MonitorsListApiKeysResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listApiKeys(resourceGroupName, monitorName, options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listApiKeysNext(
         resourceGroupName,
@@ -124,7 +136,9 @@ export class MonitorsImpl implements Monitors {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -165,11 +179,15 @@ export class MonitorsImpl implements Monitors {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listHostsPagingPage(
           resourceGroupName,
           monitorName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -178,11 +196,18 @@ export class MonitorsImpl implements Monitors {
   private async *listHostsPagingPage(
     resourceGroupName: string,
     monitorName: string,
-    options?: MonitorsListHostsOptionalParams
+    options?: MonitorsListHostsOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<DatadogHost[]> {
-    let result = await this._listHosts(resourceGroupName, monitorName, options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: MonitorsListHostsResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listHosts(resourceGroupName, monitorName, options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listHostsNext(
         resourceGroupName,
@@ -191,7 +216,9 @@ export class MonitorsImpl implements Monitors {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -232,11 +259,15 @@ export class MonitorsImpl implements Monitors {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listLinkedResourcesPagingPage(
           resourceGroupName,
           monitorName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -245,15 +276,22 @@ export class MonitorsImpl implements Monitors {
   private async *listLinkedResourcesPagingPage(
     resourceGroupName: string,
     monitorName: string,
-    options?: MonitorsListLinkedResourcesOptionalParams
+    options?: MonitorsListLinkedResourcesOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<LinkedResource[]> {
-    let result = await this._listLinkedResources(
-      resourceGroupName,
-      monitorName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: MonitorsListLinkedResourcesResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listLinkedResources(
+        resourceGroupName,
+        monitorName,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listLinkedResourcesNext(
         resourceGroupName,
@@ -262,7 +300,9 @@ export class MonitorsImpl implements Monitors {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -303,11 +343,15 @@ export class MonitorsImpl implements Monitors {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listMonitoredResourcesPagingPage(
           resourceGroupName,
           monitorName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -316,15 +360,22 @@ export class MonitorsImpl implements Monitors {
   private async *listMonitoredResourcesPagingPage(
     resourceGroupName: string,
     monitorName: string,
-    options?: MonitorsListMonitoredResourcesOptionalParams
+    options?: MonitorsListMonitoredResourcesOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<MonitoredResource[]> {
-    let result = await this._listMonitoredResources(
-      resourceGroupName,
-      monitorName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: MonitorsListMonitoredResourcesResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listMonitoredResources(
+        resourceGroupName,
+        monitorName,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listMonitoredResourcesNext(
         resourceGroupName,
@@ -333,7 +384,9 @@ export class MonitorsImpl implements Monitors {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -366,22 +419,34 @@ export class MonitorsImpl implements Monitors {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listPagingPage(options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listPagingPage(options, settings);
       }
     };
   }
 
   private async *listPagingPage(
-    options?: MonitorsListOptionalParams
+    options?: MonitorsListOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<DatadogMonitorResource[]> {
-    let result = await this._list(options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: MonitorsListResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._list(options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listNext(continuationToken, options);
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -410,19 +475,33 @@ export class MonitorsImpl implements Monitors {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listByResourceGroupPagingPage(resourceGroupName, options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listByResourceGroupPagingPage(
+          resourceGroupName,
+          options,
+          settings
+        );
       }
     };
   }
 
   private async *listByResourceGroupPagingPage(
     resourceGroupName: string,
-    options?: MonitorsListByResourceGroupOptionalParams
+    options?: MonitorsListByResourceGroupOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<DatadogMonitorResource[]> {
-    let result = await this._listByResourceGroup(resourceGroupName, options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: MonitorsListByResourceGroupResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listByResourceGroup(resourceGroupName, options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listByResourceGroupNext(
         resourceGroupName,
@@ -430,7 +509,9 @@ export class MonitorsImpl implements Monitors {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -601,8 +682,8 @@ export class MonitorsImpl implements Monitors {
     monitorName: string,
     options?: MonitorsCreateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<MonitorsCreateResponse>,
+    SimplePollerLike<
+      OperationState<MonitorsCreateResponse>,
       MonitorsCreateResponse
     >
   > {
@@ -612,7 +693,7 @@ export class MonitorsImpl implements Monitors {
     ): Promise<MonitorsCreateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -645,15 +726,18 @@ export class MonitorsImpl implements Monitors {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, monitorName, options },
-      createOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, monitorName, options },
+      spec: createOperationSpec
+    });
+    const poller = await createHttpPoller<
+      MonitorsCreateResponse,
+      OperationState<MonitorsCreateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -689,8 +773,8 @@ export class MonitorsImpl implements Monitors {
     monitorName: string,
     options?: MonitorsUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<MonitorsUpdateResponse>,
+    SimplePollerLike<
+      OperationState<MonitorsUpdateResponse>,
       MonitorsUpdateResponse
     >
   > {
@@ -700,7 +784,7 @@ export class MonitorsImpl implements Monitors {
     ): Promise<MonitorsUpdateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -733,13 +817,16 @@ export class MonitorsImpl implements Monitors {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, monitorName, options },
-      updateOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, monitorName, options },
+      spec: updateOperationSpec
+    });
+    const poller = await createHttpPoller<
+      MonitorsUpdateResponse,
+      OperationState<MonitorsUpdateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -775,14 +862,14 @@ export class MonitorsImpl implements Monitors {
     resourceGroupName: string,
     monitorName: string,
     options?: MonitorsDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -815,13 +902,13 @@ export class MonitorsImpl implements Monitors {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, monitorName, options },
-      deleteOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, monitorName, options },
+      spec: deleteOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -1288,7 +1375,6 @@ const listApiKeysNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,
@@ -1310,7 +1396,6 @@ const listHostsNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,
@@ -1332,7 +1417,6 @@ const listLinkedResourcesNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,
@@ -1354,7 +1438,6 @@ const listMonitoredResourcesNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,
@@ -1376,7 +1459,6 @@ const listNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,
@@ -1396,7 +1478,6 @@ const listByResourceGroupNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,

@@ -11,7 +11,7 @@ import { HttpOperationResponse } from "../../src/httpOperationResponse";
 import { OperationSpec } from "../../src/operationSpec";
 import { WebResource } from "../../src/webResource";
 import { assert } from "chai";
-import { bearerTokenAuthenticationPolicy } from "../../src/coreHttp";
+import { bearerTokenAuthenticationPolicy } from "../../src";
 
 const { refreshWindowInMs: defaultRefreshWindow } = DEFAULT_CYCLER_OPTIONS;
 
@@ -38,7 +38,9 @@ describe("BearerTokenAuthenticationPolicy", function () {
   it("correctly adds an Authentication header with the Bearer token", async function () {
     const mockToken = "token";
     const tokenScopes = ["scope1", "scope2"];
-    const fakeGetToken = fake.returns(Promise.resolve({ token: mockToken, expiresOn: new Date() }));
+    const fakeGetToken = fake.returns(
+      Promise.resolve({ token: mockToken, expiresOnTimestamp: new Date().getTime() })
+    );
     const mockCredential: TokenCredential = {
       getToken: fakeGetToken,
     };

@@ -58,7 +58,7 @@ export interface ErrorDetails {
    * The error code.
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
-  readonly code?: string;
+  readonly code?: number;
   /**
    * The HTTP status code.
    * NOTE: This property will not be serialized. It can only be populated by the server.
@@ -194,6 +194,8 @@ export interface IotDpsPropertiesDescription {
    * Indicates if the DPS instance has Data Residency enabled, removing the cross geo-pair disaster recovery.
    */
   enableDataResidency?: boolean;
+  /** Portal endpoint to enable CORS for this provisioning service. */
+  portalOperationsHostName?: string;
 }
 
 /** The IP filter rules for a provisioning Service. */
@@ -303,6 +305,40 @@ export interface IotDpsSkuInfo {
   capacity?: number;
 }
 
+/** Managed service identity (system assigned and/or user assigned identities) */
+export interface ManagedServiceIdentity {
+  /**
+   * The service principal ID of the system assigned identity. This property will only be provided for a system assigned identity.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly principalId?: string;
+  /**
+   * The tenant ID of the system assigned identity. This property will only be provided for a system assigned identity.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly tenantId?: string;
+  /** Type of managed service identity (where both SystemAssigned and UserAssigned types are allowed). */
+  type: ManagedServiceIdentityType;
+  /** The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests. */
+  userAssignedIdentities?: {
+    [propertyName: string]: UserAssignedIdentity | null;
+  };
+}
+
+/** User assigned identity properties */
+export interface UserAssignedIdentity {
+  /**
+   * The principal ID of the assigned identity.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly principalId?: string;
+  /**
+   * The client ID of the assigned identity.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly clientId?: string;
+}
+
 /** The common properties of an Azure resource. */
 export interface Resource {
   /**
@@ -322,6 +358,10 @@ export interface Resource {
   readonly type?: string;
   /** The resource location. */
   location: string;
+  /** The resource group of the resource. */
+  resourcegroup?: string;
+  /** The subscription id of the resource. */
+  subscriptionid?: string;
   /** The resource tags. */
   tags?: { [propertyName: string]: string };
 }
@@ -507,7 +547,7 @@ export interface CertificateBodyDescription {
 }
 
 /** The description of the provisioning service. */
-export type ProvisioningServiceDescription = Resource & {
+export interface ProvisioningServiceDescription extends Resource {
   /** The Etag field is *not* required. If it is provided in the response body, it must also be provided as a header per the normal ETag convention. */
   etag?: string;
   /** Service specific properties for a provisioning service */
@@ -519,7 +559,9 @@ export type ProvisioningServiceDescription = Resource & {
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
   readonly systemData?: SystemData;
-};
+  /** The managed identities for a provisioning service. */
+  identity?: ManagedServiceIdentity;
+}
 
 /** Defines headers for IotDpsResource_deletePrivateEndpointConnection operation. */
 export interface IotDpsResourceDeletePrivateEndpointConnectionHeaders {
@@ -533,9 +575,13 @@ export interface IotDpsResourceDeletePrivateEndpointConnectionHeaders {
 
 /** Known values of {@link CreatedByType} that the service accepts. */
 export enum KnownCreatedByType {
+  /** User */
   User = "User",
+  /** Application */
   Application = "Application",
+  /** ManagedIdentity */
   ManagedIdentity = "ManagedIdentity",
+  /** Key */
   Key = "Key"
 }
 
@@ -553,7 +599,9 @@ export type CreatedByType = string;
 
 /** Known values of {@link CertificatePurpose} that the service accepts. */
 export enum KnownCertificatePurpose {
+  /** ClientAuthentication */
   ClientAuthentication = "clientAuthentication",
+  /** ServerAuthentication */
   ServerAuthentication = "serverAuthentication"
 }
 
@@ -569,17 +617,29 @@ export type CertificatePurpose = string;
 
 /** Known values of {@link State} that the service accepts. */
 export enum KnownState {
+  /** Activating */
   Activating = "Activating",
+  /** Active */
   Active = "Active",
+  /** Deleting */
   Deleting = "Deleting",
+  /** Deleted */
   Deleted = "Deleted",
+  /** ActivationFailed */
   ActivationFailed = "ActivationFailed",
+  /** DeletionFailed */
   DeletionFailed = "DeletionFailed",
+  /** Transitioning */
   Transitioning = "Transitioning",
+  /** Suspending */
   Suspending = "Suspending",
+  /** Suspended */
   Suspended = "Suspended",
+  /** Resuming */
   Resuming = "Resuming",
+  /** FailingOver */
   FailingOver = "FailingOver",
+  /** FailoverFailed */
   FailoverFailed = "FailoverFailed"
 }
 
@@ -605,7 +665,9 @@ export type State = string;
 
 /** Known values of {@link PublicNetworkAccess} that the service accepts. */
 export enum KnownPublicNetworkAccess {
+  /** Enabled */
   Enabled = "Enabled",
+  /** Disabled */
   Disabled = "Disabled"
 }
 
@@ -621,9 +683,13 @@ export type PublicNetworkAccess = string;
 
 /** Known values of {@link PrivateLinkServiceConnectionStatus} that the service accepts. */
 export enum KnownPrivateLinkServiceConnectionStatus {
+  /** Pending */
   Pending = "Pending",
+  /** Approved */
   Approved = "Approved",
+  /** Rejected */
   Rejected = "Rejected",
+  /** Disconnected */
   Disconnected = "Disconnected"
 }
 
@@ -641,8 +707,11 @@ export type PrivateLinkServiceConnectionStatus = string;
 
 /** Known values of {@link AllocationPolicy} that the service accepts. */
 export enum KnownAllocationPolicy {
+  /** Hashed */
   Hashed = "Hashed",
+  /** GeoLatency */
   GeoLatency = "GeoLatency",
+  /** Static */
   Static = "Static"
 }
 
@@ -659,11 +728,17 @@ export type AllocationPolicy = string;
 
 /** Known values of {@link AccessRightsDescription} that the service accepts. */
 export enum KnownAccessRightsDescription {
+  /** ServiceConfig */
   ServiceConfig = "ServiceConfig",
+  /** EnrollmentRead */
   EnrollmentRead = "EnrollmentRead",
+  /** EnrollmentWrite */
   EnrollmentWrite = "EnrollmentWrite",
+  /** DeviceConnect */
   DeviceConnect = "DeviceConnect",
+  /** RegistrationStatusRead */
   RegistrationStatusRead = "RegistrationStatusRead",
+  /** RegistrationStatusWrite */
   RegistrationStatusWrite = "RegistrationStatusWrite"
 }
 
@@ -683,6 +758,7 @@ export type AccessRightsDescription = string;
 
 /** Known values of {@link IotDpsSku} that the service accepts. */
 export enum KnownIotDpsSku {
+  /** S1 */
   S1 = "S1"
 }
 
@@ -695,9 +771,35 @@ export enum KnownIotDpsSku {
  */
 export type IotDpsSku = string;
 
+/** Known values of {@link ManagedServiceIdentityType} that the service accepts. */
+export enum KnownManagedServiceIdentityType {
+  /** None */
+  None = "None",
+  /** SystemAssigned */
+  SystemAssigned = "SystemAssigned",
+  /** UserAssigned */
+  UserAssigned = "UserAssigned",
+  /** SystemAssignedUserAssigned */
+  SystemAssignedUserAssigned = "SystemAssigned,UserAssigned"
+}
+
+/**
+ * Defines values for ManagedServiceIdentityType. \
+ * {@link KnownManagedServiceIdentityType} can be used interchangeably with ManagedServiceIdentityType,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **None** \
+ * **SystemAssigned** \
+ * **UserAssigned** \
+ * **SystemAssigned,UserAssigned**
+ */
+export type ManagedServiceIdentityType = string;
+
 /** Known values of {@link NameUnavailabilityReason} that the service accepts. */
 export enum KnownNameUnavailabilityReason {
+  /** Invalid */
   Invalid = "Invalid",
+  /** AlreadyExists */
   AlreadyExists = "AlreadyExists"
 }
 

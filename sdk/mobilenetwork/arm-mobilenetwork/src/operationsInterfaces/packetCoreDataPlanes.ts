@@ -7,7 +7,7 @@
  */
 
 import { PagedAsyncIterableIterator } from "@azure/core-paging";
-import { PollerLike, PollOperationState } from "@azure/core-lro";
+import { SimplePollerLike, OperationState } from "@azure/core-lro";
 import {
   PacketCoreDataPlane,
   PacketCoreDataPlanesListByPacketCoreControlPlaneOptionalParams,
@@ -47,7 +47,7 @@ export interface PacketCoreDataPlanes {
     packetCoreControlPlaneName: string,
     packetCoreDataPlaneName: string,
     options?: PacketCoreDataPlanesDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<SimplePollerLike<OperationState<void>, void>>;
   /**
    * Deletes the specified packet core data plane.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
@@ -75,7 +75,8 @@ export interface PacketCoreDataPlanes {
     options?: PacketCoreDataPlanesGetOptionalParams
   ): Promise<PacketCoreDataPlanesGetResponse>;
   /**
-   * Creates or updates a packet core data plane.
+   * Creates or updates a packet core data plane. Must be created in the same location as its parent
+   * packet core control plane.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param packetCoreControlPlaneName The name of the packet core control plane.
    * @param packetCoreDataPlaneName The name of the packet core data plane.
@@ -89,13 +90,14 @@ export interface PacketCoreDataPlanes {
     parameters: PacketCoreDataPlane,
     options?: PacketCoreDataPlanesCreateOrUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<PacketCoreDataPlanesCreateOrUpdateResponse>,
+    SimplePollerLike<
+      OperationState<PacketCoreDataPlanesCreateOrUpdateResponse>,
       PacketCoreDataPlanesCreateOrUpdateResponse
     >
   >;
   /**
-   * Creates or updates a packet core data plane.
+   * Creates or updates a packet core data plane. Must be created in the same location as its parent
+   * packet core control plane.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param packetCoreControlPlaneName The name of the packet core control plane.
    * @param packetCoreDataPlaneName The name of the packet core data plane.

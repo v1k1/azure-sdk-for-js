@@ -24,10 +24,16 @@ export { AuthenticationRecord } from "./msal/types";
 export { serializeAuthenticationRecord, deserializeAuthenticationRecord } from "./msal/utils";
 export { TokenCredentialOptions } from "./tokenCredentialOptions";
 export { MultiTenantTokenCredentialOptions } from "./credentials/multiTenantTokenCredentialOptions";
-
+export { AuthorityValidationOptions } from "./credentials/authorityValidationOptions";
 // TODO: Export again once we're ready to release this feature.
 // export { RegionalAuthority } from "./regionalAuthority";
 
+export { BrokerAuthOptions } from "./credentials/brokerAuthOptions";
+export {
+  BrokerOptions,
+  BrokerEnabledOptions,
+  BrokerDisabledOptions,
+} from "./msal/nodeFlows/brokerOptions";
 export { InteractiveCredentialOptions } from "./credentials/interactiveCredentialOptions";
 
 export { ChainedTokenCredential } from "./credentials/chainedTokenCredential";
@@ -57,6 +63,8 @@ export { ClientAssertionCredentialOptions } from "./credentials/clientAssertionC
 export { CredentialPersistenceOptions } from "./credentials/credentialPersistenceOptions";
 export { AzureCliCredential } from "./credentials/azureCliCredential";
 export { AzureCliCredentialOptions } from "./credentials/azureCliCredentialOptions";
+export { AzureDeveloperCliCredential } from "./credentials/azureDeveloperCliCredential";
+export { AzureDeveloperCliCredentialOptions } from "./credentials/azureDeveloperCliCredentialOptions";
 export { InteractiveBrowserCredential } from "./credentials/interactiveBrowserCredential";
 export {
   InteractiveBrowserCredentialNodeOptions,
@@ -89,7 +97,9 @@ export { UsernamePasswordCredentialOptions } from "./credentials/usernamePasswor
 export { VisualStudioCodeCredential } from "./credentials/visualStudioCodeCredential";
 export { VisualStudioCodeCredentialOptions } from "./credentials/visualStudioCodeCredentialOptions";
 export { OnBehalfOfCredential } from "./credentials/onBehalfOfCredential";
-
+export { WorkloadIdentityCredential } from "./credentials/workloadIdentityCredential";
+export { WorkloadIdentityCredentialOptions } from "./credentials/workloadIdentityCredentialOptions";
+export { BrowserCustomizationOptions } from "./credentials/browserCustomizationOptions";
 export { TokenCachePersistenceOptions } from "./msal/nodeFlows/tokenCachePersistenceOptions";
 
 export { TokenCredential, GetTokenOptions, AccessToken } from "@azure/core-auth";

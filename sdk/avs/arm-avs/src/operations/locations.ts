@@ -72,16 +72,18 @@ const checkTrialAvailabilityOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.Trial
     },
     default: {
-      bodyMapper: Mappers.CloudError
+      bodyMapper: Mappers.ErrorResponse
     }
   },
+  requestBody: Parameters.sku,
   queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.location
   ],
-  headerParameters: [Parameters.accept],
+  headerParameters: [Parameters.accept, Parameters.contentType],
+  mediaType: "json",
   serializer
 };
 const checkQuotaAvailabilityOperationSpec: coreClient.OperationSpec = {
@@ -93,7 +95,7 @@ const checkQuotaAvailabilityOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.Quota
     },
     default: {
-      bodyMapper: Mappers.CloudError
+      bodyMapper: Mappers.ErrorResponse
     }
   },
   queryParameters: [Parameters.apiVersion],

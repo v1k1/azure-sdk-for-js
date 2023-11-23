@@ -8,6 +8,7 @@ export type CommunicationIdentifier =
   | CommunicationUserIdentifier
   | PhoneNumberIdentifier
   | MicrosoftTeamsUserIdentifier
+  | MicrosoftTeamsAppIdentifier
   | UnknownIdentifier;
 
 /**
@@ -60,6 +61,26 @@ export interface MicrosoftTeamsUserIdentifier {
 }
 
 /**
+ * A Microsoft Teams App.
+ */
+export interface MicrosoftTeamsAppIdentifier {
+  /**
+   * Optional raw id of the Microsoft Teams App.
+   */
+  rawId?: string;
+
+  /**
+   * The unique Microsoft Teams app ID.
+   */
+  teamsAppId: string;
+
+  /**
+   * The cloud that the Microsoft Temas App belongs to. If missing, the cloud is "public".
+   */
+  cloud?: "public" | "dod" | "gcch";
+}
+
+/**
  * An unknown identifier that doesn't fit any of the other identifier types.
  */
 export interface UnknownIdentifier {
@@ -103,6 +124,17 @@ export const isMicrosoftTeamsUserIdentifier = (
 };
 
 /**
+ * Tests an Identifier to determine whether it implements MicrosoftTeamsAppIdentifier.
+ *
+ * @param identifier - The assumed available to be tested.
+ */
+export const isMicrosoftTeamsAppIdentifier = (
+  identifier: CommunicationIdentifier
+): identifier is MicrosoftTeamsAppIdentifier => {
+  return typeof (identifier as any).teamsAppId === "string";
+};
+
+/**
  * Tests an Identifier to determine whether it implements UnknownIdentifier.
  *
  * @param identifier - The assumed UnknownIdentifier to be tested.
@@ -120,6 +152,7 @@ export type CommunicationIdentifierKind =
   | CommunicationUserKind
   | PhoneNumberKind
   | MicrosoftTeamsUserKind
+  | MicrosoftTeamsAppKind
   | UnknownIdentifierKind;
 
 /**
@@ -153,6 +186,16 @@ export interface MicrosoftTeamsUserKind extends MicrosoftTeamsUserIdentifier {
 }
 
 /**
+ * IdentifierKind for a MicrosoftTeamsAppIdentifier.
+ */
+export interface MicrosoftTeamsAppKind extends MicrosoftTeamsAppIdentifier {
+  /**
+   * The identifier kind.
+   */
+  kind: "microsoftTeamsApp";
+}
+
+/**
  * IdentifierKind for UnknownIdentifier.
  */
 export interface UnknownIdentifierKind extends UnknownIdentifier {
@@ -178,6 +221,9 @@ export const getIdentifierKind = (
   }
   if (isMicrosoftTeamsUserIdentifier(identifier)) {
     return { ...identifier, kind: "microsoftTeamsUser" };
+  }
+  if (isMicrosoftTeamsAppIdentifier(identifier)) {
+    return { ...identifier, kind: "microsoftTeamsApp" };
   }
   return { ...identifier, kind: "unknown" };
 };
@@ -206,16 +252,50 @@ export const getIdentifierRawId = (identifier: CommunicationIdentifier): string 
       }
       return `8:orgid:${microsoftTeamsUserId}`;
     }
+    case "microsoftTeamsApp": {
+      const { teamsAppId, rawId, cloud } = identifierKind;
+      if (rawId) return rawId;
+      switch (cloud) {
+        case "dod":
+          return `28:dod:${teamsAppId}`;
+        case "gcch":
+          return `28:gcch:${teamsAppId}`;
+      }
+      return `28:orgid:${teamsAppId}`;
+    }
     case "phoneNumber": {
       const { phoneNumber, rawId } = identifierKind;
       if (rawId) return rawId;
-      // strip the leading +. We just assume correct E.164 format here because validation should only happen server-side, not client-side.
-      return `4:${phoneNumber.replace(/^\+/, "")}`;
+      return `4:${phoneNumber}`;
     }
     case "unknown": {
       return identifierKind.id;
     }
   }
+};
+
+const buildMicrosoftTeamsAppIdentifier = (
+  teamsAppId: string,
+  cloud: "public" | "dod" | "gcch"
+): CommunicationIdentifierKind => {
+  return {
+    kind: "microsoftTeamsApp",
+    teamsAppId: teamsAppId,
+    cloud: cloud,
+  };
+};
+
+const buildMicrosoftTeamsUserIdentifier = (
+  id: string,
+  cloud: "public" | "dod" | "gcch",
+  isAnonymous: boolean
+): CommunicationIdentifierKind => {
+  return {
+    kind: "microsoftTeamsUser",
+    microsoftTeamsUserId: id,
+    isAnonymous: isAnonymous,
+    cloud: cloud,
+  };
 };
 
 /**
@@ -225,44 +305,37 @@ export const getIdentifierRawId = (identifier: CommunicationIdentifier): string 
  */
 export const createIdentifierFromRawId = (rawId: string): CommunicationIdentifierKind => {
   if (rawId.startsWith("4:")) {
-    return { kind: "phoneNumber", phoneNumber: `+${rawId.substring("4:".length)}` };
+    return { kind: "phoneNumber", phoneNumber: `${rawId.substring("4:".length)}` };
   }
 
   const segments = rawId.split(":");
-  if (segments.length < 3) return { kind: "unknown", id: rawId };
+  if (segments.length !== 3) {
+    return { kind: "unknown", id: rawId };
+  }
 
   const prefix = `${segments[0]}:${segments[1]}:`;
-  const suffix = rawId.substring(prefix.length);
+  const suffix = segments[2];
 
   switch (prefix) {
     case "8:teamsvisitor:":
       return { kind: "microsoftTeamsUser", microsoftTeamsUserId: suffix, isAnonymous: true };
     case "8:orgid:":
-      return {
-        kind: "microsoftTeamsUser",
-        microsoftTeamsUserId: suffix,
-        isAnonymous: false,
-        cloud: "public",
-      };
+      return buildMicrosoftTeamsUserIdentifier(suffix, "public", false);
     case "8:dod:":
-      return {
-        kind: "microsoftTeamsUser",
-        microsoftTeamsUserId: suffix,
-        isAnonymous: false,
-        cloud: "dod",
-      };
+      return buildMicrosoftTeamsUserIdentifier(suffix, "dod", false);
     case "8:gcch:":
-      return {
-        kind: "microsoftTeamsUser",
-        microsoftTeamsUserId: suffix,
-        isAnonymous: false,
-        cloud: "gcch",
-      };
+      return buildMicrosoftTeamsUserIdentifier(suffix, "gcch", false);
     case "8:acs:":
     case "8:spool:":
     case "8:dod-acs:":
     case "8:gcch-acs:":
       return { kind: "communicationUser", communicationUserId: rawId };
+    case "28:orgid:":
+      return buildMicrosoftTeamsAppIdentifier(suffix, "public");
+    case "28:gcch:":
+      return buildMicrosoftTeamsAppIdentifier(suffix, "gcch");
+    case "28:dod:":
+      return buildMicrosoftTeamsAppIdentifier(suffix, "dod");
   }
   return { kind: "unknown", id: rawId };
 };

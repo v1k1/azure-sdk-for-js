@@ -261,7 +261,8 @@ describe("Compute test", () => {
         ],
       }
     }, testPollingOptions)
-    assert.equal(res.type, "Microsoft.Compute/virtualMachines");
+    const res1 = await client.virtualMachines.get(resourceGroupName, virtual_machine_name);
+    assert.equal(res1.name, virtual_machine_name);
   });
 
   it("virtualMachines delete test", async function () {
@@ -271,8 +272,9 @@ describe("Compute test", () => {
       resArray.push(item);
     }
     assert.equal(resArray.length, 0);
-    await network_client.networkInterfaces.beginDeleteAndWait(resourceGroupName, interface_name);
-    await network_client.subnets.beginDeleteAndWait(resourceGroupName, network_name, subnet_name);
-    await network_client.virtualNetworks.beginDeleteAndWait(resourceGroupName, network_name);
+    await client.disks.beginDeleteAndWait(resourceGroupName, "myVMosdisk", testPollingOptions)
+    await network_client.networkInterfaces.beginDeleteAndWait(resourceGroupName, interface_name, testPollingOptions);
+    await network_client.subnets.beginDeleteAndWait(resourceGroupName, network_name, subnet_name, testPollingOptions);
+    await network_client.virtualNetworks.beginDeleteAndWait(resourceGroupName, network_name, testPollingOptions);
   });
 });

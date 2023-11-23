@@ -58,21 +58,6 @@ describe("Secret client - create, read, update and delete operations", () => {
     });
   });
 
-  // On playback mode, the tests happen too fast for the timeout to work
-  it("can timeout adding a secret", async function (this: Context) {
-    recorder.skip(undefined, "Timeout tests don't work on playback mode.");
-    const secretName = testClient.formatName(
-      `${secretPrefix}-${this!.test!.title}-${secretSuffix}`
-    );
-    await assertThrowsAbortError(async () => {
-      await client.setSecret(secretName, secretValue, {
-        requestOptions: {
-          timeout: 1,
-        },
-      });
-    });
-  });
-
   it("cannot create a secret with an empty name", async function () {
     const secretName = "";
     try {
@@ -132,26 +117,6 @@ describe("Secret client - create, read, update and delete operations", () => {
     );
   });
 
-  // On playback mode, the tests happen too fast for the timeout to work
-  it("can timeout updating a secret", async function (this: Context) {
-    recorder.skip(undefined, "Timeout tests don't work on playback mode.");
-    const secretName = testClient.formatName(
-      `${secretPrefix}-${this!.test!.title}-${secretSuffix}`
-    );
-    const expiryDate = new Date("3000-01-01");
-    expiryDate.setMilliseconds(0);
-
-    await client.setSecret(secretName, secretValue);
-    await assertThrowsAbortError(async () => {
-      await client.updateSecretProperties(secretName, "", {
-        expiresOn: expiryDate,
-        requestOptions: {
-          timeout: 1,
-        },
-      });
-    });
-  });
-
   it("can update a disabled secret", async function (this: Context) {
     const secretName = testClient.formatName(
       `${secretPrefix}-${this!.test!.title}-${secretSuffix}`
@@ -180,22 +145,6 @@ describe("Secret client - create, read, update and delete operations", () => {
     const result = await client.getSecret(secretName);
     assert.equal(result.name, secretName, "Unexpected secret name in result from setSecret().");
     assert.equal(result.value, secretValue, "Unexpected secret value in result from setSecret().");
-  });
-
-  // On playback mode, the tests happen too fast for the timeout to work
-  it("can timeout getting a secret", async function (this: Context) {
-    recorder.skip(undefined, "Timeout tests don't work on playback mode.");
-    const secretName = testClient.formatName(
-      `${secretPrefix}-${this!.test!.title}-${secretSuffix}`
-    );
-    await client.setSecret(secretName, secretValue);
-    await assertThrowsAbortError(async () => {
-      await client.getSecret(secretName, {
-        requestOptions: {
-          timeout: 1,
-        },
-      });
-    });
   });
 
   it("can't get a disabled secret", async function (this: Context) {
@@ -275,23 +224,6 @@ describe("Secret client - create, read, update and delete operations", () => {
     }
   });
 
-  // On playback mode, the tests happen too fast for the timeout to work
-  it("can timeout deleting a secret", async function (this: Context) {
-    recorder.skip(undefined, "Timeout tests don't work on playback mode.");
-    const secretName = testClient.formatName(
-      `${secretPrefix}-${this!.test!.title}-${secretSuffix}`
-    );
-    await client.setSecret(secretName, secretValue);
-    await assertThrowsAbortError(async () => {
-      await client.beginDeleteSecret(secretName, {
-        requestOptions: {
-          timeout: 1,
-        },
-        ...testPollerProperties,
-      });
-    });
-  });
-
   it("can delete a secret (Non Existing)", async function (this: Context) {
     const secretName = testClient.formatName(
       `${secretPrefix}-${this!.test!.title}-${secretSuffix}`
@@ -350,7 +282,10 @@ describe("Secret client - create, read, update and delete operations", () => {
   });
 
   it("traces through the various operations", async () => {
-    const secretName = recorder.getUniqueName("secrettrace");
+    const secretName = recorder.variable(
+      "secrettrace",
+      `secrettrace${Math.floor(Math.random() * 1000)}`
+    );
 
     await assert.supportsTracing(
       async (options) => {

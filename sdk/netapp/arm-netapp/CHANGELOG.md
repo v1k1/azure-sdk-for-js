@@ -1,15 +1,151 @@
 # Release History
+    
+## 19.0.0 (2023-09-25)
+    
+**Features**
 
-## 17.0.1 (Unreleased)
+  - Added operation NetAppResource.beginUpdateNetworkSiblingSet
+  - Added operation NetAppResource.beginUpdateNetworkSiblingSetAndWait
+  - Added operation NetAppResource.queryNetworkSiblingSet
+  - Added operation Volumes.beginPopulateAvailabilityZone
+  - Added operation Volumes.beginPopulateAvailabilityZoneAndWait
+  - Added Interface NetAppResourceQueryNetworkSiblingSetOptionalParams
+  - Added Interface NetAppResourceUpdateNetworkSiblingSetHeaders
+  - Added Interface NetAppResourceUpdateNetworkSiblingSetOptionalParams
+  - Added Interface NetworkSiblingSet
+  - Added Interface NicInfo
+  - Added Interface QueryNetworkSiblingSetRequest
+  - Added Interface UpdateNetworkSiblingSetRequest
+  - Added Interface VolumesPopulateAvailabilityZoneHeaders
+  - Added Interface VolumesPopulateAvailabilityZoneOptionalParams
+  - Added Type Alias CoolAccessRetrievalPolicy
+  - Added Type Alias NetAppResourceQueryNetworkSiblingSetResponse
+  - Added Type Alias NetAppResourceUpdateNetworkSiblingSetResponse
+  - Added Type Alias NetworkSiblingSetProvisioningState
+  - Added Type Alias VolumesPopulateAvailabilityZoneResponse
+  - Interface Volume has a new optional parameter coolAccessRetrievalPolicy
+  - Interface VolumeGroupVolumeProperties has a new optional parameter coolAccessRetrievalPolicy
+  - Interface VolumeGroupVolumeProperties has a new optional parameter zones
+  - Interface VolumePatch has a new optional parameter coolAccessRetrievalPolicy
+  - Interface VolumePatch has a new optional parameter smbAccessBasedEnumeration
+  - Interface VolumePatch has a new optional parameter smbNonBrowsable
+  - Added Enum KnownCoolAccessRetrievalPolicy
+  - Added Enum KnownNetworkSiblingSetProvisioningState
+  - Enum KnownApplicationType has a new value Oracle
+  - Enum KnownNetworkFeatures has a new value BasicStandard
+  - Enum KnownNetworkFeatures has a new value StandardBasic
 
-### Features Added
+**Breaking Changes**
 
-### Breaking Changes
+  - Removed operation group AccountBackups
+  - Removed operation Backups.beginCreate
+  - Removed operation Backups.beginCreateAndWait
+  - Removed operation Backups.beginDelete
+  - Removed operation Backups.beginDeleteAndWait
+  - Removed operation Backups.beginRestoreFiles
+  - Removed operation Backups.beginRestoreFilesAndWait
+  - Removed operation Backups.beginUpdate
+  - Removed operation Backups.beginUpdateAndWait
+  - Removed operation Backups.get
+  - Removed operation Backups.getStatus
+  - Removed operation Backups.list
+  - Interface VolumePatchPropertiesDataProtection no longer has parameter backup
+  - Interface VolumePropertiesDataProtection no longer has parameter backup
+  - Class NetAppManagementClient no longer has parameter accountBackups
+  - Removed Enum KnownBackupType
+    
+    
+## 18.1.0 (2023-07-03)
+    
+**Features**
 
-### Bugs Fixed
+  - Added operation Volumes.beginListGetGroupIdListForLdapUser
+  - Added operation Volumes.beginListGetGroupIdListForLdapUserAndWait
+  - Added Interface ErrorAdditionalInfo
+  - Added Interface ErrorDetail
+  - Added Interface ErrorResponse
+  - Added Interface GetGroupIdListForLdapUserRequest
+  - Added Interface GetGroupIdListForLdapUserResponse
+  - Added Interface VolumesListGetGroupIdListForLdapUserHeaders
+  - Added Interface VolumesListGetGroupIdListForLdapUserOptionalParams
+  - Added Type Alias VolumesListGetGroupIdListForLdapUserResponse
+  - Interface NetAppAccountPatch has a new optional parameter identity
+  - Interface Volume has a new optional parameter actualThroughputMibps
+  - Interface Volume has a new optional parameter originatingResourceId
+  - Interface VolumeGroupVolumeProperties has a new optional parameter actualThroughputMibps
+  - Interface VolumeGroupVolumeProperties has a new optional parameter originatingResourceId
+  - Interface VolumePatch has a new optional parameter snapshotDirectoryVisible
+  - Enum KnownRegionStorageToNetworkProximity has a new value AcrossT2
+  - Enum KnownRegionStorageToNetworkProximity has a new value T1AndAcrossT2
+  - Enum KnownRegionStorageToNetworkProximity has a new value T1AndT2AndAcrossT2
+  - Enum KnownRegionStorageToNetworkProximity has a new value T2AndAcrossT2
+  - Enum KnownVolumeStorageToNetworkProximity has a new value AcrossT2
+    
+    
+## 18.0.0 (2023-03-08)
+    
+**Features**
 
-### Other Changes
+  - Added operation Backups.beginRestoreFiles
+  - Added operation Backups.beginRestoreFilesAndWait
+  - Added operation Volumes.beginBreakFileLocks
+  - Added operation Volumes.beginBreakFileLocksAndWait
+  - Added Interface BackupRestoreFiles
+  - Added Interface BackupsRestoreFilesHeaders
+  - Added Interface BackupsRestoreFilesOptionalParams
+  - Added Interface BreakFileLocksRequest
+  - Added Interface ManagedServiceIdentity
+  - Added Interface VolumesBreakFileLocksHeaders
+  - Added Interface VolumesBreakFileLocksOptionalParams
+  - Added Type Alias FileAccessLogs
+  - Added Type Alias ManagedServiceIdentityType
+  - Interface ActiveDirectory has a new optional parameter preferredServersForLdapClient
+  - Interface Volume has a new optional parameter dataStoreResourceId
+  - Interface Volume has a new optional parameter fileAccessLogs
+  - Interface Volume has a new optional parameter isLargeVolume
+  - Interface Volume has a new optional parameter provisionedAvailabilityZone
+  - Interface VolumeGroupVolumeProperties has a new optional parameter dataStoreResourceId
+  - Interface VolumeGroupVolumeProperties has a new optional parameter fileAccessLogs
+  - Interface VolumeGroupVolumeProperties has a new optional parameter isLargeVolume
+  - Interface VolumeGroupVolumeProperties has a new optional parameter provisionedAvailabilityZone
+  - Interface VolumePropertiesDataProtection has a new optional parameter volumeRelocation
+  - Interface VolumeQuotaRulePatch has a new optional parameter tags
+  - Interface VolumeRelocationProperties has a new optional parameter readyToBeFinalized
+  - Added Enum KnownFileAccessLogs
+  - Added Enum KnownManagedServiceIdentityType
 
+**Breaking Changes**
+
+  - Removed operation group Vaults
+  - Operation NetAppResource.checkNameAvailability has a new signature
+  - Operation NetAppResource.checkQuotaAvailability has a new signature
+  - Interface Backup no longer has parameter id
+  - Interface Backup no longer has parameter name
+  - Interface Backup no longer has parameter type
+  - Interface BackupPolicyDetails no longer has parameter id
+  - Interface BackupPolicyDetails no longer has parameter name
+  - Interface BackupPolicyDetails no longer has parameter type
+  - Interface Snapshot no longer has parameter id
+  - Interface Snapshot no longer has parameter name
+  - Interface Snapshot no longer has parameter type
+  - Interface VolumeBackupProperties no longer has parameter vaultId
+  - Interface VolumeRelocationProperties no longer has parameter oldBareMetalTenantId
+  - Interface VolumeRelocationProperties no longer has parameter oldVolumeId
+  - Type of parameter identity of interface NetAppAccount is changed from Identity to ManagedServiceIdentity
+  - Class NetAppManagementClient no longer has parameter vaults
+  - Removed Enum KnownIdentityType
+    
+    
+## 17.0.1 (2023-02-01)
+    
+**Features**
+
+  - Exposes `getContinuationToken` helper function to extract continuation token
+
+**Bugs Fixed**
+
+  - A series of small bug fixs relevant to authentication and apiVersion policy
+    
 ## 17.0.0 (2022-09-21)
     
 **Features**
@@ -196,4 +332,4 @@ To understand the detail of the change, please refer to [Changelog](https://aka.
 
 To migrate the existing applications to the latest version, please refer to [Migration Guide](https://aka.ms/js-track2-migration-guide).
 
-To learn more, please refer to our documentation [Quick Start](https://aka.ms/js-track2-quickstart).
+To learn more, please refer to our documentation [Quick Start](https://aka.ms/azsdk/js/mgmt/quickstart ).

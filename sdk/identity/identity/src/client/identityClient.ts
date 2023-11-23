@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { INetworkModule, NetworkRequestOptions, NetworkResponse } from "@azure/msal-common";
+import type { INetworkModule, NetworkRequestOptions, NetworkResponse } from "@azure/msal-node";
 import { AccessToken, GetTokenOptions } from "@azure/core-auth";
 import { ServiceClient } from "@azure/core-client";
 import { isNode } from "@azure/core-util";
@@ -20,7 +20,7 @@ import { logger } from "../util/logging";
 import { TokenCredentialOptions } from "../tokenCredentialOptions";
 import {
   TokenResponseParsedBody,
-  parseExpiresOn,
+  parseExpirationTimestamp,
 } from "../credentials/managedIdentityCredential/utils";
 
 const noCorrelationId = "noCorrelationId";
@@ -34,7 +34,6 @@ export interface TokenResponse {
    * The AccessToken to be returned from getToken.
    */
   accessToken: AccessToken;
-
   /**
    * The refresh token if the 'offline_access' scope was used.
    */
@@ -68,6 +67,8 @@ export class IdentityClient extends ServiceClient implements INetworkModule {
   public authorityHost: string;
   private allowLoggingAccountIdentifiers?: boolean;
   private abortControllers: Map<string, AbortController[] | undefined>;
+  // used for WorkloadIdentity
+  private tokenCredentialOptions: TokenCredentialOptions;
 
   constructor(options?: TokenCredentialOptions) {
     const packageDetails = `azsdk-js-identity/${SDK_VERSION}`;
@@ -95,12 +96,13 @@ export class IdentityClient extends ServiceClient implements INetworkModule {
     this.authorityHost = baseUri;
     this.abortControllers = new Map();
     this.allowLoggingAccountIdentifiers = options?.loggingOptions?.allowLoggingAccountIdentifiers;
+    // used for WorkloadIdentity
+    this.tokenCredentialOptions = { ...options };
   }
 
   async sendTokenRequest(request: PipelineRequest): Promise<TokenResponse | null> {
     logger.info(`IdentityClient: sending token request to [${request.url}]`);
     const response = await this.sendRequest(request);
-
     if (response.bodyAsText && (response.status === 200 || response.status === 201)) {
       const parsedBody: TokenResponseParsedBody = JSON.parse(response.bodyAsText);
 
@@ -113,7 +115,7 @@ export class IdentityClient extends ServiceClient implements INetworkModule {
       const token = {
         accessToken: {
           token: parsedBody.access_token,
-          expiresOnTimestamp: parseExpiresOn(parsedBody),
+          expiresOnTimestamp: parseExpirationTimestamp(parsedBody),
         },
         refreshToken: parsedBody.refresh_token,
       };
@@ -292,6 +294,13 @@ export class IdentityClient extends ServiceClient implements INetworkModule {
     };
   }
 
+  /**
+   *
+   * @internal
+   */
+  getTokenCredentialOptions(): TokenCredentialOptions {
+    return this.tokenCredentialOptions;
+  }
   /**
    * If allowLoggingAccountIdentifiers was set on the constructor options
    * we try to log the account identifiers by parsing the received access token.

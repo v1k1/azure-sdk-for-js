@@ -7,7 +7,7 @@
  */
 
 import { PagedAsyncIterableIterator } from "@azure/core-paging";
-import { PollerLike, PollOperationState } from "@azure/core-lro";
+import { SimplePollerLike, OperationState } from "@azure/core-lro";
 import {
   Service,
   ServicesListByMobileNetworkOptionalParams,
@@ -48,7 +48,7 @@ export interface Services {
     mobileNetworkName: string,
     serviceName: string,
     options?: ServicesDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<SimplePollerLike<OperationState<void>, void>>;
   /**
    * Deletes the specified service.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
@@ -78,7 +78,7 @@ export interface Services {
     options?: ServicesGetOptionalParams
   ): Promise<ServicesGetResponse>;
   /**
-   * Creates or updates a service.
+   * Creates or updates a service. Must be created in the same location as its parent mobile network.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param mobileNetworkName The name of the mobile network.
    * @param serviceName The name of the service. You must not use any of the following reserved strings -
@@ -93,13 +93,13 @@ export interface Services {
     parameters: Service,
     options?: ServicesCreateOrUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ServicesCreateOrUpdateResponse>,
+    SimplePollerLike<
+      OperationState<ServicesCreateOrUpdateResponse>,
       ServicesCreateOrUpdateResponse
     >
   >;
   /**
-   * Creates or updates a service.
+   * Creates or updates a service. Must be created in the same location as its parent mobile network.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param mobileNetworkName The name of the mobile network.
    * @param serviceName The name of the service. You must not use any of the following reserved strings -

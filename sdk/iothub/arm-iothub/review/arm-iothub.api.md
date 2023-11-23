@@ -6,9 +6,9 @@
 
 import * as coreAuth from '@azure/core-auth';
 import * as coreClient from '@azure/core-client';
+import { OperationState } from '@azure/core-lro';
 import { PagedAsyncIterableIterator } from '@azure/core-paging';
-import { PollerLike } from '@azure/core-lro';
-import { PollOperationState } from '@azure/core-lro';
+import { SimplePollerLike } from '@azure/core-lro';
 
 // @public
 export type AccessRights = "RegistryRead" | "RegistryWrite" | "ServiceConnect" | "DeviceConnect" | "RegistryRead, RegistryWrite" | "RegistryRead, ServiceConnect" | "RegistryRead, DeviceConnect" | "RegistryWrite, ServiceConnect" | "RegistryWrite, DeviceConnect" | "ServiceConnect, DeviceConnect" | "RegistryRead, RegistryWrite, ServiceConnect" | "RegistryRead, RegistryWrite, DeviceConnect" | "RegistryRead, ServiceConnect, DeviceConnect" | "RegistryWrite, ServiceConnect, DeviceConnect" | "RegistryRead, RegistryWrite, ServiceConnect, DeviceConnect";
@@ -258,6 +258,9 @@ export interface FeedbackProperties {
 }
 
 // @public
+export function getContinuationToken(page: unknown): string | undefined;
+
+// @public
 export interface GroupIdInformation {
     readonly id?: string;
     readonly name?: string;
@@ -286,7 +289,7 @@ export interface ImportDevicesRequest {
 
 // @public
 export interface IotHub {
-    beginManualFailover(iotHubName: string, resourceGroupName: string, failoverInput: FailoverInput, options?: IotHubManualFailoverOptionalParams): Promise<PollerLike<PollOperationState<void>, void>>;
+    beginManualFailover(iotHubName: string, resourceGroupName: string, failoverInput: FailoverInput, options?: IotHubManualFailoverOptionalParams): Promise<SimplePollerLike<OperationState<void>, void>>;
     beginManualFailoverAndWait(iotHubName: string, resourceGroupName: string, failoverInput: FailoverInput, options?: IotHubManualFailoverOptionalParams): Promise<void>;
 }
 
@@ -349,6 +352,13 @@ export interface IotHubDescriptionListResult {
 export interface IotHubLocationDescription {
     location?: string;
     role?: IotHubReplicaRoleType;
+}
+
+// @public
+export interface IotHubManualFailoverHeaders {
+    azureAsyncOperation?: string;
+    // (undocumented)
+    location?: string;
 }
 
 // @public
@@ -419,11 +429,11 @@ export type IotHubReplicaRoleType = string;
 
 // @public
 export interface IotHubResource {
-    beginCreateOrUpdate(resourceGroupName: string, resourceName: string, iotHubDescription: IotHubDescription, options?: IotHubResourceCreateOrUpdateOptionalParams): Promise<PollerLike<PollOperationState<IotHubResourceCreateOrUpdateResponse>, IotHubResourceCreateOrUpdateResponse>>;
+    beginCreateOrUpdate(resourceGroupName: string, resourceName: string, iotHubDescription: IotHubDescription, options?: IotHubResourceCreateOrUpdateOptionalParams): Promise<SimplePollerLike<OperationState<IotHubResourceCreateOrUpdateResponse>, IotHubResourceCreateOrUpdateResponse>>;
     beginCreateOrUpdateAndWait(resourceGroupName: string, resourceName: string, iotHubDescription: IotHubDescription, options?: IotHubResourceCreateOrUpdateOptionalParams): Promise<IotHubResourceCreateOrUpdateResponse>;
-    beginDelete(resourceGroupName: string, resourceName: string, options?: IotHubResourceDeleteOptionalParams): Promise<PollerLike<PollOperationState<IotHubResourceDeleteResponse>, IotHubResourceDeleteResponse>>;
+    beginDelete(resourceGroupName: string, resourceName: string, options?: IotHubResourceDeleteOptionalParams): Promise<SimplePollerLike<OperationState<IotHubResourceDeleteResponse>, IotHubResourceDeleteResponse>>;
     beginDeleteAndWait(resourceGroupName: string, resourceName: string, options?: IotHubResourceDeleteOptionalParams): Promise<IotHubResourceDeleteResponse>;
-    beginUpdate(resourceGroupName: string, resourceName: string, iotHubTags: TagsResource, options?: IotHubResourceUpdateOptionalParams): Promise<PollerLike<PollOperationState<IotHubResourceUpdateResponse>, IotHubResourceUpdateResponse>>;
+    beginUpdate(resourceGroupName: string, resourceName: string, iotHubTags: TagsResource, options?: IotHubResourceUpdateOptionalParams): Promise<SimplePollerLike<OperationState<IotHubResourceUpdateResponse>, IotHubResourceUpdateResponse>>;
     beginUpdateAndWait(resourceGroupName: string, resourceName: string, iotHubTags: TagsResource, options?: IotHubResourceUpdateOptionalParams): Promise<IotHubResourceUpdateResponse>;
     checkNameAvailability(operationInputs: OperationInputs, options?: IotHubResourceCheckNameAvailabilityOptionalParams): Promise<IotHubResourceCheckNameAvailabilityResponse>;
     createEventHubConsumerGroup(resourceGroupName: string, resourceName: string, eventHubEndpointName: string, name: string, consumerGroupBody: EventHubConsumerGroupBodyDescription, options?: IotHubResourceCreateEventHubConsumerGroupOptionalParams): Promise<IotHubResourceCreateEventHubConsumerGroupResponse>;
@@ -473,6 +483,13 @@ export type IotHubResourceCreateOrUpdateResponse = IotHubDescription;
 
 // @public
 export interface IotHubResourceDeleteEventHubConsumerGroupOptionalParams extends coreClient.OperationOptions {
+}
+
+// @public
+export interface IotHubResourceDeleteHeaders {
+    azureAsyncOperation?: string;
+    // (undocumented)
+    location?: string;
 }
 
 // @public
@@ -951,12 +968,19 @@ export interface PrivateEndpointConnectionProperties {
 
 // @public
 export interface PrivateEndpointConnections {
-    beginDelete(resourceGroupName: string, resourceName: string, privateEndpointConnectionName: string, options?: PrivateEndpointConnectionsDeleteOptionalParams): Promise<PollerLike<PollOperationState<PrivateEndpointConnectionsDeleteResponse>, PrivateEndpointConnectionsDeleteResponse>>;
+    beginDelete(resourceGroupName: string, resourceName: string, privateEndpointConnectionName: string, options?: PrivateEndpointConnectionsDeleteOptionalParams): Promise<SimplePollerLike<OperationState<PrivateEndpointConnectionsDeleteResponse>, PrivateEndpointConnectionsDeleteResponse>>;
     beginDeleteAndWait(resourceGroupName: string, resourceName: string, privateEndpointConnectionName: string, options?: PrivateEndpointConnectionsDeleteOptionalParams): Promise<PrivateEndpointConnectionsDeleteResponse>;
-    beginUpdate(resourceGroupName: string, resourceName: string, privateEndpointConnectionName: string, privateEndpointConnection: PrivateEndpointConnection, options?: PrivateEndpointConnectionsUpdateOptionalParams): Promise<PollerLike<PollOperationState<PrivateEndpointConnectionsUpdateResponse>, PrivateEndpointConnectionsUpdateResponse>>;
+    beginUpdate(resourceGroupName: string, resourceName: string, privateEndpointConnectionName: string, privateEndpointConnection: PrivateEndpointConnection, options?: PrivateEndpointConnectionsUpdateOptionalParams): Promise<SimplePollerLike<OperationState<PrivateEndpointConnectionsUpdateResponse>, PrivateEndpointConnectionsUpdateResponse>>;
     beginUpdateAndWait(resourceGroupName: string, resourceName: string, privateEndpointConnectionName: string, privateEndpointConnection: PrivateEndpointConnection, options?: PrivateEndpointConnectionsUpdateOptionalParams): Promise<PrivateEndpointConnectionsUpdateResponse>;
     get(resourceGroupName: string, resourceName: string, privateEndpointConnectionName: string, options?: PrivateEndpointConnectionsGetOptionalParams): Promise<PrivateEndpointConnectionsGetResponse>;
     list(resourceGroupName: string, resourceName: string, options?: PrivateEndpointConnectionsListOptionalParams): Promise<PrivateEndpointConnectionsListResponse>;
+}
+
+// @public
+export interface PrivateEndpointConnectionsDeleteHeaders {
+    azureAsyncOperation?: string;
+    // (undocumented)
+    location?: string;
 }
 
 // @public
@@ -1094,7 +1118,25 @@ export interface RouteProperties {
 }
 
 // @public
+export interface RoutingCosmosDBSqlApiProperties {
+    authenticationType?: AuthenticationType;
+    containerName: string;
+    databaseName: string;
+    endpointUri: string;
+    readonly id?: string;
+    identity?: ManagedIdentity;
+    name: string;
+    partitionKeyName?: string;
+    partitionKeyTemplate?: string;
+    primaryKey?: string;
+    resourceGroup?: string;
+    secondaryKey?: string;
+    subscriptionId?: string;
+}
+
+// @public
 export interface RoutingEndpoints {
+    cosmosDBSqlContainers?: RoutingCosmosDBSqlApiProperties[];
     eventHubs?: RoutingEventHubProperties[];
     serviceBusQueues?: RoutingServiceBusQueueEndpointProperties[];
     serviceBusTopics?: RoutingServiceBusTopicEndpointProperties[];

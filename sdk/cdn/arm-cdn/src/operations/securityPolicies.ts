@@ -6,14 +6,19 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { SecurityPolicies } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { CdnManagementClient } from "../cdnManagementClient";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   SecurityPolicy,
   SecurityPoliciesListByProfileNextOptionalParams,
@@ -67,11 +72,15 @@ export class SecurityPoliciesImpl implements SecurityPolicies {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listByProfilePagingPage(
           resourceGroupName,
           profileName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -80,15 +89,22 @@ export class SecurityPoliciesImpl implements SecurityPolicies {
   private async *listByProfilePagingPage(
     resourceGroupName: string,
     profileName: string,
-    options?: SecurityPoliciesListByProfileOptionalParams
+    options?: SecurityPoliciesListByProfileOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<SecurityPolicy[]> {
-    let result = await this._listByProfile(
-      resourceGroupName,
-      profileName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: SecurityPoliciesListByProfileResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listByProfile(
+        resourceGroupName,
+        profileName,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listByProfileNext(
         resourceGroupName,
@@ -97,7 +113,9 @@ export class SecurityPoliciesImpl implements SecurityPolicies {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -169,8 +187,8 @@ export class SecurityPoliciesImpl implements SecurityPolicies {
     securityPolicy: SecurityPolicy,
     options?: SecurityPoliciesCreateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<SecurityPoliciesCreateResponse>,
+    SimplePollerLike<
+      OperationState<SecurityPoliciesCreateResponse>,
       SecurityPoliciesCreateResponse
     >
   > {
@@ -180,7 +198,7 @@ export class SecurityPoliciesImpl implements SecurityPolicies {
     ): Promise<SecurityPoliciesCreateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -213,21 +231,24 @@ export class SecurityPoliciesImpl implements SecurityPolicies {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
         resourceGroupName,
         profileName,
         securityPolicyName,
         securityPolicy,
         options
       },
-      createOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: createOperationSpec
+    });
+    const poller = await createHttpPoller<
+      SecurityPoliciesCreateResponse,
+      OperationState<SecurityPoliciesCreateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -275,8 +296,8 @@ export class SecurityPoliciesImpl implements SecurityPolicies {
     securityPolicyUpdateProperties: SecurityPolicyUpdateParameters,
     options?: SecurityPoliciesPatchOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<SecurityPoliciesPatchResponse>,
+    SimplePollerLike<
+      OperationState<SecurityPoliciesPatchResponse>,
       SecurityPoliciesPatchResponse
     >
   > {
@@ -286,7 +307,7 @@ export class SecurityPoliciesImpl implements SecurityPolicies {
     ): Promise<SecurityPoliciesPatchResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -319,21 +340,24 @@ export class SecurityPoliciesImpl implements SecurityPolicies {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
         resourceGroupName,
         profileName,
         securityPolicyName,
         securityPolicyUpdateProperties,
         options
       },
-      patchOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: patchOperationSpec
+    });
+    const poller = await createHttpPoller<
+      SecurityPoliciesPatchResponse,
+      OperationState<SecurityPoliciesPatchResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -378,14 +402,14 @@ export class SecurityPoliciesImpl implements SecurityPolicies {
     profileName: string,
     securityPolicyName: string,
     options?: SecurityPoliciesDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -418,15 +442,15 @@ export class SecurityPoliciesImpl implements SecurityPolicies {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, profileName, securityPolicyName, options },
-      deleteOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, profileName, securityPolicyName, options },
+      spec: deleteOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -495,7 +519,7 @@ const listByProfileOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName
+    Parameters.profileName1
   ],
   headerParameters: [Parameters.accept],
   serializer
@@ -517,7 +541,7 @@ const getOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.securityPolicyName
   ],
   headerParameters: [Parameters.accept],
@@ -550,7 +574,7 @@ const createOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.securityPolicyName
   ],
   headerParameters: [Parameters.contentType, Parameters.accept],
@@ -584,7 +608,7 @@ const patchOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.securityPolicyName
   ],
   headerParameters: [Parameters.contentType, Parameters.accept],
@@ -609,7 +633,7 @@ const deleteOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.securityPolicyName
   ],
   headerParameters: [Parameters.accept],
@@ -626,12 +650,11 @@ const listByProfileNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.AfdErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.nextLink
   ],
   headerParameters: [Parameters.accept],

@@ -4,64 +4,83 @@
 // https://azure.github.io/azure-sdk/typescript_design.html#ts-config-lib
 /// <reference lib="esnext.asynciterable" />
 
-import { appConfigKeyCredentialPolicy } from "./appConfigCredential";
-import { AppConfiguration } from "./generated/src/appConfiguration";
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
-import { TokenCredential, isTokenCredential } from "@azure/core-auth";
-
 import {
   AddConfigurationSettingOptions,
   AddConfigurationSettingParam,
   AddConfigurationSettingResponse,
+  AppConfigurationClientOptions,
   ConfigurationSetting,
   ConfigurationSettingId,
+  CreateSnapshotOptions,
+  CreateSnapshotResponse,
   DeleteConfigurationSettingOptions,
   DeleteConfigurationSettingResponse,
   GetConfigurationSettingOptions,
   GetConfigurationSettingResponse,
+  GetSnapshotOptions,
+  GetSnapshotResponse,
   HttpResponseField,
   ListConfigurationSettingPage,
+  ListConfigurationSettingsForSnapshotOptions,
   ListConfigurationSettingsOptions,
   ListRevisionsOptions,
   ListRevisionsPage,
+  ListSnapshotsOptions,
+  ListSnapshotsPage,
   PageSettings,
   SetConfigurationSettingOptions,
   SetConfigurationSettingParam,
   SetConfigurationSettingResponse,
   SetReadOnlyOptions,
   SetReadOnlyResponse,
+  SnapshotInfo,
+  UpdateSnapshotOptions,
+  UpdateSnapshotResponse,
 } from "./models";
 import {
+  AppConfigurationGetKeyValuesHeaders,
+  AppConfigurationGetRevisionsHeaders,
+  AppConfigurationGetSnapshotsHeaders,
+  GetKeyValuesResponse,
+  GetRevisionsResponse,
+  GetSnapshotsResponse,
+  ConfigurationSnapshot,
+} from "./generated/src/models";
+import { InternalClientPipelineOptions } from "@azure/core-client";
+import { PagedAsyncIterableIterator, PagedResult, getPagedAsyncIterator } from "@azure/core-paging";
+import {
+  PipelinePolicy,
+  bearerTokenAuthenticationPolicy,
+  RestError,
+} from "@azure/core-rest-pipeline";
+import { SyncTokens, syncTokenPolicy } from "./internal/synctokenpolicy";
+import { TokenCredential, isTokenCredential } from "@azure/core-auth";
+import {
+  SendConfigurationSettingsOptions,
   assertResponse,
   checkAndFormatIfAndIfNoneMatch,
   extractAfterTokenFromNextLink,
   formatAcceptDateTime,
+  formatConfigurationSettingsFiltersAndSelect,
   formatFieldsForSelect,
   formatFiltersAndSelect,
+  formatSnapshotFiltersAndSelect,
   makeConfigurationSettingEmpty,
   serializeAsConfigurationSettingParam,
   transformKeyValue,
   transformKeyValueResponse,
   transformKeyValueResponseWithStatusCode,
+  transformSnapshotResponse,
 } from "./internal/helpers";
-import {
-  AppConfigurationGetKeyValuesHeaders,
-  AppConfigurationGetRevisionsHeaders,
-  GetKeyValuesResponse,
-  GetRevisionsResponse,
-} from "./generated/src/models";
-import { SyncTokens, syncTokenPolicy } from "./internal/synctokenpolicy";
+import { AppConfiguration } from "./generated/src/appConfiguration";
 import { FeatureFlagValue } from "./featureFlag";
 import { SecretReferenceValue } from "./secretReference";
-import {
-  CommonClientOptions,
-  deserializationPolicy,
-  deserializationPolicyName,
-} from "@azure/core-client";
-import { PipelinePolicy, bearerTokenAuthenticationPolicy } from "@azure/core-rest-pipeline";
+import { appConfigKeyCredentialPolicy } from "./appConfigCredential";
 import { tracingClient } from "./internal/tracing";
+import { logger } from "./logger";
+import { OperationState, SimplePollerLike } from "@azure/core-lro";
+import { appConfigurationApiVersion } from "./internal/constants";
 
-const apiVersion = "1.0";
 const ConnectionStringRegex = /Endpoint=(.*);Id=(.*);Secret=(.*)/;
 const deserializationContentTypes = {
   json: [
@@ -70,13 +89,11 @@ const deserializationContentTypes = {
     "application/vnd.microsoft.appconfig.kvs+json",
     "application/vnd.microsoft.appconfig.keyset+json",
     "application/vnd.microsoft.appconfig.revs+json",
+    "application/vnd.microsoft.appconfig.snapshotset+json",
+    "application/vnd.microsoft.appconfig.snapshot+json",
+    "application/json",
   ],
 };
-
-/**
- * Provides configuration options for AppConfigurationClient.
- */
-export interface AppConfigurationClientOptions extends CommonClientOptions {}
 
 /**
  * Provides internal configuration options for AppConfigurationClient.
@@ -143,20 +160,30 @@ export class AppConfigurationClient {
         authPolicy = appConfigKeyCredentialPolicy(regexMatch[2], regexMatch[3]);
       } else {
         throw new Error(
-          `Invalid connection string. Valid connection strings should match the regex '${ConnectionStringRegex.source}'.`
+          `Invalid connection string. Valid connection strings should match the regex '${ConnectionStringRegex.source}'.` +
+            ` To mitigate the issue, please refer to the troubleshooting guide here at https://aka.ms/azsdk/js/app-configuration/troubleshoot.`
         );
       }
     }
 
+    const internalClientPipelineOptions: InternalClientPipelineOptions = {
+      ...appConfigOptions,
+      loggingOptions: {
+        logger: logger.info,
+      },
+      deserializationOptions: {
+        expectedContentTypes: deserializationContentTypes,
+      },
+    };
+
     this._syncTokens = appConfigOptions.syncTokens || new SyncTokens();
-    this.client = new AppConfiguration(appConfigEndpoint, apiVersion, appConfigOptions);
+    this.client = new AppConfiguration(
+      appConfigEndpoint,
+      appConfigurationApiVersion,
+      internalClientPipelineOptions
+    );
     this.client.pipeline.addPolicy(authPolicy, { phase: "Sign" });
     this.client.pipeline.addPolicy(syncTokenPolicy(this._syncTokens), { afterPhase: "Retry" });
-    this.client.pipeline.removePolicy({ name: deserializationPolicyName });
-    this.client.pipeline.addPolicy(
-      deserializationPolicy({ expectedContentTypes: deserializationContentTypes }),
-      { phase: "Deserialize" }
-    );
   }
 
   /**
@@ -182,15 +209,26 @@ export class AppConfigurationClient {
       options,
       async (updatedOptions) => {
         const keyValue = serializeAsConfigurationSettingParam(configurationSetting);
-        const originalResponse = await this.client.putKeyValue(configurationSetting.key, {
-          ifNoneMatch: "*",
-          label: configurationSetting.label,
-          entity: keyValue,
-          ...updatedOptions,
-        });
-        const response = transformKeyValueResponse(originalResponse);
-        assertResponse(response);
-        return response;
+        logger.info("[addConfigurationSetting] Creating a key value pair");
+        try {
+          const originalResponse = await this.client.putKeyValue(configurationSetting.key, {
+            ifNoneMatch: "*",
+            label: configurationSetting.label,
+            entity: keyValue,
+            ...updatedOptions,
+          });
+          const response = transformKeyValueResponse(originalResponse);
+          assertResponse(response);
+          return response;
+        } catch (error) {
+          const err = error as RestError;
+          // Service does not return an error message. Raise a 412 error similar to .NET
+          if (err.statusCode === 412) {
+            err.message = `Status 412: Setting was already present`;
+          }
+          throw err;
+        }
+        throw new Error("Unreachable code");
       }
     );
   }
@@ -214,6 +252,7 @@ export class AppConfigurationClient {
       options,
       async (updatedOptions) => {
         let status;
+        logger.info("[deleteConfigurationSetting] Deleting key value pair");
         const originalResponse = await this.client.deleteKeyValue(id.key, {
           label: id.label,
           ...updatedOptions,
@@ -249,6 +288,7 @@ export class AppConfigurationClient {
       options,
       async (updatedOptions) => {
         let status;
+        logger.info("[getConfigurationSetting] Getting key value pair");
         const originalResponse = await this.client.getKeyValue(id.key, {
           ...updatedOptions,
           label: id.label,
@@ -291,95 +331,87 @@ export class AppConfigurationClient {
   listConfigurationSettings(
     options: ListConfigurationSettingsOptions = {}
   ): PagedAsyncIterableIterator<ConfigurationSetting, ListConfigurationSettingPage, PageSettings> {
-    const iter = this.getListConfigurationSettingsIterator(options);
-
-    return {
-      next() {
-        return iter.next();
-      },
-      [Symbol.asyncIterator]() {
-        return this;
-      },
-      byPage: (settings: PageSettings = {}) => {
-        // The appconfig service doesn't currently support letting you select a page size
-        // so we're ignoring their setting for now.
-        return this.listConfigurationSettingsByPage({
-          ...options,
-          continuationToken: settings.continuationToken,
-        });
-      },
-    };
+    const pagedResult: PagedResult<ListConfigurationSettingPage, PageSettings, string | undefined> =
+      {
+        firstPageLink: undefined,
+        getPage: async (pageLink: string | undefined) => {
+          const response = await this.sendConfigurationSettingsRequest(options, pageLink);
+          const currentResponse = {
+            ...response,
+            items: response.items != null ? response.items?.map(transformKeyValue) : [],
+            continuationToken: response.nextLink
+              ? extractAfterTokenFromNextLink(response.nextLink)
+              : undefined,
+          };
+          return {
+            page: currentResponse,
+            nextPageLink: currentResponse.continuationToken,
+          };
+        },
+        toElements: (page) => page.items,
+      };
+    return getPagedAsyncIterator(pagedResult);
   }
 
-  private async *getListConfigurationSettingsIterator(
-    options: ListConfigurationSettingsOptions
-  ): AsyncIterableIterator<ConfigurationSetting> {
-    for await (const page of this.listConfigurationSettingsByPage(options)) {
-      for (const configurationSetting of page.items) {
-        yield configurationSetting;
-      }
-    }
+  /**
+   * Lists settings from the Azure App Configuration service for snapshots based on name, optionally
+   * filtered by key names, labels and accept datetime.
+   *
+   * Example code:
+   * ```ts
+   * const allSettingsWithLabel = client.listConfigurationSettingsForSnashots({ snapshotName: "MySnapshot" });
+   * ```
+   * @param options - Optional parameters for the request.
+   */
+  listConfigurationSettingsForSnapshot(
+    snapshotName: string,
+    options: ListConfigurationSettingsForSnapshotOptions = {}
+  ): PagedAsyncIterableIterator<ConfigurationSetting, ListConfigurationSettingPage, PageSettings> {
+    const pagedResult: PagedResult<ListConfigurationSettingPage, PageSettings, string | undefined> =
+      {
+        firstPageLink: undefined,
+        getPage: async (pageLink: string | undefined) => {
+          const response = await this.sendConfigurationSettingsRequest(
+            { snapshotName, ...options },
+            pageLink
+          );
+          const currentResponse = {
+            ...response,
+            items: response.items != null ? response.items?.map(transformKeyValue) : [],
+            continuationToken: response.nextLink
+              ? extractAfterTokenFromNextLink(response.nextLink)
+              : undefined,
+          };
+          return {
+            page: currentResponse,
+            nextPageLink: currentResponse.continuationToken,
+          };
+        },
+        toElements: (page) => page.items,
+      };
+    return getPagedAsyncIterator(pagedResult);
   }
 
-  private async *listConfigurationSettingsByPage(
-    options: ListConfigurationSettingsOptions & PageSettings = {}
-  ): AsyncIterableIterator<ListConfigurationSettingPage> {
-    let currentResponse = await tracingClient.withSpan(
+  private async sendConfigurationSettingsRequest(
+    options: SendConfigurationSettingsOptions & PageSettings = {},
+    pageLink: string | undefined
+  ): Promise<GetKeyValuesResponse & HttpResponseField<AppConfigurationGetKeyValuesHeaders>> {
+    return tracingClient.withSpan(
       "AppConfigurationClient.listConfigurationSettings",
       options,
       async (updatedOptions) => {
         const response = await this.client.getKeyValues({
           ...updatedOptions,
           ...formatAcceptDateTime(options),
-          ...formatFiltersAndSelect(options),
-          after: options.continuationToken,
+          ...formatConfigurationSettingsFiltersAndSelect(options),
+          after: pageLink,
         });
 
         return response as GetKeyValuesResponse &
           HttpResponseField<AppConfigurationGetKeyValuesHeaders>;
       }
     );
-
-    yield* this.createListConfigurationPageFromResponse(currentResponse);
-
-    while (currentResponse.nextLink) {
-      currentResponse = await tracingClient.withSpan(
-        "AppConfigurationClient.listConfigurationSettings",
-        options,
-        // TODO: same code up above. Unify.
-        async (updatedOptions) => {
-          const response = await this.client.getKeyValues({
-            ...updatedOptions,
-            ...formatAcceptDateTime(options),
-            ...formatFiltersAndSelect(options),
-            after: extractAfterTokenFromNextLink(currentResponse.nextLink!),
-          });
-
-          return response as GetKeyValuesResponse &
-            HttpResponseField<AppConfigurationGetKeyValuesHeaders>;
-        }
-      );
-
-      if (!currentResponse.items) {
-        break;
-      }
-
-      yield* this.createListConfigurationPageFromResponse(currentResponse);
-    }
   }
-
-  private *createListConfigurationPageFromResponse(
-    currentResponse: GetKeyValuesResponse & HttpResponseField<AppConfigurationGetKeyValuesHeaders>
-  ): Generator<ListConfigurationSettingPage> {
-    yield {
-      ...currentResponse,
-      items: currentResponse.items != null ? currentResponse.items.map(transformKeyValue) : [],
-      continuationToken: currentResponse.nextLink
-        ? extractAfterTokenFromNextLink(currentResponse.nextLink)
-        : undefined,
-    };
-  }
-
   /**
    * Lists revisions of a set of keys, optionally filtered by key names,
    * labels and accept datetime.
@@ -393,40 +425,33 @@ export class AppConfigurationClient {
   listRevisions(
     options?: ListRevisionsOptions
   ): PagedAsyncIterableIterator<ConfigurationSetting, ListRevisionsPage, PageSettings> {
-    const iter = this.getListRevisionsIterator(options);
-
-    return {
-      next() {
-        return iter.next();
+    const pagedResult: PagedResult<ListRevisionsPage, PageSettings, string | undefined> = {
+      firstPageLink: undefined,
+      getPage: async (pageLink: string | undefined) => {
+        const response = await this.sendRevisionsRequest(options, pageLink);
+        const currentResponse = {
+          ...response,
+          items: response.items != null ? response.items.map(transformKeyValue) : [],
+          continuationToken: response.nextLink
+            ? extractAfterTokenFromNextLink(response.nextLink)
+            : undefined,
+        };
+        // let itemList = currentResponse.items;
+        return {
+          page: currentResponse,
+          nextPageLink: currentResponse.continuationToken,
+        };
       },
-      [Symbol.asyncIterator]() {
-        return this;
-      },
-      byPage: (settings: PageSettings = {}) => {
-        // The appconfig service doesn't currently support letting you select a page size
-        // so we're ignoring their setting for now.
-        return this.listRevisionsByPage({
-          ...options,
-          continuationToken: settings.continuationToken,
-        });
-      },
+      toElements: (page) => page.items,
     };
+    return getPagedAsyncIterator(pagedResult);
   }
 
-  private async *getListRevisionsIterator(
-    options?: ListRevisionsOptions
-  ): AsyncIterableIterator<ConfigurationSetting> {
-    for await (const page of this.listRevisionsByPage(options)) {
-      for (const item of page.items) {
-        yield item;
-      }
-    }
-  }
-
-  private async *listRevisionsByPage(
-    options: ListRevisionsOptions & PageSettings = {}
-  ): AsyncIterableIterator<ListRevisionsPage> {
-    let currentResponse = await tracingClient.withSpan(
+  private async sendRevisionsRequest(
+    options: ListConfigurationSettingsOptions & PageSettings = {},
+    pageLink: string | undefined
+  ): Promise<GetKeyValuesResponse & HttpResponseField<AppConfigurationGetKeyValuesHeaders>> {
+    return tracingClient.withSpan(
       "AppConfigurationClient.listRevisions",
       options,
       async (updatedOptions) => {
@@ -434,48 +459,13 @@ export class AppConfigurationClient {
           ...updatedOptions,
           ...formatAcceptDateTime(options),
           ...formatFiltersAndSelect(updatedOptions),
-          after: options.continuationToken,
+          after: pageLink,
         });
 
         return response as GetRevisionsResponse &
           HttpResponseField<AppConfigurationGetRevisionsHeaders>;
       }
     );
-
-    yield* this.createListRevisionsPageFromResponse(currentResponse);
-
-    while (currentResponse.nextLink) {
-      currentResponse = (await tracingClient.withSpan(
-        "AppConfigurationClient.listRevisions",
-        options,
-        (updatedOptions) => {
-          return this.client.getRevisions({
-            ...updatedOptions,
-            ...formatAcceptDateTime(options),
-            ...formatFiltersAndSelect(options),
-            after: extractAfterTokenFromNextLink(currentResponse.nextLink!),
-          });
-        }
-      )) as GetRevisionsResponse & HttpResponseField<AppConfigurationGetRevisionsHeaders>;
-
-      if (!currentResponse.items) {
-        break;
-      }
-
-      yield* this.createListRevisionsPageFromResponse(currentResponse);
-    }
-  }
-
-  private *createListRevisionsPageFromResponse(
-    currentResponse: GetKeyValuesResponse & HttpResponseField<AppConfigurationGetKeyValuesHeaders>
-  ) {
-    yield {
-      ...currentResponse,
-      items: currentResponse.items != null ? currentResponse.items.map(transformKeyValue) : [],
-      continuationToken: currentResponse.nextLink
-        ? extractAfterTokenFromNextLink(currentResponse.nextLink)
-        : undefined,
-    };
   }
 
   /**
@@ -501,6 +491,7 @@ export class AppConfigurationClient {
       options,
       async (updatedOptions) => {
         const keyValue = serializeAsConfigurationSettingParam(configurationSetting);
+        logger.info("[setConfigurationSetting] Setting new key value");
         const response = transformKeyValueResponse(
           await this.client.putKeyValue(configurationSetting.key, {
             ...updatedOptions,
@@ -530,12 +521,14 @@ export class AppConfigurationClient {
       async (newOptions) => {
         let response;
         if (readOnly) {
+          logger.info("[setReadOnly] Setting read-only status to ${readOnly}");
           response = await this.client.putLock(id.key, {
             ...newOptions,
             label: id.label,
             ...checkAndFormatIfAndIfNoneMatch(id, options),
           });
         } else {
+          logger.info("[setReadOnly] Deleting read-only lock");
           response = await this.client.deleteLock(id.key, {
             ...newOptions,
             label: id.label,
@@ -556,5 +549,189 @@ export class AppConfigurationClient {
    */
   updateSyncToken(syncToken: string): void {
     this._syncTokens.addSyncTokenFromHeaderValue(syncToken);
+  }
+
+  /**
+   * Begins creating a snapshot for Azure App Configuration service, fails if it
+   * already exists.
+   */
+  beginCreateSnapshot(
+    snapshot: SnapshotInfo,
+    options: CreateSnapshotOptions = {}
+  ): Promise<SimplePollerLike<OperationState<CreateSnapshotResponse>, CreateSnapshotResponse>> {
+    return tracingClient.withSpan(
+      `${AppConfigurationClient.name}.beginCreateSnapshot`,
+      options,
+      (updatedOptions) =>
+        this.client.beginCreateSnapshot(snapshot.name, snapshot, { ...updatedOptions })
+    );
+  }
+
+  /**
+   * Begins creating a snapshot for Azure App Configuration service, waits until it is done,
+   * fails if it already exists.
+   */
+  beginCreateSnapshotAndWait(
+    snapshot: SnapshotInfo,
+    options: CreateSnapshotOptions = {}
+  ): Promise<CreateSnapshotResponse> {
+    return tracingClient.withSpan(
+      `${AppConfigurationClient.name}.beginCreateSnapshotAndWait`,
+      options,
+      (updatedOptions) =>
+        this.client.beginCreateSnapshotAndWait(snapshot.name, snapshot, { ...updatedOptions })
+    );
+  }
+
+  /**
+   * Get a snapshot from Azure App Configuration service
+   *
+   * Example usage:
+   * ```ts
+   * const result = await client.getSnapshot("MySnapshot");
+   * ```
+   * @param name - The name of the snapshot.
+   * @param options - Optional parameters for the request.
+   */
+  getSnapshot(name: string, options: GetSnapshotOptions = {}): Promise<GetSnapshotResponse> {
+    return tracingClient.withSpan(
+      "AppConfigurationClient.getSnapshot",
+      options,
+      async (updatedOptions) => {
+        logger.info("[getSnapshot] Get a snapshot");
+        const originalResponse = await this.client.getSnapshot(name, {
+          ...updatedOptions,
+        });
+        const response = transformSnapshotResponse(originalResponse);
+        assertResponse(response);
+        return response;
+      }
+    );
+  }
+
+  /**
+   * Recover an archived snapshot back to ready status
+   *
+   * Example usage:
+   * ```ts
+   * const result = await client.recoverSnapshot("MySnapshot");
+   * ```
+   * @param name - The name of the snapshot.
+   * @param options - Optional parameters for the request.
+   */
+  recoverSnapshot(
+    name: string,
+    options: UpdateSnapshotOptions = {}
+  ): Promise<UpdateSnapshotResponse> {
+    return tracingClient.withSpan(
+      "AppConfigurationClient.recoverSnapshot",
+      options,
+      async (updatedOptions) => {
+        logger.info("[recoverSnapshot] Recover a snapshot");
+        const originalResponse = await this.client.updateSnapshot(
+          name,
+          { status: "ready" },
+          {
+            ...updatedOptions,
+            ...checkAndFormatIfAndIfNoneMatch(
+              { etag: options.etag },
+              { onlyIfUnchanged: true, ...options }
+            ),
+          }
+        );
+        const response = transformSnapshotResponse(originalResponse);
+        assertResponse(response);
+        return response;
+      }
+    );
+  }
+  /**
+   * Archive a ready snapshot
+   *
+   * Example usage:
+   * ```ts
+   * const result = await client.archiveSnapshot({name: "MySnapshot"});
+   * ```
+   * @param name - The name of the snapshot.
+   * @param options - Optional parameters for the request.
+   */
+  archiveSnapshot(
+    name: string,
+    options: UpdateSnapshotOptions = {}
+  ): Promise<UpdateSnapshotResponse> {
+    return tracingClient.withSpan(
+      "AppConfigurationClient.archiveSnapshot",
+      options,
+      async (updatedOptions) => {
+        logger.info("[archiveSnapshot] Archive a snapshot");
+        const originalResponse = await this.client.updateSnapshot(
+          name,
+          { status: "archived" },
+          {
+            ...updatedOptions,
+            ...checkAndFormatIfAndIfNoneMatch(
+              { etag: options.etag },
+              { onlyIfUnchanged: true, ...options }
+            ),
+          }
+        );
+        const response = transformSnapshotResponse(originalResponse);
+        assertResponse(response);
+        return response;
+      }
+    );
+  }
+
+  /**
+   * List all snapshots from Azure App Configuration service
+   *
+   * Example usage:
+   * ```ts
+   * const result = await client.listSnapshots();
+   * ```
+   * @param options - Optional parameters for the request.
+   */
+  listSnapshots(
+    options: ListSnapshotsOptions = {}
+  ): PagedAsyncIterableIterator<ConfigurationSnapshot, ListSnapshotsPage, PageSettings> {
+    const pagedResult: PagedResult<ListSnapshotsPage, PageSettings, string | undefined> = {
+      firstPageLink: undefined,
+      getPage: async (pageLink: string | undefined) => {
+        const response = await this.sendSnapShotsRequest(options, pageLink);
+        const currentResponse = {
+          ...response,
+          items: response.items != null ? response.items : [],
+          continuationToken: response.nextLink
+            ? extractAfterTokenFromNextLink(response.nextLink)
+            : undefined,
+        };
+        return {
+          page: currentResponse,
+          nextPageLink: currentResponse.continuationToken,
+        };
+      },
+      toElements: (page) => page.items,
+    };
+    return getPagedAsyncIterator(pagedResult);
+  }
+
+  private async sendSnapShotsRequest(
+    options: ListSnapshotsOptions & PageSettings = {},
+    pageLink: string | undefined
+  ): Promise<GetSnapshotsResponse & HttpResponseField<AppConfigurationGetSnapshotsHeaders>> {
+    return tracingClient.withSpan(
+      "AppConfigurationClient.listSnapshots",
+      options,
+      async (updatedOptions) => {
+        const response = await this.client.getSnapshots({
+          ...updatedOptions,
+          ...formatSnapshotFiltersAndSelect(options),
+          after: pageLink,
+        });
+
+        return response as GetSnapshotsResponse &
+          HttpResponseField<AppConfigurationGetSnapshotsHeaders>;
+      }
+    );
   }
 }

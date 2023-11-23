@@ -578,51 +578,6 @@ export const ResourceSku: coreClient.CompositeMapper = {
   }
 };
 
-export const SystemData: coreClient.CompositeMapper = {
-  type: {
-    name: "Composite",
-    className: "SystemData",
-    modelProperties: {
-      createdBy: {
-        serializedName: "createdBy",
-        type: {
-          name: "String"
-        }
-      },
-      createdByType: {
-        serializedName: "createdByType",
-        type: {
-          name: "String"
-        }
-      },
-      createdAt: {
-        serializedName: "createdAt",
-        type: {
-          name: "DateTime"
-        }
-      },
-      lastModifiedBy: {
-        serializedName: "lastModifiedBy",
-        type: {
-          name: "String"
-        }
-      },
-      lastModifiedByType: {
-        serializedName: "lastModifiedByType",
-        type: {
-          name: "String"
-        }
-      },
-      lastModifiedAt: {
-        serializedName: "lastModifiedAt",
-        type: {
-          name: "DateTime"
-        }
-      }
-    }
-  }
-};
-
 export const PrivateEndpoint: coreClient.CompositeMapper = {
   type: {
     name: "Composite",
@@ -690,6 +645,58 @@ export const Resource: coreClient.CompositeMapper = {
         type: {
           name: "String"
         }
+      },
+      systemData: {
+        serializedName: "systemData",
+        type: {
+          name: "Composite",
+          className: "SystemData"
+        }
+      }
+    }
+  }
+};
+
+export const SystemData: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "SystemData",
+    modelProperties: {
+      createdBy: {
+        serializedName: "createdBy",
+        type: {
+          name: "String"
+        }
+      },
+      createdByType: {
+        serializedName: "createdByType",
+        type: {
+          name: "String"
+        }
+      },
+      createdAt: {
+        serializedName: "createdAt",
+        type: {
+          name: "DateTime"
+        }
+      },
+      lastModifiedBy: {
+        serializedName: "lastModifiedBy",
+        type: {
+          name: "String"
+        }
+      },
+      lastModifiedByType: {
+        serializedName: "lastModifiedByType",
+        type: {
+          name: "String"
+        }
+      },
+      lastModifiedAt: {
+        serializedName: "lastModifiedAt",
+        type: {
+          name: "DateTime"
+        }
       }
     }
   }
@@ -701,7 +708,7 @@ export const SignalRTlsSettings: coreClient.CompositeMapper = {
     className: "SignalRTlsSettings",
     modelProperties: {
       clientCertEnabled: {
-        defaultValue: true,
+        defaultValue: false,
         serializedName: "clientCertEnabled",
         type: {
           name: "Boolean"
@@ -856,6 +863,26 @@ export const SignalRCorsSettings: coreClient.CompositeMapper = {
   }
 };
 
+export const ServerlessSettings: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "ServerlessSettings",
+    modelProperties: {
+      connectionTimeoutInSeconds: {
+        defaultValue: 30,
+        constraints: {
+          InclusiveMaximum: 120,
+          InclusiveMinimum: 1
+        },
+        serializedName: "connectionTimeoutInSeconds",
+        type: {
+          name: "Number"
+        }
+      }
+    }
+  }
+};
+
 export const ServerlessUpstreamSettings: coreClient.CompositeMapper = {
   type: {
     name: "Composite",
@@ -984,6 +1011,21 @@ export const SignalRNetworkACLs: coreClient.CompositeMapper = {
             }
           }
         }
+      },
+      ipRules: {
+        constraints: {
+          MaxItems: 30
+        },
+        serializedName: "ipRules",
+        type: {
+          name: "Sequence",
+          element: {
+            type: {
+              name: "Composite",
+              className: "IPRule"
+            }
+          }
+        }
       }
     }
   }
@@ -1014,6 +1056,27 @@ export const NetworkACL: coreClient.CompositeMapper = {
               name: "String"
             }
           }
+        }
+      }
+    }
+  }
+};
+
+export const IPRule: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "IPRule",
+    modelProperties: {
+      value: {
+        serializedName: "value",
+        type: {
+          name: "String"
+        }
+      },
+      action: {
+        serializedName: "action",
+        type: {
+          name: "String"
         }
       }
     }
@@ -1304,10 +1367,10 @@ export const RegenerateKeyParameters: coreClient.CompositeMapper = {
   }
 };
 
-export const SharedPrivateLinkResourceList: coreClient.CompositeMapper = {
+export const ReplicaList: coreClient.CompositeMapper = {
   type: {
     name: "Composite",
-    className: "SharedPrivateLinkResourceList",
+    className: "ReplicaList",
     modelProperties: {
       value: {
         serializedName: "value",
@@ -1316,7 +1379,7 @@ export const SharedPrivateLinkResourceList: coreClient.CompositeMapper = {
           element: {
             type: {
               name: "Composite",
-              className: "SharedPrivateLinkResource"
+              className: "Replica"
             }
           }
         }
@@ -1439,6 +1502,33 @@ export const SkuCapacity: coreClient.CompositeMapper = {
   }
 };
 
+export const SharedPrivateLinkResourceList: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "SharedPrivateLinkResourceList",
+    modelProperties: {
+      value: {
+        serializedName: "value",
+        type: {
+          name: "Sequence",
+          element: {
+            type: {
+              name: "Composite",
+              className: "SharedPrivateLinkResource"
+            }
+          }
+        }
+      },
+      nextLink: {
+        serializedName: "nextLink",
+        type: {
+          name: "String"
+        }
+      }
+    }
+  }
+};
+
 export const ProxyResource: coreClient.CompositeMapper = {
   type: {
     name: "Composite",
@@ -1455,17 +1545,18 @@ export const TrackedResource: coreClient.CompositeMapper = {
     className: "TrackedResource",
     modelProperties: {
       ...Resource.type.modelProperties,
-      location: {
-        serializedName: "location",
-        type: {
-          name: "String"
-        }
-      },
       tags: {
         serializedName: "tags",
         type: {
           name: "Dictionary",
           value: { type: { name: "String" } }
+        }
+      },
+      location: {
+        serializedName: "location",
+        required: true,
+        type: {
+          name: "String"
         }
       }
     }
@@ -1495,13 +1586,6 @@ export const PrivateEndpointConnection: coreClient.CompositeMapper = {
     className: "PrivateEndpointConnection",
     modelProperties: {
       ...ProxyResource.type.modelProperties,
-      systemData: {
-        serializedName: "systemData",
-        type: {
-          name: "Composite",
-          className: "SystemData"
-        }
-      },
       provisioningState: {
         serializedName: "properties.provisioningState",
         readOnly: true,
@@ -1545,13 +1629,6 @@ export const SharedPrivateLinkResource: coreClient.CompositeMapper = {
     className: "SharedPrivateLinkResource",
     modelProperties: {
       ...ProxyResource.type.modelProperties,
-      systemData: {
-        serializedName: "systemData",
-        type: {
-          name: "Composite",
-          className: "SystemData"
-        }
-      },
       groupId: {
         serializedName: "properties.groupId",
         type: {
@@ -1594,13 +1671,6 @@ export const CustomCertificate: coreClient.CompositeMapper = {
     className: "CustomCertificate",
     modelProperties: {
       ...ProxyResource.type.modelProperties,
-      systemData: {
-        serializedName: "systemData",
-        type: {
-          name: "Composite",
-          className: "SystemData"
-        }
-      },
       provisioningState: {
         serializedName: "properties.provisioningState",
         readOnly: true,
@@ -1638,13 +1708,6 @@ export const CustomDomain: coreClient.CompositeMapper = {
     className: "CustomDomain",
     modelProperties: {
       ...ProxyResource.type.modelProperties,
-      systemData: {
-        serializedName: "systemData",
-        type: {
-          name: "Composite",
-          className: "SystemData"
-        }
-      },
       provisioningState: {
         serializedName: "properties.provisioningState",
         readOnly: true,
@@ -1744,13 +1807,6 @@ export const SignalRResource: coreClient.CompositeMapper = {
         type: {
           name: "Composite",
           className: "ManagedIdentity"
-        }
-      },
-      systemData: {
-        serializedName: "systemData",
-        type: {
-          name: "Composite",
-          className: "SystemData"
         }
       },
       provisioningState: {
@@ -1868,6 +1924,13 @@ export const SignalRResource: coreClient.CompositeMapper = {
           className: "SignalRCorsSettings"
         }
       },
+      serverless: {
+        serializedName: "properties.serverless",
+        type: {
+          name: "Composite",
+          className: "ServerlessSettings"
+        }
+      },
       upstream: {
         serializedName: "properties.upstream",
         type: {
@@ -1901,6 +1964,133 @@ export const SignalRResource: coreClient.CompositeMapper = {
         serializedName: "properties.disableAadAuth",
         type: {
           name: "Boolean"
+        }
+      },
+      regionEndpointEnabled: {
+        defaultValue: "Enabled",
+        serializedName: "properties.regionEndpointEnabled",
+        type: {
+          name: "String"
+        }
+      },
+      resourceStopped: {
+        defaultValue: "false",
+        serializedName: "properties.resourceStopped",
+        type: {
+          name: "String"
+        }
+      }
+    }
+  }
+};
+
+export const Replica: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "Replica",
+    modelProperties: {
+      ...TrackedResource.type.modelProperties,
+      sku: {
+        serializedName: "sku",
+        type: {
+          name: "Composite",
+          className: "ResourceSku"
+        }
+      },
+      provisioningState: {
+        serializedName: "properties.provisioningState",
+        readOnly: true,
+        type: {
+          name: "String"
+        }
+      },
+      regionEndpointEnabled: {
+        defaultValue: "Enabled",
+        serializedName: "properties.regionEndpointEnabled",
+        type: {
+          name: "String"
+        }
+      },
+      resourceStopped: {
+        defaultValue: "false",
+        serializedName: "properties.resourceStopped",
+        type: {
+          name: "String"
+        }
+      }
+    }
+  }
+};
+
+export const SignalRUpdateHeaders: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "SignalRUpdateHeaders",
+    modelProperties: {
+      location: {
+        serializedName: "location",
+        type: {
+          name: "String"
+        }
+      }
+    }
+  }
+};
+
+export const SignalRRegenerateKeyHeaders: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "SignalRRegenerateKeyHeaders",
+    modelProperties: {
+      location: {
+        serializedName: "location",
+        type: {
+          name: "String"
+        }
+      }
+    }
+  }
+};
+
+export const SignalRRestartHeaders: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "SignalRRestartHeaders",
+    modelProperties: {
+      location: {
+        serializedName: "location",
+        type: {
+          name: "String"
+        }
+      }
+    }
+  }
+};
+
+export const SignalRReplicasUpdateHeaders: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "SignalRReplicasUpdateHeaders",
+    modelProperties: {
+      location: {
+        serializedName: "location",
+        type: {
+          name: "String"
+        }
+      }
+    }
+  }
+};
+
+export const SignalRReplicasRestartHeaders: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "SignalRReplicasRestartHeaders",
+    modelProperties: {
+      location: {
+        serializedName: "location",
+        type: {
+          name: "String"
         }
       }
     }

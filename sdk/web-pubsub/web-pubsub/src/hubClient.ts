@@ -4,7 +4,12 @@
 import { CommonClientOptions, FullOperationResponse, OperationOptions } from "@azure/core-client";
 import { RestError, RequestBodyType } from "@azure/core-rest-pipeline";
 import { GeneratedClient } from "./generated/generatedClient";
-import { WebPubSubGroup, WebPubSubGroupImpl } from "./groupClient";
+import {
+  WebPubSubGroup,
+  WebPubSubGroupImpl,
+  GroupAddConnectionOptions,
+  GroupRemoveConnectionOptions,
+} from "./groupClient";
 import { AzureKeyCredential, TokenCredential, isTokenCredential } from "@azure/core-auth";
 import { webPubSubKeyCredentialPolicy } from "./webPubSubCredentialPolicy";
 import { tracingClient } from "./tracing";
@@ -12,7 +17,11 @@ import { logger } from "./logger";
 import { parseConnectionString } from "./parseConnectionString";
 import jwt from "jsonwebtoken";
 import { getPayloadForMessage } from "./utils";
-import { GeneratedClientOptionalParams } from "./generated";
+import {
+  GeneratedClientOptionalParams,
+  AddToGroupsRequest,
+  RemoveFromGroupsRequest,
+} from "./generated";
 import { webPubSubReverseProxyPolicy } from "./reverseProxyPolicy";
 
 /**
@@ -53,12 +62,31 @@ export interface HubSendToAllOptions extends OperationOptions {
    * Connection ids to exclude from receiving this message.
    */
   excludedConnections?: string[];
+  /**
+   * The filter syntax to filter out the connections to send the messages to following OData filter syntax.
+   * Examples:
+   *  * Exclude connections from `user1` and `user2`: `userId ne 'user1' and userId ne 'user2'`
+   *  * Exclude connections in `group1`: `not('group1' in groups)`
+   * Details about `filter` syntax please see [OData filter syntax for Azure Web PubSub](https://aka.ms/awps/filter-syntax).
+   */
+  filter?: string;
+  /**
+   * The time-to-live (TTL) value in seconds for messages sent to the service.
+   * 0 is the default value, which means the message never expires.
+   * 300 is the maximum value.
+   * If this parameter is non-zero, messages that are not consumed by the client within the specified TTL will be dropped by the service.
+   * This parameter can help when the client's bandwidth is limited.
+   */
+  messageTtlSeconds?: number;
 }
 
 /**
  * Options for sending text messages to hubs.
  */
 export interface HubSendTextToAllOptions extends HubSendToAllOptions {
+  /**
+   * The content will be sent to the clients in plain text.
+   */
   contentType: "text/plain";
 }
 
@@ -123,7 +151,16 @@ export interface HubRemoveUserFromAllGroupsOptions extends HubCloseConnectionOpt
 /**
  * Options for sending a message to a specific connection.
  */
-export interface HubSendToConnectionOptions extends OperationOptions {}
+export interface HubSendToConnectionOptions extends OperationOptions {
+  /**
+   * The time-to-live (TTL) value in seconds for messages sent to the service.
+   * 0 is the default value, which means the message never expires.
+   * 300 is the maximum value.
+   * If this parameter is non-zero, messages that are not consumed by the client within the specified TTL will be dropped by the service.
+   * This parameter can help when the client's bandwidth is limited.
+   */
+  messageTtlSeconds?: number;
+}
 
 /**
  * Options for sending a text message to a connection.
@@ -135,12 +172,32 @@ export interface HubSendTextToConnectionOptions extends HubSendToConnectionOptio
 /**
  * Options for sending a message to a user.
  */
-export interface HubSendToUserOptions extends OperationOptions {}
+export interface HubSendToUserOptions extends OperationOptions {
+  /**
+   * The filter syntax to filter out the connections to send the messages to following OData filter syntax.
+   * Examples:
+   *  * Exclude connections in `group1`: `not('group1' in groups)`
+   *  * Send to connections in `group1` or `group2`: `'group1' in groups or `group2` in groups`
+   * Details about `filter` syntax please see [OData filter syntax for Azure Web PubSub](https://aka.ms/awps/filter-syntax).
+   */
+  filter?: string;
+  /**
+   * The time-to-live (TTL) value in seconds for messages sent to the service.
+   * 0 is the default value, which means the message never expires.
+   * 300 is the maximum value.
+   * If this parameter is non-zero, messages that are not consumed by the client within the specified TTL will be dropped by the service.
+   * This parameter can help when the client's bandwidth is limited.
+   */
+  messageTtlSeconds?: number;
+}
 
 /**
  * Options for sending a text message to a user.
  */
 export interface HubSendTextToUserOptions extends HubSendToUserOptions {
+  /**
+   * The content will be sent to the clients in plain text.
+   */
   contentType: "text/plain";
 }
 
@@ -204,6 +261,11 @@ export interface GenerateClientTokenOptions extends OperationOptions {
    * Minutes until the token expires.
    */
   expirationTimeInMinutes?: number;
+
+  /**
+   * The groups to join when the client connects
+   */
+  groups?: string[];
 }
 
 /**
@@ -239,7 +301,7 @@ export class WebPubSubServiceClient {
   /**
    * The Web PubSub API version being used by this client
    */
-  public readonly apiVersion: string = "2021-10-01";
+  public readonly apiVersion: string = "2023-07-01";
 
   /**
    * The Web PubSub endpoint this client is connected to
@@ -619,6 +681,82 @@ export class WebPubSubServiceClient {
   }
 
   /**
+   * Remove a specific connection from all groups they are joined to
+   * @param connectionId - The connection id to remove from all groups
+   * @param options - Additional options
+   */
+  public async removeConnectionFromAllGroups(
+    connectionId: string,
+    options: HubCloseConnectionOptions = {}
+  ): Promise<void> {
+    return tracingClient.withSpan(
+      "WebPubSubServiceClient.removeConnectionFromAllGroups",
+      options,
+      (updatedOptions) => {
+        return this.client.webPubSub.removeConnectionFromAllGroups(
+          this.hubName,
+          connectionId,
+          updatedOptions
+        );
+      }
+    );
+  }
+
+  /**
+   * Add filtered connections to multiple groups
+   * @param groups - A list of groups which target connections will be added into
+   * @param filter - An OData filter which target connections satisfy
+   * @param options - Additional options
+   */
+  public async addConnectionsToGroups(
+    groups: string[],
+    filter: string,
+    options: GroupAddConnectionOptions = {}
+  ): Promise<void> {
+    return tracingClient.withSpan(
+      "WebPubSubServiceClient.addConnectionsToGroups",
+      options,
+      (updatedOptions) => {
+        return this.client.webPubSub.addConnectionsToGroups(
+          this.hubName,
+          {
+            groups: groups,
+            filter: filter,
+          } as AddToGroupsRequest,
+          updatedOptions
+        );
+      }
+    );
+  }
+
+  /**
+   * Remove filtered connections from multiple groups
+   * @param groups - A list of groups which target connections will be removed from
+   * @param filter - An OData filter which target connections satisfy
+   * @param options - Additional options
+   */
+  public async removeConnectionsFromGroups(
+    groups: string[],
+    filter: string,
+    options: GroupRemoveConnectionOptions = {}
+  ): Promise<void> {
+    return tracingClient.withSpan(
+      "WebPubSubServiceClient.removeConnectionsFromGroups",
+      options,
+      (updatedOptions) => {
+        return this.client.webPubSub.removeConnectionsFromGroups(
+          this.hubName,
+          {
+            groups: groups,
+            filter: filter,
+          } as RemoveFromGroupsRequest,
+          updatedOptions
+        );
+      }
+    );
+  }
+
+  /**
    * Check if a particular group exists (i.e. has active connections).
    *
    * @param groupName - The group name to check for
@@ -820,7 +958,7 @@ export class WebPubSubServiceClient {
         } else {
           const key = this.credential.key;
           const audience = `${endpoint}client/hubs/${this.hubName}`;
-          const payload = { role: options?.roles };
+          const payload = { role: options?.roles, "webpubsub.group": options?.groups };
           const signOptions: jwt.SignOptions = {
             audience: audience,
             expiresIn:

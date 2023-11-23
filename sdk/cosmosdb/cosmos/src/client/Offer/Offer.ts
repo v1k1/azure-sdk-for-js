@@ -3,6 +3,8 @@
 import { ClientContext } from "../../ClientContext";
 import { Constants, isResourceValid, ResourceType } from "../../common";
 import { CosmosClient } from "../../CosmosClient";
+import { getEmptyCosmosDiagnostics, withDiagnostics } from "../../utils/diagnostics";
+import { DiagnosticNodeInternal } from "../../diagnostics/DiagnosticNodeInternal";
 import { RequestOptions } from "../../request";
 import { OfferDefinition } from "./OfferDefinition";
 import { OfferResponse } from "./OfferResponse";
@@ -34,13 +36,22 @@ export class Offer {
    * Read the {@link OfferDefinition} for the given {@link Offer}.
    */
   public async read(options?: RequestOptions): Promise<OfferResponse> {
-    const response = await this.clientContext.read<OfferDefinition>({
-      path: this.url,
-      resourceType: ResourceType.offer,
-      resourceId: this.id,
-      options,
-    });
-    return new OfferResponse(response.result, response.headers, response.code, this);
+    return withDiagnostics(async (diagnosticNode: DiagnosticNodeInternal) => {
+      const response = await this.clientContext.read<OfferDefinition>({
+        path: this.url,
+        resourceType: ResourceType.offer,
+        resourceId: this.id,
+        options,
+        diagnosticNode,
+      });
+      return new OfferResponse(
+        response.result,
+        response.headers,
+        response.code,
+        getEmptyCosmosDiagnostics(),
+        this
+      );
+    }, this.clientContext);
   }
 
   /**
@@ -48,17 +59,26 @@ export class Offer {
    * @param body - The specified {@link OfferDefinition}
    */
   public async replace(body: OfferDefinition, options?: RequestOptions): Promise<OfferResponse> {
-    const err = {};
-    if (!isResourceValid(body, err)) {
-      throw err;
-    }
-    const response = await this.clientContext.replace<OfferDefinition>({
-      body,
-      path: this.url,
-      resourceType: ResourceType.offer,
-      resourceId: this.id,
-      options,
-    });
-    return new OfferResponse(response.result, response.headers, response.code, this);
+    return withDiagnostics(async (diagnosticNode: DiagnosticNodeInternal) => {
+      const err = {};
+      if (!isResourceValid(body, err)) {
+        throw err;
+      }
+      const response = await this.clientContext.replace<OfferDefinition>({
+        body,
+        path: this.url,
+        resourceType: ResourceType.offer,
+        resourceId: this.id,
+        options,
+        diagnosticNode,
+      });
+      return new OfferResponse(
+        response.result,
+        response.headers,
+        response.code,
+        getEmptyCosmosDiagnostics(),
+        this
+      );
+    }, this.clientContext);
   }
 }

@@ -10,19 +10,25 @@
 // Licensed under the MIT License.
 const { TrafficManagerManagementClient } = require("@azure/arm-trafficmanager");
 const { DefaultAzureCredential } = require("@azure/identity");
+require("dotenv").config();
 
 /**
  * This sample demonstrates how to Gets the default Geographic Hierarchy used by the Geographic traffic routing method.
  *
  * @summary Gets the default Geographic Hierarchy used by the Geographic traffic routing method.
- * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2018-08-01/examples/GeographicHierarchy-GET-default.json
+ * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2022-04-01/examples/GeographicHierarchy-GET-default.json
  */
 async function geographicHierarchyGetDefault() {
-  const subscriptionId = "00000000-0000-0000-0000-000000000000";
+  const subscriptionId =
+    process.env["TRAFFICMANAGER_SUBSCRIPTION_ID"] || "00000000-0000-0000-0000-000000000000";
   const credential = new DefaultAzureCredential();
   const client = new TrafficManagerManagementClient(credential, subscriptionId);
   const result = await client.geographicHierarchies.getDefault();
   console.log(result);
 }
 
-geographicHierarchyGetDefault().catch(console.error);
+async function main() {
+  geographicHierarchyGetDefault();
+}
+
+main().catch(console.error);

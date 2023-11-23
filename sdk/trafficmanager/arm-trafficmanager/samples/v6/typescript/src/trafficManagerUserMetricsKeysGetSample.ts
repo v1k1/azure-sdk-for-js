@@ -10,19 +10,27 @@
 // Licensed under the MIT License.
 import { TrafficManagerManagementClient } from "@azure/arm-trafficmanager";
 import { DefaultAzureCredential } from "@azure/identity";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 /**
  * This sample demonstrates how to Get the subscription-level key used for Real User Metrics collection.
  *
  * @summary Get the subscription-level key used for Real User Metrics collection.
- * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2018-08-01/examples/TrafficManagerUserMetricsKeys-GET.json
+ * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2022-04-01/examples/TrafficManagerUserMetricsKeys-GET.json
  */
 async function trafficManagerUserMetricsKeysGet() {
-  const subscriptionId = "{subscription-id}";
+  const subscriptionId =
+    process.env["TRAFFICMANAGER_SUBSCRIPTION_ID"] || "{subscription-id}";
   const credential = new DefaultAzureCredential();
   const client = new TrafficManagerManagementClient(credential, subscriptionId);
   const result = await client.trafficManagerUserMetricsKeys.get();
   console.log(result);
 }
 
-trafficManagerUserMetricsKeysGet().catch(console.error);
+async function main() {
+  trafficManagerUserMetricsKeysGet();
+}
+
+main().catch(console.error);

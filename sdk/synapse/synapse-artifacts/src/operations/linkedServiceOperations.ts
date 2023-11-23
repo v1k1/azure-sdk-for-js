@@ -7,14 +7,19 @@
  */
 
 import { tracingClient } from "../tracing";
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { LinkedServiceOperations } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { ArtifactsClient } from "../artifactsClient";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   LinkedServiceResource,
   LinkedServiceGetLinkedServicesByWorkspaceNextOptionalParams,
@@ -58,25 +63,37 @@ export class LinkedServiceOperationsImpl implements LinkedServiceOperations {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.getLinkedServicesByWorkspacePagingPage(options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.getLinkedServicesByWorkspacePagingPage(options, settings);
       }
     };
   }
 
   private async *getLinkedServicesByWorkspacePagingPage(
-    options?: LinkedServiceGetLinkedServicesByWorkspaceOptionalParams
+    options?: LinkedServiceGetLinkedServicesByWorkspaceOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<LinkedServiceResource[]> {
-    let result = await this._getLinkedServicesByWorkspace(options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: LinkedServiceGetLinkedServicesByWorkspaceResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._getLinkedServicesByWorkspace(options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._getLinkedServicesByWorkspaceNext(
         continuationToken,
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -120,8 +137,8 @@ export class LinkedServiceOperationsImpl implements LinkedServiceOperations {
     linkedService: LinkedServiceResource,
     options?: LinkedServiceCreateOrUpdateLinkedServiceOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<LinkedServiceCreateOrUpdateLinkedServiceResponse>,
+    SimplePollerLike<
+      OperationState<LinkedServiceCreateOrUpdateLinkedServiceResponse>,
       LinkedServiceCreateOrUpdateLinkedServiceResponse
     >
   > {
@@ -139,7 +156,7 @@ export class LinkedServiceOperationsImpl implements LinkedServiceOperations {
         }
       );
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -172,13 +189,16 @@ export class LinkedServiceOperationsImpl implements LinkedServiceOperations {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { linkedServiceName, linkedService, options },
-      createOrUpdateLinkedServiceOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { linkedServiceName, linkedService, options },
+      spec: createOrUpdateLinkedServiceOperationSpec
+    });
+    const poller = await createHttpPoller<
+      LinkedServiceCreateOrUpdateLinkedServiceResponse,
+      OperationState<LinkedServiceCreateOrUpdateLinkedServiceResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -233,7 +253,7 @@ export class LinkedServiceOperationsImpl implements LinkedServiceOperations {
   async beginDeleteLinkedService(
     linkedServiceName: string,
     options?: LinkedServiceDeleteLinkedServiceOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
@@ -246,7 +266,7 @@ export class LinkedServiceOperationsImpl implements LinkedServiceOperations {
         }
       );
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -279,13 +299,13 @@ export class LinkedServiceOperationsImpl implements LinkedServiceOperations {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { linkedServiceName, options },
-      deleteLinkedServiceOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { linkedServiceName, options },
+      spec: deleteLinkedServiceOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -318,7 +338,7 @@ export class LinkedServiceOperationsImpl implements LinkedServiceOperations {
     linkedServiceName: string,
     request: ArtifactRenameRequest,
     options?: LinkedServiceRenameLinkedServiceOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
@@ -331,7 +351,7 @@ export class LinkedServiceOperationsImpl implements LinkedServiceOperations {
         }
       );
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -364,13 +384,13 @@ export class LinkedServiceOperationsImpl implements LinkedServiceOperations {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { linkedServiceName, request, options },
-      renameLinkedServiceOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { linkedServiceName, request, options },
+      spec: renameLinkedServiceOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -432,7 +452,7 @@ const getLinkedServicesByWorkspaceOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.CloudError
     }
   },
-  queryParameters: [Parameters.apiVersion4],
+  queryParameters: [Parameters.apiVersion5],
   urlParameters: [Parameters.endpoint],
   headerParameters: [Parameters.accept],
   serializer
@@ -458,7 +478,7 @@ const createOrUpdateLinkedServiceOperationSpec: coreClient.OperationSpec = {
     }
   },
   requestBody: Parameters.linkedService,
-  queryParameters: [Parameters.apiVersion4],
+  queryParameters: [Parameters.apiVersion5],
   urlParameters: [Parameters.endpoint, Parameters.linkedServiceName],
   headerParameters: [
     Parameters.accept,
@@ -480,7 +500,7 @@ const getLinkedServiceOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.CloudError
     }
   },
-  queryParameters: [Parameters.apiVersion4],
+  queryParameters: [Parameters.apiVersion5],
   urlParameters: [Parameters.endpoint, Parameters.linkedServiceName],
   headerParameters: [Parameters.accept, Parameters.ifNoneMatch],
   serializer
@@ -497,7 +517,7 @@ const deleteLinkedServiceOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.CloudError
     }
   },
-  queryParameters: [Parameters.apiVersion4],
+  queryParameters: [Parameters.apiVersion5],
   urlParameters: [Parameters.endpoint, Parameters.linkedServiceName],
   headerParameters: [Parameters.accept],
   serializer
@@ -515,7 +535,7 @@ const renameLinkedServiceOperationSpec: coreClient.OperationSpec = {
     }
   },
   requestBody: Parameters.request,
-  queryParameters: [Parameters.apiVersion4],
+  queryParameters: [Parameters.apiVersion5],
   urlParameters: [Parameters.endpoint, Parameters.linkedServiceName],
   headerParameters: [Parameters.accept, Parameters.contentType],
   mediaType: "json",
@@ -532,7 +552,6 @@ const getLinkedServicesByWorkspaceNextOperationSpec: coreClient.OperationSpec = 
       bodyMapper: Mappers.CloudError
     }
   },
-  queryParameters: [Parameters.apiVersion4],
   urlParameters: [Parameters.endpoint, Parameters.nextLink],
   headerParameters: [Parameters.accept],
   serializer

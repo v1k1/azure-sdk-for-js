@@ -1,12 +1,35 @@
 # Release History
 
-## 1.1.0 (Unreleased)
+## 1.1.3 (Unreleased)
+
+### Features Added
+- Added a `messageTtlSeconds` option to `serviceClient.sendToAll`, `serviceClient.sendToUser`, `serviceClient.sendToConnection` and `groupClient.sendToAll`. This option defines the expiration time for a message. Messages that are not consumed by the client within the specified TTL will be dropped by the service. This parameter helps when the client's bandwidth is limited.
+- Added method `serviceClient.addConnectionsToGroups` to add connections to multiple groups. Target connections are specified by a filter string.
+- Added method `serviceClient.removeConnectionsFromGroups` to remove connections from multiple groups. Target connections are specified by a filter string.
+
+## 1.1.2 (2023-04-18)
 
 ### Features Added
 
 ### Breaking Changes
 
 ### Bugs Fixed
+
+### Other Changes
+
+## 1.1.1 (2023-01-03)
+
+### Other Changes
+
+- Bumped the version of the jsonwebtoken dependency to v9.
+
+## 1.1.0 (2022-11-11)
+
+### Features Added
+- Added method `serviceClient.removeConnectionFromAllGroups` to remove the connection from all the groups it is in.
+- Added a `groups` option in `serviceClient.generateClientToken`, to enable connections join initial groups once it is connected.
+- Added a `filter` parameter when sending messages to connections in a hub/group/user to filter out the connections recieving message, details about `filter` syntax please see [OData filter syntax for Azure Web PubSub](https://aka.ms/awps/filter-syntax).
+- Provided a utility method `odata` to generate the `filter` parameter
 
 ### Other Changes
 

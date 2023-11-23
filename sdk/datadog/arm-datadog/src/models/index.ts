@@ -126,6 +126,30 @@ export interface ErrorAdditionalInfo {
   readonly info?: Record<string, unknown>;
 }
 
+export interface CreateResourceSupportedResponseList {
+  value?: CreateResourceSupportedResponse[];
+}
+
+/** Datadog resource can be created or not. */
+export interface CreateResourceSupportedResponse {
+  /** Represents the properties of the resource. */
+  properties?: CreateResourceSupportedProperties;
+}
+
+/** Datadog resource can be created or not properties. */
+export interface CreateResourceSupportedProperties {
+  /**
+   * The ARM id of the subscription.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly name?: string;
+  /**
+   * Indicates if selected subscription supports Datadog resource creation, if not it is already being monitored for the selected organization via multi subscription feature.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly creationSupported?: boolean;
+}
+
 /** Response of a list operation. */
 export interface DatadogApiKeyListResponse {
   /** Results of a list operation. */
@@ -156,7 +180,7 @@ export interface DatadogHostListResponse {
 export interface DatadogHost {
   /** The name of the host. */
   name?: string;
-  /** The aliases for the host. */
+  /** The aliases for the host installed via the Datadog agent. */
   aliases?: string[];
   /** The Datadog integrations reporting metrics for the host. */
   apps?: string[];
@@ -289,7 +313,7 @@ export interface DatadogMonitorResource {
 }
 
 export interface ResourceSku {
-  /** Name of the SKU. */
+  /** Name of the SKU in {PlanId} format. For Terraform, the only allowed value is 'linking'. */
   name: string;
 }
 
@@ -304,9 +328,9 @@ export interface MonitorProperties {
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
   readonly marketplaceSubscriptionStatus?: MarketplaceSubscriptionStatus;
-  /** Datadog organization properties */
+  /** Specify the Datadog organization name. In the case of linking to existing organizations, Id, ApiKey, and Applicationkey is required as well. */
   datadogOrganizationProperties?: DatadogOrganizationProperties;
-  /** User info */
+  /** Includes name, email and optionally, phone number. User Information can't be null. */
   userInfo?: UserInfo;
   /** NOTE: This property will not be serialized. It can only be populated by the server. */
   readonly liftrResourceCategory?: LiftrResourceCategories;
@@ -317,23 +341,17 @@ export interface MonitorProperties {
   readonly liftrResourcePreference?: number;
 }
 
-/** Datadog organization properties */
+/** Specify the Datadog organization name. In the case of linking to existing organizations, Id, ApiKey, and Applicationkey is required as well. */
 export interface DatadogOrganizationProperties {
-  /**
-   * Name of the Datadog organization.
-   * NOTE: This property will not be serialized. It can only be populated by the server.
-   */
-  readonly name?: string;
-  /**
-   * Id of the Datadog organization.
-   * NOTE: This property will not be serialized. It can only be populated by the server.
-   */
-  readonly id?: string;
-  /** The auth code used to linking to an existing datadog organization. */
+  /** Name of the Datadog organization. */
+  name?: string;
+  /** Id of the Datadog organization. */
+  id?: string;
+  /** The auth code used to linking to an existing Datadog organization. */
   linkingAuthCode?: string;
   /** The client_id from an existing in exchange for an auth token to link organization. */
   linkingClientId?: string;
-  /** The redirect uri for linking. */
+  /** The redirect URI for linking. */
   redirectUri?: string;
   /** Api key associated to the Datadog organization. */
   apiKey?: string;
@@ -341,9 +359,11 @@ export interface DatadogOrganizationProperties {
   applicationKey?: string;
   /** The Id of the Enterprise App used for Single sign on. */
   enterpriseAppId?: string;
+  /** The configuration which describes the state of cloud security posture management. This collects configuration information for all resources in a subscription and track conformance to industry benchmarks. */
+  cspm?: boolean;
 }
 
-/** User info */
+/** Includes name, email and optionally, phone number. User Information can't be null. */
 export interface UserInfo {
   /** Name of the user */
   name?: string;
@@ -364,7 +384,7 @@ export interface IdentityProperties {
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
   readonly tenantId?: string;
-  /** Identity type */
+  /** Specifies the identity type of the Datadog Monitor. At this time the only allowed value is 'SystemAssigned'. */
   type?: ManagedIdentityTypes;
 }
 
@@ -381,6 +401,8 @@ export interface DatadogMonitorResourceUpdateParameters {
 export interface MonitorUpdateProperties {
   /** Flag specifying if the resource monitoring is enabled or disabled. */
   monitoringStatus?: MonitoringStatus;
+  /** The new cloud security posture management value of the monitor resource. This collects configuration information for all resources in a subscription and track conformance to industry benchmarks. */
+  cspm?: boolean;
 }
 
 export interface DatadogSetPasswordLink {
@@ -429,6 +451,8 @@ export interface MonitoringTagRulesProperties {
   logRules?: LogRules;
   /** Set of rules for sending metrics for the Monitor resource. */
   metricRules?: MetricRules;
+  /** Configuration to enable/disable auto-muting flag */
+  automuting?: boolean;
 }
 
 /** Set of rules for sending logs for the Monitor resource. */
@@ -505,11 +529,60 @@ export interface DatadogSingleSignOnProperties {
   readonly singleSignOnUrl?: string;
 }
 
+export interface MonitoredSubscriptionPropertiesList {
+  value?: MonitoredSubscriptionProperties[];
+}
+
+/** The request to update subscriptions needed to be monitored by the Datadog monitor resource. */
+export interface MonitoredSubscriptionProperties {
+  /**
+   * Name of the monitored subscription resource.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly name?: string;
+  /**
+   * The id of the monitored subscription resource.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly id?: string;
+  /**
+   * The type of the monitored subscription resource.
+   * NOTE: This property will not be serialized. It can only be populated by the server.
+   */
+  readonly type?: string;
+  /** The request to update subscriptions needed to be monitored by the Datadog monitor resource. */
+  properties?: SubscriptionList;
+}
+
+/** The request to update subscriptions needed to be monitored by the Datadog monitor resource. */
+export interface SubscriptionList {
+  /** The operation for the patch on the resource. */
+  operation?: Operation;
+  /** List of subscriptions and the state of the monitoring. */
+  monitoredSubscriptionList?: MonitoredSubscription[];
+}
+
+/** The list of subscriptions and it's monitoring status by current Datadog monitor. */
+export interface MonitoredSubscription {
+  /** The subscriptionId to be monitored. */
+  subscriptionId?: string;
+  /** The state of monitoring. */
+  status?: Status;
+  /** The reason of not monitoring the subscription. */
+  error?: string;
+  /** Definition of the properties for a TagRules resource. */
+  tagRules?: MonitoringTagRulesProperties;
+}
+
 /** Known values of {@link CreatedByType} that the service accepts. */
 export enum KnownCreatedByType {
+  /** User */
   User = "User",
+  /** Application */
   Application = "Application",
+  /** ManagedIdentity */
   ManagedIdentity = "ManagedIdentity",
+  /** Key */
   Key = "Key"
 }
 
@@ -527,14 +600,23 @@ export type CreatedByType = string;
 
 /** Known values of {@link ProvisioningState} that the service accepts. */
 export enum KnownProvisioningState {
+  /** Accepted */
   Accepted = "Accepted",
+  /** Creating */
   Creating = "Creating",
+  /** Updating */
   Updating = "Updating",
+  /** Deleting */
   Deleting = "Deleting",
+  /** Succeeded */
   Succeeded = "Succeeded",
+  /** Failed */
   Failed = "Failed",
+  /** Canceled */
   Canceled = "Canceled",
+  /** Deleted */
   Deleted = "Deleted",
+  /** NotSpecified */
   NotSpecified = "NotSpecified"
 }
 
@@ -557,7 +639,9 @@ export type ProvisioningState = string;
 
 /** Known values of {@link MonitoringStatus} that the service accepts. */
 export enum KnownMonitoringStatus {
+  /** Enabled */
   Enabled = "Enabled",
+  /** Disabled */
   Disabled = "Disabled"
 }
 
@@ -573,9 +657,13 @@ export type MonitoringStatus = string;
 
 /** Known values of {@link MarketplaceSubscriptionStatus} that the service accepts. */
 export enum KnownMarketplaceSubscriptionStatus {
+  /** Provisioning */
   Provisioning = "Provisioning",
+  /** Active */
   Active = "Active",
+  /** Suspended */
   Suspended = "Suspended",
+  /** Unsubscribed */
   Unsubscribed = "Unsubscribed"
 }
 
@@ -593,7 +681,9 @@ export type MarketplaceSubscriptionStatus = string;
 
 /** Known values of {@link LiftrResourceCategories} that the service accepts. */
 export enum KnownLiftrResourceCategories {
+  /** Unknown */
   Unknown = "Unknown",
+  /** MonitorLogs */
   MonitorLogs = "MonitorLogs"
 }
 
@@ -609,7 +699,9 @@ export type LiftrResourceCategories = string;
 
 /** Known values of {@link ManagedIdentityTypes} that the service accepts. */
 export enum KnownManagedIdentityTypes {
+  /** SystemAssigned */
   SystemAssigned = "SystemAssigned",
+  /** UserAssigned */
   UserAssigned = "UserAssigned"
 }
 
@@ -625,7 +717,9 @@ export type ManagedIdentityTypes = string;
 
 /** Known values of {@link TagAction} that the service accepts. */
 export enum KnownTagAction {
+  /** Include */
   Include = "Include",
+  /** Exclude */
   Exclude = "Exclude"
 }
 
@@ -641,9 +735,13 @@ export type TagAction = string;
 
 /** Known values of {@link SingleSignOnStates} that the service accepts. */
 export enum KnownSingleSignOnStates {
+  /** Initial */
   Initial = "Initial",
+  /** Enable */
   Enable = "Enable",
+  /** Disable */
   Disable = "Disable",
+  /** Existing */
   Existing = "Existing"
 }
 
@@ -658,6 +756,57 @@ export enum KnownSingleSignOnStates {
  * **Existing**
  */
 export type SingleSignOnStates = string;
+
+/** Known values of {@link Operation} that the service accepts. */
+export enum KnownOperation {
+  /** AddBegin */
+  AddBegin = "AddBegin",
+  /** AddComplete */
+  AddComplete = "AddComplete",
+  /** DeleteBegin */
+  DeleteBegin = "DeleteBegin",
+  /** DeleteComplete */
+  DeleteComplete = "DeleteComplete",
+  /** Active */
+  Active = "Active"
+}
+
+/**
+ * Defines values for Operation. \
+ * {@link KnownOperation} can be used interchangeably with Operation,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **AddBegin** \
+ * **AddComplete** \
+ * **DeleteBegin** \
+ * **DeleteComplete** \
+ * **Active**
+ */
+export type Operation = string;
+
+/** Known values of {@link Status} that the service accepts. */
+export enum KnownStatus {
+  /** InProgress */
+  InProgress = "InProgress",
+  /** Active */
+  Active = "Active",
+  /** Failed */
+  Failed = "Failed",
+  /** Deleting */
+  Deleting = "Deleting"
+}
+
+/**
+ * Defines values for Status. \
+ * {@link KnownStatus} can be used interchangeably with Status,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **InProgress** \
+ * **Active** \
+ * **Failed** \
+ * **Deleting**
+ */
+export type Status = string;
 
 /** Optional parameters. */
 export interface MarketplaceAgreementsListOptionalParams
@@ -681,6 +830,20 @@ export interface MarketplaceAgreementsListNextOptionalParams
 
 /** Contains response data for the listNext operation. */
 export type MarketplaceAgreementsListNextResponse = DatadogAgreementResourceListResponse;
+
+/** Optional parameters. */
+export interface CreationSupportedListOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the list operation. */
+export type CreationSupportedListResponse = CreateResourceSupportedResponseList;
+
+/** Optional parameters. */
+export interface CreationSupportedGetOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the get operation. */
+export type CreationSupportedGetResponse = CreateResourceSupportedResponse;
 
 /** Optional parameters. */
 export interface MonitorsListApiKeysOptionalParams
@@ -907,6 +1070,57 @@ export interface SingleSignOnConfigurationsListNextOptionalParams
 
 /** Contains response data for the listNext operation. */
 export type SingleSignOnConfigurationsListNextResponse = DatadogSingleSignOnResourceListResponse;
+
+/** Optional parameters. */
+export interface MonitoredSubscriptionsListOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the list operation. */
+export type MonitoredSubscriptionsListResponse = MonitoredSubscriptionPropertiesList;
+
+/** Optional parameters. */
+export interface MonitoredSubscriptionsGetOptionalParams
+  extends coreClient.OperationOptions {}
+
+/** Contains response data for the get operation. */
+export type MonitoredSubscriptionsGetResponse = MonitoredSubscriptionProperties;
+
+/** Optional parameters. */
+export interface MonitoredSubscriptionsCreateorUpdateOptionalParams
+  extends coreClient.OperationOptions {
+  /** The request to update subscriptions needed to be monitored by the Datadog monitor resource. */
+  body?: MonitoredSubscriptionProperties;
+  /** Delay to wait until next poll, in milliseconds. */
+  updateIntervalInMs?: number;
+  /** A serialized poller which can be used to resume an existing paused Long-Running-Operation. */
+  resumeFrom?: string;
+}
+
+/** Contains response data for the createorUpdate operation. */
+export type MonitoredSubscriptionsCreateorUpdateResponse = MonitoredSubscriptionProperties;
+
+/** Optional parameters. */
+export interface MonitoredSubscriptionsUpdateOptionalParams
+  extends coreClient.OperationOptions {
+  /** The request to update subscriptions needed to be monitored by the Datadog monitor resource. */
+  body?: MonitoredSubscriptionProperties;
+  /** Delay to wait until next poll, in milliseconds. */
+  updateIntervalInMs?: number;
+  /** A serialized poller which can be used to resume an existing paused Long-Running-Operation. */
+  resumeFrom?: string;
+}
+
+/** Contains response data for the update operation. */
+export type MonitoredSubscriptionsUpdateResponse = MonitoredSubscriptionProperties;
+
+/** Optional parameters. */
+export interface MonitoredSubscriptionsDeleteOptionalParams
+  extends coreClient.OperationOptions {
+  /** Delay to wait until next poll, in milliseconds. */
+  updateIntervalInMs?: number;
+  /** A serialized poller which can be used to resume an existing paused Long-Running-Operation. */
+  resumeFrom?: string;
+}
 
 /** Optional parameters. */
 export interface MicrosoftDatadogClientOptionalParams

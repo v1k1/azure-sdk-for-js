@@ -735,6 +735,18 @@ export const RoutingEndpoints: coreClient.CompositeMapper = {
             }
           }
         }
+      },
+      cosmosDBSqlContainers: {
+        serializedName: "cosmosDBSqlContainers",
+        type: {
+          name: "Sequence",
+          element: {
+            type: {
+              name: "Composite",
+              className: "RoutingCosmosDBSqlApiProperties"
+            }
+          }
+        }
       }
     }
   }
@@ -1052,6 +1064,102 @@ export const RoutingStorageContainerProperties: coreClient.CompositeMapper = {
       },
       encoding: {
         serializedName: "encoding",
+        type: {
+          name: "String"
+        }
+      }
+    }
+  }
+};
+
+export const RoutingCosmosDBSqlApiProperties: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "RoutingCosmosDBSqlApiProperties",
+    modelProperties: {
+      name: {
+        constraints: {
+          Pattern: new RegExp("^[A-Za-z0-9-._]{1,64}$")
+        },
+        serializedName: "name",
+        required: true,
+        type: {
+          name: "String"
+        }
+      },
+      id: {
+        serializedName: "id",
+        readOnly: true,
+        type: {
+          name: "String"
+        }
+      },
+      subscriptionId: {
+        serializedName: "subscriptionId",
+        type: {
+          name: "String"
+        }
+      },
+      resourceGroup: {
+        serializedName: "resourceGroup",
+        type: {
+          name: "String"
+        }
+      },
+      endpointUri: {
+        serializedName: "endpointUri",
+        required: true,
+        type: {
+          name: "String"
+        }
+      },
+      authenticationType: {
+        serializedName: "authenticationType",
+        type: {
+          name: "String"
+        }
+      },
+      identity: {
+        serializedName: "identity",
+        type: {
+          name: "Composite",
+          className: "ManagedIdentity"
+        }
+      },
+      primaryKey: {
+        serializedName: "primaryKey",
+        type: {
+          name: "String"
+        }
+      },
+      secondaryKey: {
+        serializedName: "secondaryKey",
+        type: {
+          name: "String"
+        }
+      },
+      databaseName: {
+        serializedName: "databaseName",
+        required: true,
+        type: {
+          name: "String"
+        }
+      },
+      containerName: {
+        serializedName: "containerName",
+        required: true,
+        type: {
+          name: "String"
+        }
+      },
+      partitionKeyName: {
+        serializedName: "partitionKeyName",
+        type: {
+          name: "String"
+        }
+      },
+      partitionKeyTemplate: {
+        serializedName: "partitionKeyTemplate",
         type: {
           name: "String"
         }
@@ -3042,6 +3150,69 @@ export const IotHubDescription: coreClient.CompositeMapper = {
         type: {
           name: "Composite",
           className: "SystemData"
+        }
+      }
+    }
+  }
+};
+
+export const IotHubResourceDeleteHeaders: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "IotHubResourceDeleteHeaders",
+    modelProperties: {
+      azureAsyncOperation: {
+        serializedName: "azure-asyncoperation",
+        type: {
+          name: "String"
+        }
+      },
+      location: {
+        serializedName: "location",
+        type: {
+          name: "String"
+        }
+      }
+    }
+  }
+};
+
+export const IotHubManualFailoverHeaders: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "IotHubManualFailoverHeaders",
+    modelProperties: {
+      azureAsyncOperation: {
+        serializedName: "azure-asyncoperation",
+        type: {
+          name: "String"
+        }
+      },
+      location: {
+        serializedName: "location",
+        type: {
+          name: "String"
+        }
+      }
+    }
+  }
+};
+
+export const PrivateEndpointConnectionsDeleteHeaders: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "PrivateEndpointConnectionsDeleteHeaders",
+    modelProperties: {
+      azureAsyncOperation: {
+        serializedName: "azure-asyncoperation",
+        type: {
+          name: "String"
+        }
+      },
+      location: {
+        serializedName: "location",
+        type: {
+          name: "String"
         }
       }
     }

@@ -10,16 +10,21 @@
 // Licensed under the MIT License.
 import { NetworkConnectionUpdate, DevCenterClient } from "@azure/arm-devcenter";
 import { DefaultAzureCredential } from "@azure/identity";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 /**
  * This sample demonstrates how to Partially updates a Network Connection
  *
  * @summary Partially updates a Network Connection
- * x-ms-original-file: specification/devcenter/resource-manager/Microsoft.DevCenter/preview/2022-09-01-preview/examples/NetworkConnections_Patch.json
+ * x-ms-original-file: specification/devcenter/resource-manager/Microsoft.DevCenter/preview/2023-10-01-preview/examples/NetworkConnections_Patch.json
  */
 async function networkConnectionsUpdate() {
-  const subscriptionId = "{subscriptionId}";
-  const resourceGroupName = "rg1";
+  const subscriptionId =
+    process.env["DEVCENTER_SUBSCRIPTION_ID"] ||
+    "0ac520ee-14c0-480f-b6c9-0a90c58ffff";
+  const resourceGroupName = process.env["DEVCENTER_RESOURCE_GROUP"] || "rg1";
   const networkConnectionName = "uswest3network";
   const body: NetworkConnectionUpdate = {
     domainPassword: "New Password value for user"
@@ -34,4 +39,8 @@ async function networkConnectionsUpdate() {
   console.log(result);
 }
 
-networkConnectionsUpdate().catch(console.error);
+async function main() {
+  networkConnectionsUpdate();
+}
+
+main().catch(console.error);

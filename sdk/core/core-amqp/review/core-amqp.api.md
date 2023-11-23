@@ -155,6 +155,7 @@ export enum ConditionErrorNameMapper {
     "amqp:session:unattached-handle" = "UnattachedHandleError",
     "amqp:session:window-violation" = "SessionWindowViolationError",
     "amqp:unauthorized-access" = "UnauthorizedError",
+    "client.sender:link-not-ready" = "SenderNotReadyError",
     "client.sender:not-enough-link-credit" = "SenderBusyError",
     "com.microsoft:address-already-in-use" = "AddressAlreadyInUseError",
     "com.microsoft:argument-error" = "ArgumentError",
@@ -196,8 +197,8 @@ export interface ConnectionConfig {
 
 // @public
 export const ConnectionConfig: {
-    create(connectionString: string, path?: string | undefined): ConnectionConfig;
-    validate(config: ConnectionConfig, options?: ConnectionConfigOptions | undefined): void;
+    create(connectionString: string, path?: string): ConnectionConfig;
+    validate(config: ConnectionConfig, options?: ConnectionConfigOptions): void;
 };
 
 // @public
@@ -407,6 +408,7 @@ export enum ErrorNameConditionMapper {
     ResourceDeletedError = "amqp:resource-deleted",
     ResourceLockedError = "amqp:resource-locked",
     SenderBusyError = "client.sender:not-enough-link-credit",
+    SenderNotReadyError = "client.sender:link-not-ready",
     ServerBusyError = "com.microsoft:server-busy",
     ServiceCommunicationError = "amqp:not-found",
     ServiceUnavailableError = "com.microsoft:timeout",
@@ -551,7 +553,7 @@ export interface RetryOptions {
 
 // @public
 export interface SasTokenProvider {
-    getToken(audience: string): AccessToken;
+    getToken(audience: string): Promise<AccessToken>;
     isSasTokenProvider: true;
 }
 

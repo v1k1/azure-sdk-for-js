@@ -364,6 +364,12 @@ export const RedisCreateParameters: coreClient.CompositeMapper = {
           name: "String"
         }
       },
+      updateChannel: {
+        serializedName: "properties.updateChannel",
+        type: {
+          name: "String"
+        }
+      },
       sku: {
         serializedName: "properties.sku",
         type: {
@@ -487,6 +493,12 @@ export const RedisCommonProperties: coreClient.CompositeMapper = {
         type: {
           name: "String"
         }
+      },
+      updateChannel: {
+        serializedName: "updateChannel",
+        type: {
+          name: "String"
+        }
       }
     }
   }
@@ -593,6 +605,18 @@ export const RedisCommonPropertiesRedisConfiguration: coreClient.CompositeMapper
       },
       authnotrequired: {
         serializedName: "authnotrequired",
+        type: {
+          name: "String"
+        }
+      },
+      storageSubscriptionId: {
+        serializedName: "storage-subscription-id",
+        type: {
+          name: "String"
+        }
+      },
+      aadEnabled: {
+        serializedName: "aad-enabled",
         type: {
           name: "String"
         }
@@ -903,6 +927,12 @@ export const RedisUpdateParameters: coreClient.CompositeMapper = {
           name: "String"
         }
       },
+      updateChannel: {
+        serializedName: "properties.updateChannel",
+        type: {
+          name: "String"
+        }
+      },
       sku: {
         serializedName: "properties.sku",
         type: {
@@ -1035,6 +1065,12 @@ export const ImportRDBParameters: coreClient.CompositeMapper = {
         type: {
           name: "String"
         }
+      },
+      storageSubscriptionId: {
+        serializedName: "storage-subscription-id",
+        type: {
+          name: "String"
+        }
       }
     }
   }
@@ -1069,6 +1105,81 @@ export const ExportRDBParameters: coreClient.CompositeMapper = {
         serializedName: "preferred-data-archive-auth-method",
         type: {
           name: "String"
+        }
+      },
+      storageSubscriptionId: {
+        serializedName: "storage-subscription-id",
+        type: {
+          name: "String"
+        }
+      }
+    }
+  }
+};
+
+export const OperationStatusResult: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "OperationStatusResult",
+    modelProperties: {
+      id: {
+        serializedName: "id",
+        type: {
+          name: "String"
+        }
+      },
+      name: {
+        serializedName: "name",
+        type: {
+          name: "String"
+        }
+      },
+      status: {
+        serializedName: "status",
+        required: true,
+        type: {
+          name: "String"
+        }
+      },
+      percentComplete: {
+        constraints: {
+          InclusiveMaximum: 100,
+          InclusiveMinimum: 0
+        },
+        serializedName: "percentComplete",
+        type: {
+          name: "Number"
+        }
+      },
+      startTime: {
+        serializedName: "startTime",
+        type: {
+          name: "DateTime"
+        }
+      },
+      endTime: {
+        serializedName: "endTime",
+        type: {
+          name: "DateTime"
+        }
+      },
+      operations: {
+        serializedName: "operations",
+        type: {
+          name: "Sequence",
+          element: {
+            type: {
+              name: "Composite",
+              className: "OperationStatusResult"
+            }
+          }
+        }
+      },
+      error: {
+        serializedName: "error",
+        type: {
+          name: "Composite",
+          className: "ErrorDetail"
         }
       }
     }
@@ -1197,6 +1308,20 @@ export const RedisLinkedServerCreateParameters: coreClient.CompositeMapper = {
           name: "Enum",
           allowedValues: ["Primary", "Secondary"]
         }
+      },
+      geoReplicatedPrimaryHostName: {
+        serializedName: "properties.geoReplicatedPrimaryHostName",
+        readOnly: true,
+        type: {
+          name: "String"
+        }
+      },
+      primaryHostName: {
+        serializedName: "properties.primaryHostName",
+        readOnly: true,
+        type: {
+          name: "String"
+        }
       }
     }
   }
@@ -1227,6 +1352,20 @@ export const RedisLinkedServerCreateProperties: coreClient.CompositeMapper = {
         type: {
           name: "Enum",
           allowedValues: ["Primary", "Secondary"]
+        }
+      },
+      geoReplicatedPrimaryHostName: {
+        serializedName: "geoReplicatedPrimaryHostName",
+        readOnly: true,
+        type: {
+          name: "String"
+        }
+      },
+      primaryHostName: {
+        serializedName: "primaryHostName",
+        readOnly: true,
+        type: {
+          name: "String"
         }
       }
     }
@@ -1303,125 +1442,56 @@ export const PrivateLinkResourceListResult: coreClient.CompositeMapper = {
   }
 };
 
-export const OperationStatusResult: coreClient.CompositeMapper = {
+export const RedisCacheAccessPolicyList: coreClient.CompositeMapper = {
   type: {
     name: "Composite",
-    className: "OperationStatusResult",
+    className: "RedisCacheAccessPolicyList",
     modelProperties: {
-      id: {
-        serializedName: "id",
-        type: {
-          name: "String"
-        }
-      },
-      name: {
-        serializedName: "name",
-        type: {
-          name: "String"
-        }
-      },
-      status: {
-        serializedName: "status",
-        required: true,
-        type: {
-          name: "String"
-        }
-      },
-      percentComplete: {
-        constraints: {
-          InclusiveMaximum: 100,
-          InclusiveMinimum: 0
-        },
-        serializedName: "percentComplete",
-        type: {
-          name: "Number"
-        }
-      },
-      startTime: {
-        serializedName: "startTime",
-        type: {
-          name: "DateTime"
-        }
-      },
-      endTime: {
-        serializedName: "endTime",
-        type: {
-          name: "DateTime"
-        }
-      },
-      operations: {
-        serializedName: "operations",
+      value: {
+        serializedName: "value",
         type: {
           name: "Sequence",
           element: {
             type: {
               name: "Composite",
-              className: "OperationStatusResult"
+              className: "RedisCacheAccessPolicy"
             }
           }
         }
       },
-      error: {
-        serializedName: "error",
+      nextLink: {
+        serializedName: "nextLink",
+        readOnly: true,
         type: {
-          name: "Composite",
-          className: "ErrorDetailAutoGenerated"
+          name: "String"
         }
       }
     }
   }
 };
 
-export const ErrorDetailAutoGenerated: coreClient.CompositeMapper = {
+export const RedisCacheAccessPolicyAssignmentList: coreClient.CompositeMapper = {
   type: {
     name: "Composite",
-    className: "ErrorDetailAutoGenerated",
+    className: "RedisCacheAccessPolicyAssignmentList",
     modelProperties: {
-      code: {
-        serializedName: "code",
-        readOnly: true,
-        type: {
-          name: "String"
-        }
-      },
-      message: {
-        serializedName: "message",
-        readOnly: true,
-        type: {
-          name: "String"
-        }
-      },
-      target: {
-        serializedName: "target",
-        readOnly: true,
-        type: {
-          name: "String"
-        }
-      },
-      details: {
-        serializedName: "details",
-        readOnly: true,
+      value: {
+        serializedName: "value",
         type: {
           name: "Sequence",
           element: {
             type: {
               name: "Composite",
-              className: "ErrorDetailAutoGenerated"
+              className: "RedisCacheAccessPolicyAssignment"
             }
           }
         }
       },
-      additionalInfo: {
-        serializedName: "additionalInfo",
+      nextLink: {
+        serializedName: "nextLink",
         readOnly: true,
         type: {
-          name: "Sequence",
-          element: {
-            type: {
-              name: "Composite",
-              className: "ErrorAdditionalInfo"
-            }
-          }
+          name: "String"
         }
       }
     }
@@ -1587,23 +1657,6 @@ export const PrivateLinkResource: coreClient.CompositeMapper = {
   }
 };
 
-export const RedisLinkedServerProperties: coreClient.CompositeMapper = {
-  type: {
-    name: "Composite",
-    className: "RedisLinkedServerProperties",
-    modelProperties: {
-      ...RedisLinkedServerCreateProperties.type.modelProperties,
-      provisioningState: {
-        serializedName: "provisioningState",
-        readOnly: true,
-        type: {
-          name: "String"
-        }
-      }
-    }
-  }
-};
-
 export const OperationStatus: coreClient.CompositeMapper = {
   type: {
     name: "Composite",
@@ -1615,6 +1668,23 @@ export const OperationStatus: coreClient.CompositeMapper = {
         type: {
           name: "Dictionary",
           value: { type: { name: "any" } }
+        }
+      }
+    }
+  }
+};
+
+export const RedisLinkedServerProperties: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "RedisLinkedServerProperties",
+    modelProperties: {
+      ...RedisLinkedServerCreateProperties.type.modelProperties,
+      provisioningState: {
+        serializedName: "provisioningState",
+        readOnly: true,
+        type: {
+          name: "String"
         }
       }
     }
@@ -1783,6 +1853,12 @@ export const RedisResource: coreClient.CompositeMapper = {
       publicNetworkAccess: {
         defaultValue: "Enabled",
         serializedName: "properties.publicNetworkAccess",
+        type: {
+          name: "String"
+        }
+      },
+      updateChannel: {
+        serializedName: "properties.updateChannel",
         type: {
           name: "String"
         }
@@ -1971,9 +2047,93 @@ export const RedisLinkedServerWithProperties: coreClient.CompositeMapper = {
           allowedValues: ["Primary", "Secondary"]
         }
       },
+      geoReplicatedPrimaryHostName: {
+        serializedName: "properties.geoReplicatedPrimaryHostName",
+        readOnly: true,
+        type: {
+          name: "String"
+        }
+      },
+      primaryHostName: {
+        serializedName: "properties.primaryHostName",
+        readOnly: true,
+        type: {
+          name: "String"
+        }
+      },
       provisioningState: {
         serializedName: "properties.provisioningState",
         readOnly: true,
+        type: {
+          name: "String"
+        }
+      }
+    }
+  }
+};
+
+export const RedisCacheAccessPolicy: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "RedisCacheAccessPolicy",
+    modelProperties: {
+      ...ProxyResource.type.modelProperties,
+      provisioningState: {
+        serializedName: "properties.provisioningState",
+        readOnly: true,
+        type: {
+          name: "String"
+        }
+      },
+      typePropertiesType: {
+        serializedName: "properties.type",
+        readOnly: true,
+        type: {
+          name: "String"
+        }
+      },
+      permissions: {
+        serializedName: "properties.permissions",
+        type: {
+          name: "String"
+        }
+      }
+    }
+  }
+};
+
+export const RedisCacheAccessPolicyAssignment: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "RedisCacheAccessPolicyAssignment",
+    modelProperties: {
+      ...ProxyResource.type.modelProperties,
+      provisioningState: {
+        serializedName: "properties.provisioningState",
+        readOnly: true,
+        type: {
+          name: "String"
+        }
+      },
+      objectId: {
+        serializedName: "properties.objectId",
+        type: {
+          name: "String"
+        }
+      },
+      objectIdAlias: {
+        serializedName: "properties.objectIdAlias",
+        type: {
+          name: "String"
+        }
+      },
+      accessPolicyName: {
+        constraints: {
+          Pattern: new RegExp(
+            "^([a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]|[a-zA-Z0-9])$"
+          )
+        },
+        serializedName: "properties.accessPolicyName",
         type: {
           name: "String"
         }
@@ -1988,6 +2148,72 @@ export const RedisFirewallRuleCreateParameters: coreClient.CompositeMapper = {
     className: "RedisFirewallRuleCreateParameters",
     modelProperties: {
       ...RedisFirewallRule.type.modelProperties
+    }
+  }
+};
+
+export const RedisFlushCacheHeaders: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "RedisFlushCacheHeaders",
+    modelProperties: {
+      location: {
+        serializedName: "location",
+        type: {
+          name: "String"
+        }
+      },
+      azureAsyncOperation: {
+        serializedName: "azure-asyncoperation",
+        type: {
+          name: "String"
+        }
+      }
+    }
+  }
+};
+
+export const LinkedServerDeleteHeaders: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "LinkedServerDeleteHeaders",
+    modelProperties: {
+      location: {
+        serializedName: "location",
+        type: {
+          name: "String"
+        }
+      }
+    }
+  }
+};
+
+export const AccessPolicyDeleteHeaders: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "AccessPolicyDeleteHeaders",
+    modelProperties: {
+      location: {
+        serializedName: "location",
+        type: {
+          name: "String"
+        }
+      }
+    }
+  }
+};
+
+export const AccessPolicyAssignmentDeleteHeaders: coreClient.CompositeMapper = {
+  type: {
+    name: "Composite",
+    className: "AccessPolicyAssignmentDeleteHeaders",
+    modelProperties: {
+      location: {
+        serializedName: "location",
+        type: {
+          name: "String"
+        }
+      }
     }
   }
 };

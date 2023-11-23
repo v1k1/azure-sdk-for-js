@@ -1,17 +1,23 @@
 # Release History
+    
+## 1.3.0-beta.1 (2023-07-06)
+    
+**Features**
 
-## 1.2.1 (Unreleased)
+  - Interface StorageAccount has a new optional parameter enableSecureChannel
+    
+## 1.2.1 (2023-01-10)
 
-### Features Added
+**Features**
 
-### Breaking Changes
+  - Exposes `getContinuationToken` helper function to extract continuation token
 
-### Bugs Fixed
+**Bugs Fixed**
 
-### Other Changes
+  - A series of small bug fixs relevant to authentication and apiVersion policy
 
 ## 1.2.0 (2022-08-01)
-    
+
 **Features**
 
   - Added Interface Application
@@ -31,4 +37,4 @@
 
 ## 1.1.0 (2021-12-29)
 
-The package of @azure/arm-hdinsight is using our next generation design principles. To learn more, please refer to our documentation [Quick Start](https://aka.ms/js-track2-quickstart).
+The package of @azure/arm-hdinsight is using our next generation design principles. To learn more, please refer to our documentation [Quick Start](https://aka.ms/azsdk/js/mgmt/quickstart ).

@@ -1,6 +1,6 @@
 # Release History
 
-## 1.9.3 (Unreleased)
+## 1.12.3 (Unreleased)
 
 ### Features Added
 
@@ -8,9 +8,70 @@
 
 ### Bugs Fixed
 
+### Other Changes
+
+## 1.12.2 (2023-10-23)
+
+### Bugs Fixed
+- Support Cloudflare workers by only setting the available fields in the `Request` class for the Fetch API. [PR #27423](https://github.com/Azure/azure-sdk-for-js/pull/27423)
+- Add `ENOTFOUND` code to exponential retry policy. [PR #27437](https://github.com/Azure/azure-sdk-for-js/pull/27437)
+- Wait before stop listening to the abort signal until after the response stream has been drained to allow for aborting prolonged responses [PR #27205](https://github.com/Azure/azure-sdk-for-js/pull/27205)
+
+## 1.12.1 (2023-09-07)
+
+### Other Changes
+
+- Set `init.duplex` to `"half"` when streaming body via `fetch()` [PR #26890](https://github.com/Azure/azure-sdk-for-js/pull/26890)
+- Defer Error construction [PR #26897](https://github.com/Azure/azure-sdk-for-js/pull/26897) 
+
+## 1.12.0 (2023-08-08)
+
+### Features Added
+
+- Add CommonTelemetryOptions in PipelineOptions to allow customizing the client request id header name [PR #26424](https://github.com/Azure/azure-sdk-for-js/pull/26424)
+
+### Bugs Fixed
+
+- Fix a TypeError in React Native when `Platform.constants` is undefined [Issue #26609](https://github.com/Azure/azure-sdk-for-js/issues/26609)
+
+## 1.11.0 (2023-06-01)
+
+### Features Added
+
+- Add a policy `auxiliaryAuthenticationHeaderPolicy` for external tokens to `x-ms-authorization-auxiliary` header. This header will be used when creating a cross-tenant application we may need to handle authentication requests for resources that are in different tenants. [PR #25270](https://github.com/Azure/azure-sdk-for-js/pull/25270)
+
+## 1.10.3 (2023-04-06)
+
+### Other Changes
+
+- Migrate to use core-util UUID helper [PR# 25413](https://github.com/Azure/azure-sdk-for-js/pull/25413)
+
+## 1.10.2 (2023-03-02)
+
+### Bugs Fixed
+
+- Remove oscpu from OS sniffing [PR #24809](https://github.com/Azure/azure-sdk-for-js/pull/24809)
+
+## 1.10.1 (2023-01-05)
+
+### Features Added
+
+- In browsers, fire an upload progress event when Blobs are used instead of streams. [PR #24356](https://github.com/Azure/azure-sdk-for-js/pull/24356)
+
+### Bugs Fixed
+
+- Fix an issue in `FormDataPolicy` where we are not waiting for `prepareFormData()` to complete [PR #23858](https://github.com/Azure/azure-sdk-for-js/pull/23858)
+- Fix an issue on Node where `HEAD` requests would close their socket, ignoring keep-alive. [PR #24356](https://github.com/Azure/azure-sdk-for-js/pull/24356)
+
+## 1.10.0 (2022-11-03)
+
+### Bugs Fixed
+
 - Fixed an issue where policies added to a cloned Pipeline would also be added to the original (and vice versa) until policies were removed from either. [#23316](https://github.com/Azure/azure-sdk-for-js/pull/23316)
 
 ### Other Changes
+
+- Update `engines` to `"node": ">=14.0.0"`
 
 ## 1.9.2 (2022-09-01)
 
@@ -92,7 +153,7 @@
 
 ### Bugs Fixed
 
-- Updated the HTTP tracing span names to conform to the [OpenTelemetry Specification](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#name). [#19838](https://github.com/Azure/azure-sdk-for-js/pull/19838)
+- Updated the HTTP tracing span names to conform to the [OpenTelemetry Specification](https://github.com/open-telemetry/semantic-conventions/blob/4040095eda0159e38edfe7084ed32d3077a6ffb0/docs/http/http-spans.md#name). [#19838](https://github.com/Azure/azure-sdk-for-js/pull/19838)
 - New HTTP spans will use the `HTTP <VERB>` convention instead of using the URL path.
 - Addressed an issue where policy order might change in cases where there are no policies inside a phase specified by an "afterPhase" constraint. [#20129](https://github.com/Azure/azure-sdk-for-js/pull/20129)
 

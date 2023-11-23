@@ -46,16 +46,31 @@ export interface GroupSendToAllOptions extends OperationOptions {
    * Connection ids to exclude from receiving this message.
    */
   excludedConnections?: string[];
+  /**
+   * The filter syntax to filter out the connections to send the messages to following OData filter syntax.
+   * Examples:
+   *  * Exclude connections from `user1` and `user2`: `userId ne 'user1' and userId ne 'user2'`
+   *  * Exclude connections in `group1`: `not('group1' in groups)`
+   * Details about `filter` syntax please see [OData filter syntax for Azure Web PubSub](https://aka.ms/awps/filter-syntax).
+   */
+  filter?: string;
+  /**
+   * The time-to-live (TTL) value in seconds for messages sent to the service.
+   * 0 is the default value, which means the message never expires.
+   * 300 is the maximum value.
+   * If this parameter is non-zero, messages that are not consumed by the client within the specified TTL will be dropped by the service.
+   * This parameter can help when the client's bandwidth is limited.
+   */
+  messageTtlSeconds?: number;
 }
 
 /**
  * Options for sending text messages to a group..
  */
-export interface GroupSendTextToAllOptions extends OperationOptions {
+export interface GroupSendTextToAllOptions extends GroupSendToAllOptions {
   /**
-   * Connection ids to exclude from receiving this message.
+   * The content will be sent to the clients in plain text.
    */
-  excludedConnections?: string[];
   contentType: "text/plain";
 }
 

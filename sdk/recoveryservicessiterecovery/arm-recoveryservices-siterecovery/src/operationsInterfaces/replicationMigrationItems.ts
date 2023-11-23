@@ -7,7 +7,7 @@
  */
 
 import { PagedAsyncIterableIterator } from "@azure/core-paging";
-import { PollerLike, PollOperationState } from "@azure/core-lro";
+import { SimplePollerLike, OperationState } from "@azure/core-lro";
 import {
   MigrationItem,
   ReplicationMigrationItemsListByReplicationProtectionContainersOptionalParams,
@@ -24,6 +24,12 @@ import {
   MigrateInput,
   ReplicationMigrationItemsMigrateOptionalParams,
   ReplicationMigrationItemsMigrateResponse,
+  PauseReplicationInput,
+  ReplicationMigrationItemsPauseReplicationOptionalParams,
+  ReplicationMigrationItemsPauseReplicationResponse,
+  ResumeReplicationInput,
+  ReplicationMigrationItemsResumeReplicationOptionalParams,
+  ReplicationMigrationItemsResumeReplicationResponse,
   ResyncInput,
   ReplicationMigrationItemsResyncOptionalParams,
   ReplicationMigrationItemsResyncResponse,
@@ -40,30 +46,45 @@ import {
 export interface ReplicationMigrationItems {
   /**
    * Gets the list of ASR migration items in the protection container.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param options The options parameters.
    */
   listByReplicationProtectionContainers(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     options?: ReplicationMigrationItemsListByReplicationProtectionContainersOptionalParams
   ): PagedAsyncIterableIterator<MigrationItem>;
   /**
    * Gets the list of migration items in the vault.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param options The options parameters.
    */
   list(
+    resourceName: string,
+    resourceGroupName: string,
     options?: ReplicationMigrationItemsListOptionalParams
   ): PagedAsyncIterableIterator<MigrationItem>;
   /**
    * Gets the details of a migration item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric unique name.
    * @param protectionContainerName Protection container name.
    * @param migrationItemName Migration item name.
    * @param options The options parameters.
    */
   get(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     migrationItemName: string,
@@ -71,6 +92,9 @@ export interface ReplicationMigrationItems {
   ): Promise<ReplicationMigrationItemsGetResponse>;
   /**
    * The operation to create an ASR migration item (enable migration).
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param migrationItemName Migration item name.
@@ -78,19 +102,24 @@ export interface ReplicationMigrationItems {
    * @param options The options parameters.
    */
   beginCreate(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     migrationItemName: string,
     input: EnableMigrationInput,
     options?: ReplicationMigrationItemsCreateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationMigrationItemsCreateResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationMigrationItemsCreateResponse>,
       ReplicationMigrationItemsCreateResponse
     >
   >;
   /**
    * The operation to create an ASR migration item (enable migration).
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param migrationItemName Migration item name.
@@ -98,6 +127,8 @@ export interface ReplicationMigrationItems {
    * @param options The options parameters.
    */
   beginCreateAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     migrationItemName: string,
@@ -106,25 +137,35 @@ export interface ReplicationMigrationItems {
   ): Promise<ReplicationMigrationItemsCreateResponse>;
   /**
    * The operation to delete an ASR migration item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param migrationItemName Migration item name.
    * @param options The options parameters.
    */
   beginDelete(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     migrationItemName: string,
     options?: ReplicationMigrationItemsDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<SimplePollerLike<OperationState<void>, void>>;
   /**
    * The operation to delete an ASR migration item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param migrationItemName Migration item name.
    * @param options The options parameters.
    */
   beginDeleteAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     migrationItemName: string,
@@ -132,6 +173,9 @@ export interface ReplicationMigrationItems {
   ): Promise<void>;
   /**
    * The operation to update the recovery settings of an ASR migration item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param migrationItemName Migration item name.
@@ -139,19 +183,24 @@ export interface ReplicationMigrationItems {
    * @param options The options parameters.
    */
   beginUpdate(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     migrationItemName: string,
     input: UpdateMigrationItemInput,
     options?: ReplicationMigrationItemsUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationMigrationItemsUpdateResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationMigrationItemsUpdateResponse>,
       ReplicationMigrationItemsUpdateResponse
     >
   >;
   /**
    * The operation to update the recovery settings of an ASR migration item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param migrationItemName Migration item name.
@@ -159,6 +208,8 @@ export interface ReplicationMigrationItems {
    * @param options The options parameters.
    */
   beginUpdateAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     migrationItemName: string,
@@ -167,6 +218,9 @@ export interface ReplicationMigrationItems {
   ): Promise<ReplicationMigrationItemsUpdateResponse>;
   /**
    * The operation to initiate migration of the item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param migrationItemName Migration item name.
@@ -174,19 +228,24 @@ export interface ReplicationMigrationItems {
    * @param options The options parameters.
    */
   beginMigrate(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     migrationItemName: string,
     migrateInput: MigrateInput,
     options?: ReplicationMigrationItemsMigrateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationMigrationItemsMigrateResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationMigrationItemsMigrateResponse>,
       ReplicationMigrationItemsMigrateResponse
     >
   >;
   /**
    * The operation to initiate migration of the item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param migrationItemName Migration item name.
@@ -194,6 +253,8 @@ export interface ReplicationMigrationItems {
    * @param options The options parameters.
    */
   beginMigrateAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     migrationItemName: string,
@@ -201,7 +262,100 @@ export interface ReplicationMigrationItems {
     options?: ReplicationMigrationItemsMigrateOptionalParams
   ): Promise<ReplicationMigrationItemsMigrateResponse>;
   /**
+   * The operation to initiate pause replication of the item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
+   * @param fabricName Fabric name.
+   * @param protectionContainerName Protection container name.
+   * @param migrationItemName Migration item name.
+   * @param pauseReplicationInput Pause replication input.
+   * @param options The options parameters.
+   */
+  beginPauseReplication(
+    resourceName: string,
+    resourceGroupName: string,
+    fabricName: string,
+    protectionContainerName: string,
+    migrationItemName: string,
+    pauseReplicationInput: PauseReplicationInput,
+    options?: ReplicationMigrationItemsPauseReplicationOptionalParams
+  ): Promise<
+    SimplePollerLike<
+      OperationState<ReplicationMigrationItemsPauseReplicationResponse>,
+      ReplicationMigrationItemsPauseReplicationResponse
+    >
+  >;
+  /**
+   * The operation to initiate pause replication of the item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
+   * @param fabricName Fabric name.
+   * @param protectionContainerName Protection container name.
+   * @param migrationItemName Migration item name.
+   * @param pauseReplicationInput Pause replication input.
+   * @param options The options parameters.
+   */
+  beginPauseReplicationAndWait(
+    resourceName: string,
+    resourceGroupName: string,
+    fabricName: string,
+    protectionContainerName: string,
+    migrationItemName: string,
+    pauseReplicationInput: PauseReplicationInput,
+    options?: ReplicationMigrationItemsPauseReplicationOptionalParams
+  ): Promise<ReplicationMigrationItemsPauseReplicationResponse>;
+  /**
+   * The operation to initiate resume replication of the item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
+   * @param fabricName Fabric name.
+   * @param protectionContainerName Protection container name.
+   * @param migrationItemName Migration item name.
+   * @param resumeReplicationInput Resume replication input.
+   * @param options The options parameters.
+   */
+  beginResumeReplication(
+    resourceName: string,
+    resourceGroupName: string,
+    fabricName: string,
+    protectionContainerName: string,
+    migrationItemName: string,
+    resumeReplicationInput: ResumeReplicationInput,
+    options?: ReplicationMigrationItemsResumeReplicationOptionalParams
+  ): Promise<
+    SimplePollerLike<
+      OperationState<ReplicationMigrationItemsResumeReplicationResponse>,
+      ReplicationMigrationItemsResumeReplicationResponse
+    >
+  >;
+  /**
+   * The operation to initiate resume replication of the item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
+   * @param fabricName Fabric name.
+   * @param protectionContainerName Protection container name.
+   * @param migrationItemName Migration item name.
+   * @param resumeReplicationInput Resume replication input.
+   * @param options The options parameters.
+   */
+  beginResumeReplicationAndWait(
+    resourceName: string,
+    resourceGroupName: string,
+    fabricName: string,
+    protectionContainerName: string,
+    migrationItemName: string,
+    resumeReplicationInput: ResumeReplicationInput,
+    options?: ReplicationMigrationItemsResumeReplicationOptionalParams
+  ): Promise<ReplicationMigrationItemsResumeReplicationResponse>;
+  /**
    * The operation to resynchronize replication of an ASR migration item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param migrationItemName Migration item name.
@@ -209,19 +363,24 @@ export interface ReplicationMigrationItems {
    * @param options The options parameters.
    */
   beginResync(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     migrationItemName: string,
     input: ResyncInput,
     options?: ReplicationMigrationItemsResyncOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationMigrationItemsResyncResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationMigrationItemsResyncResponse>,
       ReplicationMigrationItemsResyncResponse
     >
   >;
   /**
    * The operation to resynchronize replication of an ASR migration item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param migrationItemName Migration item name.
@@ -229,6 +388,8 @@ export interface ReplicationMigrationItems {
    * @param options The options parameters.
    */
   beginResyncAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     migrationItemName: string,
@@ -237,6 +398,9 @@ export interface ReplicationMigrationItems {
   ): Promise<ReplicationMigrationItemsResyncResponse>;
   /**
    * The operation to initiate test migration of the item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param migrationItemName Migration item name.
@@ -244,19 +408,24 @@ export interface ReplicationMigrationItems {
    * @param options The options parameters.
    */
   beginTestMigrate(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     migrationItemName: string,
     testMigrateInput: TestMigrateInput,
     options?: ReplicationMigrationItemsTestMigrateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationMigrationItemsTestMigrateResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationMigrationItemsTestMigrateResponse>,
       ReplicationMigrationItemsTestMigrateResponse
     >
   >;
   /**
    * The operation to initiate test migration of the item.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param migrationItemName Migration item name.
@@ -264,6 +433,8 @@ export interface ReplicationMigrationItems {
    * @param options The options parameters.
    */
   beginTestMigrateAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     migrationItemName: string,
@@ -272,6 +443,9 @@ export interface ReplicationMigrationItems {
   ): Promise<ReplicationMigrationItemsTestMigrateResponse>;
   /**
    * The operation to initiate test migrate cleanup.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param migrationItemName Migration item name.
@@ -279,19 +453,24 @@ export interface ReplicationMigrationItems {
    * @param options The options parameters.
    */
   beginTestMigrateCleanup(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     migrationItemName: string,
     testMigrateCleanupInput: TestMigrateCleanupInput,
     options?: ReplicationMigrationItemsTestMigrateCleanupOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ReplicationMigrationItemsTestMigrateCleanupResponse>,
+    SimplePollerLike<
+      OperationState<ReplicationMigrationItemsTestMigrateCleanupResponse>,
       ReplicationMigrationItemsTestMigrateCleanupResponse
     >
   >;
   /**
    * The operation to initiate test migrate cleanup.
+   * @param resourceName The name of the recovery services vault.
+   * @param resourceGroupName The name of the resource group where the recovery services vault is
+   *                          present.
    * @param fabricName Fabric name.
    * @param protectionContainerName Protection container name.
    * @param migrationItemName Migration item name.
@@ -299,6 +478,8 @@ export interface ReplicationMigrationItems {
    * @param options The options parameters.
    */
   beginTestMigrateCleanupAndWait(
+    resourceName: string,
+    resourceGroupName: string,
     fabricName: string,
     protectionContainerName: string,
     migrationItemName: string,

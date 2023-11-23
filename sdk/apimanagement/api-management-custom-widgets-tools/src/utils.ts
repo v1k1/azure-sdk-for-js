@@ -99,7 +99,7 @@ export function getValuesPure<Values extends ValuesCommon>(
 
   Object.keys(values).forEach((key: keyof Values) => {
     const value = urlValues[key];
-    if (value != null && value !== "") values[key] = value as Values[typeof key]; // if value is specified in the URL, replace the default value
+    if (value != null) values[key] = value as Values[typeof key]; // if value is specified in the URL, replace the default value
   });
   return values;
 }
@@ -150,13 +150,23 @@ export function buildOnChange<Values extends ValuesCommon>(): OnChange<Values> {
  */
 export type TargetModule = "app" | "editor";
 /**
- * Secrets needed for communication with Dev Portal back-end
+ * Secrets needed for communication with Dev Portal back-end and other runtime data
  */
 export type Secrets = {
   managementApiUrl: string;
   apiVersion: string;
   userId?: string;
   token?: string;
+  parentLocation: {
+    host: string;
+    hostname: string;
+    href: string;
+    origin: string;
+    pathname: string;
+    port: string;
+    protocol: string;
+    search: string;
+  };
 };
 
 /**

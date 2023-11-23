@@ -6,21 +6,26 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { PrivateClouds } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { AzureVMwareSolutionAPI } from "../azureVMwareSolutionAPI";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   PrivateCloud,
   PrivateCloudsListNextOptionalParams,
   PrivateCloudsListOptionalParams,
+  PrivateCloudsListResponse,
   PrivateCloudsListInSubscriptionNextOptionalParams,
   PrivateCloudsListInSubscriptionOptionalParams,
-  PrivateCloudsListResponse,
   PrivateCloudsListInSubscriptionResponse,
   PrivateCloudsGetOptionalParams,
   PrivateCloudsGetResponse,
@@ -68,19 +73,29 @@ export class PrivateCloudsImpl implements PrivateClouds {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listPagingPage(resourceGroupName, options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listPagingPage(resourceGroupName, options, settings);
       }
     };
   }
 
   private async *listPagingPage(
     resourceGroupName: string,
-    options?: PrivateCloudsListOptionalParams
+    options?: PrivateCloudsListOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<PrivateCloud[]> {
-    let result = await this._list(resourceGroupName, options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: PrivateCloudsListResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._list(resourceGroupName, options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listNext(
         resourceGroupName,
@@ -88,7 +103,9 @@ export class PrivateCloudsImpl implements PrivateClouds {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -116,22 +133,34 @@ export class PrivateCloudsImpl implements PrivateClouds {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listInSubscriptionPagingPage(options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listInSubscriptionPagingPage(options, settings);
       }
     };
   }
 
   private async *listInSubscriptionPagingPage(
-    options?: PrivateCloudsListInSubscriptionOptionalParams
+    options?: PrivateCloudsListInSubscriptionOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<PrivateCloud[]> {
-    let result = await this._listInSubscription(options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: PrivateCloudsListInSubscriptionResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listInSubscription(options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listInSubscriptionNext(continuationToken, options);
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -201,8 +230,8 @@ export class PrivateCloudsImpl implements PrivateClouds {
     privateCloud: PrivateCloud,
     options?: PrivateCloudsCreateOrUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<PrivateCloudsCreateOrUpdateResponse>,
+    SimplePollerLike<
+      OperationState<PrivateCloudsCreateOrUpdateResponse>,
       PrivateCloudsCreateOrUpdateResponse
     >
   > {
@@ -212,7 +241,7 @@ export class PrivateCloudsImpl implements PrivateClouds {
     ): Promise<PrivateCloudsCreateOrUpdateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -245,13 +274,16 @@ export class PrivateCloudsImpl implements PrivateClouds {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, privateCloudName, privateCloud, options },
-      createOrUpdateOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, privateCloudName, privateCloud, options },
+      spec: createOrUpdateOperationSpec
+    });
+    const poller = await createHttpPoller<
+      PrivateCloudsCreateOrUpdateResponse,
+      OperationState<PrivateCloudsCreateOrUpdateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -293,8 +325,8 @@ export class PrivateCloudsImpl implements PrivateClouds {
     privateCloudUpdate: PrivateCloudUpdate,
     options?: PrivateCloudsUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<PrivateCloudsUpdateResponse>,
+    SimplePollerLike<
+      OperationState<PrivateCloudsUpdateResponse>,
       PrivateCloudsUpdateResponse
     >
   > {
@@ -304,7 +336,7 @@ export class PrivateCloudsImpl implements PrivateClouds {
     ): Promise<PrivateCloudsUpdateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -337,13 +369,21 @@ export class PrivateCloudsImpl implements PrivateClouds {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, privateCloudName, privateCloudUpdate, options },
-      updateOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceGroupName,
+        privateCloudName,
+        privateCloudUpdate,
+        options
+      },
+      spec: updateOperationSpec
+    });
+    const poller = await createHttpPoller<
+      PrivateCloudsUpdateResponse,
+      OperationState<PrivateCloudsUpdateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -382,14 +422,14 @@ export class PrivateCloudsImpl implements PrivateClouds {
     resourceGroupName: string,
     privateCloudName: string,
     options?: PrivateCloudsDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -422,13 +462,13 @@ export class PrivateCloudsImpl implements PrivateClouds {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, privateCloudName, options },
-      deleteOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, privateCloudName, options },
+      spec: deleteOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -464,14 +504,14 @@ export class PrivateCloudsImpl implements PrivateClouds {
     resourceGroupName: string,
     privateCloudName: string,
     options?: PrivateCloudsRotateVcenterPasswordOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -504,13 +544,13 @@ export class PrivateCloudsImpl implements PrivateClouds {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, privateCloudName, options },
-      rotateVcenterPasswordOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, privateCloudName, options },
+      spec: rotateVcenterPasswordOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -546,14 +586,14 @@ export class PrivateCloudsImpl implements PrivateClouds {
     resourceGroupName: string,
     privateCloudName: string,
     options?: PrivateCloudsRotateNsxtPasswordOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -586,13 +626,13 @@ export class PrivateCloudsImpl implements PrivateClouds {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, privateCloudName, options },
-      rotateNsxtPasswordOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, privateCloudName, options },
+      spec: rotateNsxtPasswordOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -679,7 +719,7 @@ const listOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.PrivateCloudList
     },
     default: {
-      bodyMapper: Mappers.CloudError
+      bodyMapper: Mappers.ErrorResponse
     }
   },
   queryParameters: [Parameters.apiVersion],
@@ -699,7 +739,7 @@ const listInSubscriptionOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.PrivateCloudList
     },
     default: {
-      bodyMapper: Mappers.CloudError
+      bodyMapper: Mappers.ErrorResponse
     }
   },
   queryParameters: [Parameters.apiVersion],
@@ -716,7 +756,7 @@ const getOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.PrivateCloud
     },
     default: {
-      bodyMapper: Mappers.CloudError
+      bodyMapper: Mappers.ErrorResponse
     }
   },
   queryParameters: [Parameters.apiVersion],
@@ -747,7 +787,7 @@ const createOrUpdateOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.PrivateCloud
     },
     default: {
-      bodyMapper: Mappers.CloudError
+      bodyMapper: Mappers.ErrorResponse
     }
   },
   requestBody: Parameters.privateCloud,
@@ -780,7 +820,7 @@ const updateOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.PrivateCloud
     },
     default: {
-      bodyMapper: Mappers.CloudError
+      bodyMapper: Mappers.ErrorResponse
     }
   },
   requestBody: Parameters.privateCloudUpdate,
@@ -805,7 +845,7 @@ const deleteOperationSpec: coreClient.OperationSpec = {
     202: {},
     204: {},
     default: {
-      bodyMapper: Mappers.CloudError
+      bodyMapper: Mappers.ErrorResponse
     }
   },
   queryParameters: [Parameters.apiVersion],
@@ -828,7 +868,7 @@ const rotateVcenterPasswordOperationSpec: coreClient.OperationSpec = {
     202: {},
     204: {},
     default: {
-      bodyMapper: Mappers.CloudError
+      bodyMapper: Mappers.ErrorResponse
     }
   },
   queryParameters: [Parameters.apiVersion],
@@ -851,7 +891,7 @@ const rotateNsxtPasswordOperationSpec: coreClient.OperationSpec = {
     202: {},
     204: {},
     default: {
-      bodyMapper: Mappers.CloudError
+      bodyMapper: Mappers.ErrorResponse
     }
   },
   queryParameters: [Parameters.apiVersion],
@@ -873,7 +913,7 @@ const listAdminCredentialsOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.AdminCredentials
     },
     default: {
-      bodyMapper: Mappers.CloudError
+      bodyMapper: Mappers.ErrorResponse
     }
   },
   queryParameters: [Parameters.apiVersion],
@@ -894,10 +934,9 @@ const listNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.PrivateCloudList
     },
     default: {
-      bodyMapper: Mappers.CloudError
+      bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.nextLink,
@@ -915,10 +954,9 @@ const listInSubscriptionNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.PrivateCloudList
     },
     default: {
-      bodyMapper: Mappers.CloudError
+      bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.nextLink,

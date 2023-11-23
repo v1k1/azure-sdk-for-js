@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import { AuthorityValidationOptions } from "./authorityValidationOptions";
 import { CredentialPersistenceOptions } from "./credentialPersistenceOptions";
 import { MultiTenantTokenCredentialOptions } from "./multiTenantTokenCredentialOptions";
 
@@ -9,7 +10,7 @@ import { MultiTenantTokenCredentialOptions } from "./multiTenantTokenCredentialO
  */
 export interface OnBehalfOfCredentialSecretOptions {
   /**
-   * The Azure Active Directory tenant (directory) ID.
+   * The Microsoft Entra tenant (directory) ID.
    */
   tenantId: string;
   /**
@@ -31,7 +32,7 @@ export interface OnBehalfOfCredentialSecretOptions {
  */
 export interface OnBehalfOfCredentialCertificateOptions {
   /**
-   * The Azure Active Directory tenant (directory) ID.
+   * The Microsoft Entra tenant (directory) ID.
    */
   tenantId: string;
   /**
@@ -61,4 +62,5 @@ export type OnBehalfOfCredentialOptions = (
   | OnBehalfOfCredentialCertificateOptions
 ) &
   MultiTenantTokenCredentialOptions &
-  CredentialPersistenceOptions;
+  CredentialPersistenceOptions &
+  AuthorityValidationOptions;

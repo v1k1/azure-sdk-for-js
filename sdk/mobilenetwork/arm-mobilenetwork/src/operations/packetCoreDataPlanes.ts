@@ -6,18 +6,24 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { PacketCoreDataPlanes } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { MobileNetworkManagementClient } from "../mobileNetworkManagementClient";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   PacketCoreDataPlane,
   PacketCoreDataPlanesListByPacketCoreControlPlaneNextOptionalParams,
   PacketCoreDataPlanesListByPacketCoreControlPlaneOptionalParams,
+  PacketCoreDataPlanesListByPacketCoreControlPlaneResponse,
   PacketCoreDataPlanesDeleteOptionalParams,
   PacketCoreDataPlanesGetOptionalParams,
   PacketCoreDataPlanesGetResponse,
@@ -26,7 +32,6 @@ import {
   TagsObject,
   PacketCoreDataPlanesUpdateTagsOptionalParams,
   PacketCoreDataPlanesUpdateTagsResponse,
-  PacketCoreDataPlanesListByPacketCoreControlPlaneResponse,
   PacketCoreDataPlanesListByPacketCoreControlPlaneNextResponse
 } from "../models";
 
@@ -66,11 +71,15 @@ export class PacketCoreDataPlanesImpl implements PacketCoreDataPlanes {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listByPacketCoreControlPlanePagingPage(
           resourceGroupName,
           packetCoreControlPlaneName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -79,15 +88,22 @@ export class PacketCoreDataPlanesImpl implements PacketCoreDataPlanes {
   private async *listByPacketCoreControlPlanePagingPage(
     resourceGroupName: string,
     packetCoreControlPlaneName: string,
-    options?: PacketCoreDataPlanesListByPacketCoreControlPlaneOptionalParams
+    options?: PacketCoreDataPlanesListByPacketCoreControlPlaneOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<PacketCoreDataPlane[]> {
-    let result = await this._listByPacketCoreControlPlane(
-      resourceGroupName,
-      packetCoreControlPlaneName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: PacketCoreDataPlanesListByPacketCoreControlPlaneResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listByPacketCoreControlPlane(
+        resourceGroupName,
+        packetCoreControlPlaneName,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listByPacketCoreControlPlaneNext(
         resourceGroupName,
@@ -96,7 +112,9 @@ export class PacketCoreDataPlanesImpl implements PacketCoreDataPlanes {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -126,14 +144,14 @@ export class PacketCoreDataPlanesImpl implements PacketCoreDataPlanes {
     packetCoreControlPlaneName: string,
     packetCoreDataPlaneName: string,
     options?: PacketCoreDataPlanesDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -166,20 +184,20 @@ export class PacketCoreDataPlanesImpl implements PacketCoreDataPlanes {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
         resourceGroupName,
         packetCoreControlPlaneName,
         packetCoreDataPlaneName,
         options
       },
-      deleteOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: deleteOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "location"
+      resourceLocationConfig: "location"
     });
     await poller.poll();
     return poller;
@@ -232,7 +250,8 @@ export class PacketCoreDataPlanesImpl implements PacketCoreDataPlanes {
   }
 
   /**
-   * Creates or updates a packet core data plane.
+   * Creates or updates a packet core data plane. Must be created in the same location as its parent
+   * packet core control plane.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param packetCoreControlPlaneName The name of the packet core control plane.
    * @param packetCoreDataPlaneName The name of the packet core data plane.
@@ -246,8 +265,8 @@ export class PacketCoreDataPlanesImpl implements PacketCoreDataPlanes {
     parameters: PacketCoreDataPlane,
     options?: PacketCoreDataPlanesCreateOrUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<PacketCoreDataPlanesCreateOrUpdateResponse>,
+    SimplePollerLike<
+      OperationState<PacketCoreDataPlanesCreateOrUpdateResponse>,
       PacketCoreDataPlanesCreateOrUpdateResponse
     >
   > {
@@ -257,7 +276,7 @@ export class PacketCoreDataPlanesImpl implements PacketCoreDataPlanes {
     ): Promise<PacketCoreDataPlanesCreateOrUpdateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -290,28 +309,32 @@ export class PacketCoreDataPlanesImpl implements PacketCoreDataPlanes {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
         resourceGroupName,
         packetCoreControlPlaneName,
         packetCoreDataPlaneName,
         parameters,
         options
       },
-      createOrUpdateOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: createOrUpdateOperationSpec
+    });
+    const poller = await createHttpPoller<
+      PacketCoreDataPlanesCreateOrUpdateResponse,
+      OperationState<PacketCoreDataPlanesCreateOrUpdateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
   }
 
   /**
-   * Creates or updates a packet core data plane.
+   * Creates or updates a packet core data plane. Must be created in the same location as its parent
+   * packet core control plane.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param packetCoreControlPlaneName The name of the packet core control plane.
    * @param packetCoreDataPlaneName The name of the packet core data plane.
@@ -541,7 +564,6 @@ const listByPacketCoreControlPlaneNextOperationSpec: coreClient.OperationSpec = 
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,

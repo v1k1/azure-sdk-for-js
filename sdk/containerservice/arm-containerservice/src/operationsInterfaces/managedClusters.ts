@@ -7,15 +7,21 @@
  */
 
 import { PagedAsyncIterableIterator } from "@azure/core-paging";
-import { PollerLike, PollOperationState } from "@azure/core-lro";
+import { SimplePollerLike, OperationState } from "@azure/core-lro";
 import {
   ManagedCluster,
   ManagedClustersListOptionalParams,
   ManagedClustersListByResourceGroupOptionalParams,
   OutboundEnvironmentEndpoint,
   ManagedClustersListOutboundNetworkDependenciesEndpointsOptionalParams,
+  MeshRevisionProfile,
+  ManagedClustersListMeshRevisionProfilesOptionalParams,
+  MeshUpgradeProfile,
+  ManagedClustersListMeshUpgradeProfilesOptionalParams,
   ManagedClustersGetOSOptionsOptionalParams,
   ManagedClustersGetOSOptionsResponse,
+  ManagedClustersListKubernetesVersionsOptionalParams,
+  ManagedClustersListKubernetesVersionsResponse,
   ManagedClustersGetUpgradeProfileOptionalParams,
   ManagedClustersGetUpgradeProfileResponse,
   ManagedClustersGetAccessProfileOptionalParams,
@@ -34,20 +40,30 @@ import {
   ManagedClustersUpdateTagsOptionalParams,
   ManagedClustersUpdateTagsResponse,
   ManagedClustersDeleteOptionalParams,
+  ManagedClustersDeleteResponse,
   ManagedClusterServicePrincipalProfile,
   ManagedClustersResetServicePrincipalProfileOptionalParams,
   ManagedClusterAADProfile,
   ManagedClustersResetAADProfileOptionalParams,
-  ManagedClustersAbortLatestOperationOptionalParams,
   ManagedClustersRotateClusterCertificatesOptionalParams,
+  ManagedClustersRotateClusterCertificatesResponse,
+  ManagedClustersAbortLatestOperationOptionalParams,
+  ManagedClustersAbortLatestOperationResponse,
   ManagedClustersRotateServiceAccountSigningKeysOptionalParams,
+  ManagedClustersRotateServiceAccountSigningKeysResponse,
   ManagedClustersStopOptionalParams,
+  ManagedClustersStopResponse,
   ManagedClustersStartOptionalParams,
+  ManagedClustersStartResponse,
   RunCommandRequest,
   ManagedClustersRunCommandOptionalParams,
   ManagedClustersRunCommandResponse,
   ManagedClustersGetCommandResultOptionalParams,
-  ManagedClustersGetCommandResultResponse
+  ManagedClustersGetCommandResultResponse,
+  ManagedClustersGetMeshRevisionProfileOptionalParams,
+  ManagedClustersGetMeshRevisionProfileResponse,
+  ManagedClustersGetMeshUpgradeProfileOptionalParams,
+  ManagedClustersGetMeshUpgradeProfileResponse
 } from "../models";
 
 /// <reference lib="esnext.asynciterable" />
@@ -82,6 +98,27 @@ export interface ManagedClusters {
     options?: ManagedClustersListOutboundNetworkDependenciesEndpointsOptionalParams
   ): PagedAsyncIterableIterator<OutboundEnvironmentEndpoint>;
   /**
+   * Contains extra metadata on each revision, including supported revisions, cluster compatibility and
+   * available upgrades
+   * @param location The name of Azure region.
+   * @param options The options parameters.
+   */
+  listMeshRevisionProfiles(
+    location: string,
+    options?: ManagedClustersListMeshRevisionProfilesOptionalParams
+  ): PagedAsyncIterableIterator<MeshRevisionProfile>;
+  /**
+   * Lists available upgrades for all service meshes in a specific cluster.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
+   * @param resourceName The name of the managed cluster resource.
+   * @param options The options parameters.
+   */
+  listMeshUpgradeProfiles(
+    resourceGroupName: string,
+    resourceName: string,
+    options?: ManagedClustersListMeshUpgradeProfilesOptionalParams
+  ): PagedAsyncIterableIterator<MeshUpgradeProfile>;
+  /**
    * Gets supported OS options in the specified subscription.
    * @param location The name of Azure region.
    * @param options The options parameters.
@@ -90,6 +127,16 @@ export interface ManagedClusters {
     location: string,
     options?: ManagedClustersGetOSOptionsOptionalParams
   ): Promise<ManagedClustersGetOSOptionsResponse>;
+  /**
+   * Contains extra metadata on the version, including supported patch versions, capabilities, available
+   * upgrades, and details on preview status of the version
+   * @param location The name of Azure region.
+   * @param options The options parameters.
+   */
+  listKubernetesVersions(
+    location: string,
+    options?: ManagedClustersListKubernetesVersionsOptionalParams
+  ): Promise<ManagedClustersListKubernetesVersionsResponse>;
   /**
    * Gets the upgrade profile of a managed cluster.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
@@ -175,8 +222,8 @@ export interface ManagedClusters {
     parameters: ManagedCluster,
     options?: ManagedClustersCreateOrUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ManagedClustersCreateOrUpdateResponse>,
+    SimplePollerLike<
+      OperationState<ManagedClustersCreateOrUpdateResponse>,
       ManagedClustersCreateOrUpdateResponse
     >
   >;
@@ -206,8 +253,8 @@ export interface ManagedClusters {
     parameters: TagsObject,
     options?: ManagedClustersUpdateTagsOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ManagedClustersUpdateTagsResponse>,
+    SimplePollerLike<
+      OperationState<ManagedClustersUpdateTagsResponse>,
       ManagedClustersUpdateTagsResponse
     >
   >;
@@ -234,7 +281,12 @@ export interface ManagedClusters {
     resourceGroupName: string,
     resourceName: string,
     options?: ManagedClustersDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<
+    SimplePollerLike<
+      OperationState<ManagedClustersDeleteResponse>,
+      ManagedClustersDeleteResponse
+    >
+  >;
   /**
    * Deletes a managed cluster.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
@@ -245,7 +297,7 @@ export interface ManagedClusters {
     resourceGroupName: string,
     resourceName: string,
     options?: ManagedClustersDeleteOptionalParams
-  ): Promise<void>;
+  ): Promise<ManagedClustersDeleteResponse>;
   /**
    * This action cannot be performed on a cluster that is not using a service principal
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
@@ -258,7 +310,7 @@ export interface ManagedClusters {
     resourceName: string,
     parameters: ManagedClusterServicePrincipalProfile,
     options?: ManagedClustersResetServicePrincipalProfileOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<SimplePollerLike<OperationState<void>, void>>;
   /**
    * This action cannot be performed on a cluster that is not using a service principal
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
@@ -273,7 +325,8 @@ export interface ManagedClusters {
     options?: ManagedClustersResetServicePrincipalProfileOptionalParams
   ): Promise<void>;
   /**
-   * Reset the AAD Profile of a managed cluster.
+   * **WARNING**: This API will be deprecated. Please see [AKS-managed Azure Active Directory
+   * integration](https://aka.ms/aks-managed-aad) to update your cluster with AKS-managed Azure AD.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param resourceName The name of the managed cluster resource.
    * @param parameters The AAD profile to set on the Managed Cluster
@@ -284,9 +337,10 @@ export interface ManagedClusters {
     resourceName: string,
     parameters: ManagedClusterAADProfile,
     options?: ManagedClustersResetAADProfileOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<SimplePollerLike<OperationState<void>, void>>;
   /**
-   * Reset the AAD Profile of a managed cluster.
+   * **WARNING**: This API will be deprecated. Please see [AKS-managed Azure Active Directory
+   * integration](https://aka.ms/aks-managed-aad) to update your cluster with AKS-managed Azure AD.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param resourceName The name of the managed cluster resource.
    * @param parameters The AAD profile to set on the Managed Cluster
@@ -299,21 +353,6 @@ export interface ManagedClusters {
     options?: ManagedClustersResetAADProfileOptionalParams
   ): Promise<void>;
   /**
-   * Aborting last running operation on managed cluster.  We return a 204 no content code here to
-   * indicate that the operation has been accepted and an abort will be attempted but is not guaranteed
-   * to complete successfully. Please look up the provisioning state of the managed cluster to keep track
-   * of whether it changes to Canceled. A canceled provisioning state indicates that the abort was
-   * successful
-   * @param resourceGroupName The name of the resource group. The name is case insensitive.
-   * @param resourceName The name of the managed cluster resource.
-   * @param options The options parameters.
-   */
-  abortLatestOperation(
-    resourceGroupName: string,
-    resourceName: string,
-    options?: ManagedClustersAbortLatestOperationOptionalParams
-  ): Promise<void>;
-  /**
    * See [Certificate rotation](https://docs.microsoft.com/azure/aks/certificate-rotation) for more
    * details about rotating managed cluster certificates.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
@@ -324,7 +363,12 @@ export interface ManagedClusters {
     resourceGroupName: string,
     resourceName: string,
     options?: ManagedClustersRotateClusterCertificatesOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<
+    SimplePollerLike<
+      OperationState<ManagedClustersRotateClusterCertificatesResponse>,
+      ManagedClustersRotateClusterCertificatesResponse
+    >
+  >;
   /**
    * See [Certificate rotation](https://docs.microsoft.com/azure/aks/certificate-rotation) for more
    * details about rotating managed cluster certificates.
@@ -336,7 +380,38 @@ export interface ManagedClusters {
     resourceGroupName: string,
     resourceName: string,
     options?: ManagedClustersRotateClusterCertificatesOptionalParams
-  ): Promise<void>;
+  ): Promise<ManagedClustersRotateClusterCertificatesResponse>;
+  /**
+   * Aborts the currently running operation on the managed cluster. The Managed Cluster will be moved to
+   * a Canceling state and eventually to a Canceled state when cancellation finishes. If the operation
+   * completes before cancellation can take place, a 409 error code is returned.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
+   * @param resourceName The name of the managed cluster resource.
+   * @param options The options parameters.
+   */
+  beginAbortLatestOperation(
+    resourceGroupName: string,
+    resourceName: string,
+    options?: ManagedClustersAbortLatestOperationOptionalParams
+  ): Promise<
+    SimplePollerLike<
+      OperationState<ManagedClustersAbortLatestOperationResponse>,
+      ManagedClustersAbortLatestOperationResponse
+    >
+  >;
+  /**
+   * Aborts the currently running operation on the managed cluster. The Managed Cluster will be moved to
+   * a Canceling state and eventually to a Canceled state when cancellation finishes. If the operation
+   * completes before cancellation can take place, a 409 error code is returned.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
+   * @param resourceName The name of the managed cluster resource.
+   * @param options The options parameters.
+   */
+  beginAbortLatestOperationAndWait(
+    resourceGroupName: string,
+    resourceName: string,
+    options?: ManagedClustersAbortLatestOperationOptionalParams
+  ): Promise<ManagedClustersAbortLatestOperationResponse>;
   /**
    * Rotates the service account signing keys of a managed cluster.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
@@ -347,7 +422,12 @@ export interface ManagedClusters {
     resourceGroupName: string,
     resourceName: string,
     options?: ManagedClustersRotateServiceAccountSigningKeysOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<
+    SimplePollerLike<
+      OperationState<ManagedClustersRotateServiceAccountSigningKeysResponse>,
+      ManagedClustersRotateServiceAccountSigningKeysResponse
+    >
+  >;
   /**
    * Rotates the service account signing keys of a managed cluster.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
@@ -358,7 +438,7 @@ export interface ManagedClusters {
     resourceGroupName: string,
     resourceName: string,
     options?: ManagedClustersRotateServiceAccountSigningKeysOptionalParams
-  ): Promise<void>;
+  ): Promise<ManagedClustersRotateServiceAccountSigningKeysResponse>;
   /**
    * This can only be performed on Azure Virtual Machine Scale set backed clusters. Stopping a cluster
    * stops the control plane and agent nodes entirely, while maintaining all object and cluster state. A
@@ -373,7 +453,12 @@ export interface ManagedClusters {
     resourceGroupName: string,
     resourceName: string,
     options?: ManagedClustersStopOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<
+    SimplePollerLike<
+      OperationState<ManagedClustersStopResponse>,
+      ManagedClustersStopResponse
+    >
+  >;
   /**
    * This can only be performed on Azure Virtual Machine Scale set backed clusters. Stopping a cluster
    * stops the control plane and agent nodes entirely, while maintaining all object and cluster state. A
@@ -388,7 +473,7 @@ export interface ManagedClusters {
     resourceGroupName: string,
     resourceName: string,
     options?: ManagedClustersStopOptionalParams
-  ): Promise<void>;
+  ): Promise<ManagedClustersStopResponse>;
   /**
    * See [starting a cluster](https://docs.microsoft.com/azure/aks/start-stop-cluster) for more details
    * about starting a cluster.
@@ -400,7 +485,12 @@ export interface ManagedClusters {
     resourceGroupName: string,
     resourceName: string,
     options?: ManagedClustersStartOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<
+    SimplePollerLike<
+      OperationState<ManagedClustersStartResponse>,
+      ManagedClustersStartResponse
+    >
+  >;
   /**
    * See [starting a cluster](https://docs.microsoft.com/azure/aks/start-stop-cluster) for more details
    * about starting a cluster.
@@ -412,7 +502,7 @@ export interface ManagedClusters {
     resourceGroupName: string,
     resourceName: string,
     options?: ManagedClustersStartOptionalParams
-  ): Promise<void>;
+  ): Promise<ManagedClustersStartResponse>;
   /**
    * AKS will create a pod to run the command. This is primarily useful for private clusters. For more
    * information see [AKS Run
@@ -428,8 +518,8 @@ export interface ManagedClusters {
     requestPayload: RunCommandRequest,
     options?: ManagedClustersRunCommandOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<ManagedClustersRunCommandResponse>,
+    SimplePollerLike<
+      OperationState<ManagedClustersRunCommandResponse>,
       ManagedClustersRunCommandResponse
     >
   >;
@@ -461,4 +551,29 @@ export interface ManagedClusters {
     commandId: string,
     options?: ManagedClustersGetCommandResultOptionalParams
   ): Promise<ManagedClustersGetCommandResultResponse>;
+  /**
+   * Contains extra metadata on the revision, including supported revisions, cluster compatibility and
+   * available upgrades
+   * @param location The name of Azure region.
+   * @param mode The mode of the mesh.
+   * @param options The options parameters.
+   */
+  getMeshRevisionProfile(
+    location: string,
+    mode: string,
+    options?: ManagedClustersGetMeshRevisionProfileOptionalParams
+  ): Promise<ManagedClustersGetMeshRevisionProfileResponse>;
+  /**
+   * Gets available upgrades for a service mesh in a cluster.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
+   * @param resourceName The name of the managed cluster resource.
+   * @param mode The mode of the mesh.
+   * @param options The options parameters.
+   */
+  getMeshUpgradeProfile(
+    resourceGroupName: string,
+    resourceName: string,
+    mode: string,
+    options?: ManagedClustersGetMeshUpgradeProfileOptionalParams
+  ): Promise<ManagedClustersGetMeshUpgradeProfileResponse>;
 }

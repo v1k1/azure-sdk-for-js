@@ -11,11 +11,15 @@ import {
   OperationQueryParameter,
   OperationParameter
 } from "@azure/core-client";
+import {
+  AddToGroupsRequest as AddToGroupsRequestMapper,
+  RemoveFromGroupsRequest as RemoveFromGroupsRequestMapper
+} from "../models/mappers";
 
 export const endpoint: OperationURLParameter = {
   parameterPath: "endpoint",
   mapper: {
-    serializedName: "Endpoint",
+    serializedName: "endpoint",
     required: true,
     type: {
       name: "String"
@@ -27,7 +31,7 @@ export const endpoint: OperationURLParameter = {
 export const apiVersion: OperationQueryParameter = {
   parameterPath: "apiVersion",
   mapper: {
-    defaultValue: "2021-10-01",
+    defaultValue: "2023-07-01",
     isConstant: true,
     serializedName: "api-version",
     type: {
@@ -36,10 +40,27 @@ export const apiVersion: OperationQueryParameter = {
   }
 };
 
+export const contentType: OperationParameter = {
+  parameterPath: ["options", "contentType"],
+  mapper: {
+    defaultValue: "application/json",
+    isConstant: true,
+    serializedName: "Content-Type",
+    type: {
+      name: "String"
+    }
+  }
+};
+
+export const groupsToAdd: OperationParameter = {
+  parameterPath: "groupsToAdd",
+  mapper: AddToGroupsRequestMapper
+};
+
 export const accept: OperationParameter = {
   parameterPath: "accept",
   mapper: {
-    defaultValue: "application/json, text/json",
+    defaultValue: "application/json",
     isConstant: true,
     serializedName: "Accept",
     type: {
@@ -56,6 +77,44 @@ export const hub: OperationURLParameter = {
     },
     serializedName: "hub",
     required: true,
+    type: {
+      name: "String"
+    }
+  }
+};
+
+export const excluded: OperationQueryParameter = {
+  parameterPath: ["options", "excluded"],
+  mapper: {
+    serializedName: "excluded",
+    type: {
+      name: "Sequence",
+      element: {
+        type: {
+          name: "String"
+        }
+      }
+    }
+  },
+  collectionFormat: "Multi"
+};
+
+export const reason: OperationQueryParameter = {
+  parameterPath: ["options", "reason"],
+  mapper: {
+    serializedName: "reason",
+    type: {
+      name: "String"
+    }
+  }
+};
+
+export const accept1: OperationParameter = {
+  parameterPath: "accept",
+  mapper: {
+    defaultValue: "application/json, text/json",
+    isConstant: true,
+    serializedName: "Accept",
     type: {
       name: "String"
     }
@@ -92,6 +151,9 @@ export const expirationTimeInMinutes: OperationQueryParameter = {
   parameterPath: ["options", "expirationTimeInMinutes"],
   mapper: {
     defaultValue: 60,
+    constraints: {
+      InclusiveMinimum: 1
+    },
     serializedName: "minutesToExpire",
     type: {
       name: "Number"
@@ -99,10 +161,10 @@ export const expirationTimeInMinutes: OperationQueryParameter = {
   }
 };
 
-export const excluded: OperationQueryParameter = {
-  parameterPath: ["options", "excluded"],
+export const groups: OperationQueryParameter = {
+  parameterPath: ["options", "groups"],
   mapper: {
-    serializedName: "excluded",
+    serializedName: "group",
     type: {
       name: "Sequence",
       element: {
@@ -115,17 +177,12 @@ export const excluded: OperationQueryParameter = {
   collectionFormat: "Multi"
 };
 
-export const reason: OperationQueryParameter = {
-  parameterPath: ["options", "reason"],
-  mapper: {
-    serializedName: "reason",
-    type: {
-      name: "String"
-    }
-  }
+export const groupsToRemove: OperationParameter = {
+  parameterPath: "groupsToRemove",
+  mapper: RemoveFromGroupsRequestMapper
 };
 
-export const contentType: OperationParameter = {
+export const contentType1: OperationParameter = {
   parameterPath: "contentType",
   mapper: {
     serializedName: "Content-Type",
@@ -148,10 +205,10 @@ export const message: OperationParameter = {
   }
 };
 
-export const accept1: OperationParameter = {
+export const accept2: OperationParameter = {
   parameterPath: "accept",
   mapper: {
-    defaultValue: "application/json, text/json",
+    defaultValue: "application/json",
     isConstant: true,
     serializedName: "Accept",
     type: {
@@ -160,7 +217,7 @@ export const accept1: OperationParameter = {
   }
 };
 
-export const contentType1: OperationParameter = {
+export const contentType2: OperationParameter = {
   parameterPath: "contentType",
   mapper: {
     defaultValue: "text/plain",
@@ -183,10 +240,10 @@ export const message1: OperationParameter = {
   }
 };
 
-export const accept2: OperationParameter = {
+export const accept3: OperationParameter = {
   parameterPath: "accept",
   mapper: {
-    defaultValue: "application/json, text/json",
+    defaultValue: "application/json",
     isConstant: true,
     serializedName: "Accept",
     type: {
@@ -211,6 +268,30 @@ export const excludedConnections: OperationQueryParameter = {
   collectionFormat: "Multi"
 };
 
+export const filter: OperationQueryParameter = {
+  parameterPath: ["options", "filter"],
+  mapper: {
+    serializedName: "filter",
+    type: {
+      name: "String"
+    }
+  }
+};
+
+export const messageTtlSeconds: OperationQueryParameter = {
+  parameterPath: ["options", "messageTtlSeconds"],
+  mapper: {
+    constraints: {
+      InclusiveMaximum: 300,
+      InclusiveMinimum: 0
+    },
+    serializedName: "messageTtlSeconds",
+    type: {
+      name: "Number"
+    }
+  }
+};
+
 export const connectionId: OperationURLParameter = {
   parameterPath: "connectionId",
   mapper: {
@@ -229,24 +310,11 @@ export const group: OperationURLParameter = {
   parameterPath: "group",
   mapper: {
     constraints: {
+      Pattern: new RegExp("^(?!\\s+$).+$"),
       MaxLength: 1024,
       MinLength: 1
     },
     serializedName: "group",
-    required: true,
-    type: {
-      name: "String"
-    }
-  }
-};
-
-export const userId1: OperationURLParameter = {
-  parameterPath: "userId",
-  mapper: {
-    constraints: {
-      MinLength: 1
-    },
-    serializedName: "userId",
     required: true,
     type: {
       name: "String"
@@ -269,6 +337,20 @@ export const targetName: OperationQueryParameter = {
   parameterPath: ["options", "targetName"],
   mapper: {
     serializedName: "targetName",
+    type: {
+      name: "String"
+    }
+  }
+};
+
+export const userId1: OperationURLParameter = {
+  parameterPath: "userId",
+  mapper: {
+    constraints: {
+      MinLength: 1
+    },
+    serializedName: "userId",
+    required: true,
     type: {
       name: "String"
     }

@@ -1,6 +1,6 @@
 # Release History
 
-## 4.10.1 (Unreleased)
+## 4.15.1 (Unreleased)
 
 ### Features Added
 
@@ -10,11 +10,104 @@
 
 ### Other Changes
 
+## 4.15.0 (2023-10-12)
+
+### Features Added
+
+- Added new System Events:
+
+  - `Microsoft.ResourceNotifications.HealthResources.AvailabilityStatusChanged`
+  - `Microsoft.ResourceNotifications.HealthResources.ResourceAnnotated`
+  - `Microsoft.Communication.RouterWorkerDeregistered`
+  - `Microsoft.Communication.RouterWorkerRegistered`
+  - `Microsoft.Communication.RouterJobCancelled`
+  - `Microsoft.Communication.RouterJobClassificationFailed`
+  - `Microsoft.Communication.RouterJobClassified`
+  - `Microsoft.Communication.RouterJobClosed`
+  - `Microsoft.Communication.RouterJobCompleted`
+  - `Microsoft.Communication.RouterJobDeleted`
+  - `Microsoft.Communication.RouterJobExceptionTriggered`
+  - `Microsoft.Communication.RouterJobQueued`
+  - `Microsoft.Communication.RouterJobReceived`
+  - `Microsoft.Communication.RouterJobSchedulingFailed`
+  - `Microsoft.Communication.RouterJobUnassigned`
+  - `Microsoft.Communication.RouterJobWaitingForActivation`
+  - `Microsoft.Communication.RouterJobWorkerSelectorsExpire`
+  - `Microsoft.Communication.RouterWorkerDeleted`
+  - `Microsoft.Communication.RouterWorkerOfferAccepted`
+  - `Microsoft.Communication.RouterWorkerOfferDeclined`
+  - `Microsoft.Communication.RouterWorkerOfferExpired`
+  - `Microsoft.Communication.RouterWorkerOfferIssued`
+  - `Microsoft.Communication.RouterWorkerOfferRevoked`
+
+## 4.14.0 (2023-09-14)
+
+### Features Added
+
+- Added new System Events:
+
+  - `Microsoft.EventGrid.MQTTClientCreatedOrUpdated`
+  - `Microsoft.EventGrid.MQTTClientDeleted`
+  - `Microsoft.EventGrid.MQTTClientSessionConnected`
+  - `Microsoft.EventGrid.MQTTClientSessionDisconnected`
+
+## 4.13.0 (2023-06-08)
+
+### Features Added
+
+- Added new System Events:
+
+  - `Microsoft.ContainerService.ClusterSupportEnded`
+  - `Microsoft.ContainerService.ClusterSupportEnding`
+  - `Microsoft.ContainerService.NodePoolRollingFailed`
+  - `Microsoft.ContainerService.NodePoolRollingStarted`
+  - `Microsoft.ContainerService.NodePoolRollingSucceeded`
+
+## 4.12.0 (2023-05-17)
+
+- No new changes for this release. This is to update the minor version of the release to indicate the new system events that were added in the `4.11.1` version.
+
+## 4.11.1 (2023-05-15)
+
+### Features Added
+
+- Added new System Events:
+
+  - `Microsoft.ApiManagement.GatewayAPIAdded`
+  - `Microsoft.ApiManagement.GatewayAPIRemoved`
+  - `Microsoft.ApiManagement.GatewayCertificateAuthorityCreated`
+  - `Microsoft.ApiManagement.GatewayCertificateAuthorityDeleted`
+  - `Microsoft.ApiManagement.GatewayCertificateAuthorityUpdated`
+  - `Microsoft.ApiManagement.GatewayCreated`
+  - `Microsoft.ApiManagement.GatewayDeleted`
+  - `Microsoft.ApiManagement.GatewayHostnameConfigurationCreated`
+  - `Microsoft.ApiManagement.GatewayHostnameConfigurationDeleted`
+  - `Microsoft.ApiManagement.GatewayHostnameConfigurationUpdated`
+  - `Microsoft.ApiManagement.GatewayUpdated`
+  - `Microsoft.Communication.EmailDeliveryReportReceived`
+  - `Microsoft.Communication.EmailEngagementTrackingReportReceived`
+  - `Microsoft.Communication.IncomingCall`
+  - `Microsoft.DataBox.CopyCompleted`
+  - `Microsoft.DataBox.CopyStarted`
+  - `Microsoft.DataBox.OrderCompleted`
+  - `Microsoft.HealthcareApis.DicomImageUpdated`
+  - `Microsoft.Storage.StorageTaskCompleted`
+  - `Microsoft.Storage.StorageTaskQueued`
+
+## 4.11.0 (2022-11-08)
+
+### Features Added
+
+- Added new System Events:
+
+  - `Microsoft.HealthcareApis.DicomImageCreated`
+  - `Microsoft.HealthcareApis.DicomImageDeleted`
+
 ## 4.10.0 (2022-07-11)
 
 ### Bugs Fixed
 
-- Fixed an issue where `generateSharedAccessSignature` would generate an invalid signature if the experation time was between 12:00pm and 1:00pm.  Thank you to @donut87 for discovering the issue and providing the fix.
+- Fixed an issue where `generateSharedAccessSignature` would generate an invalid signature if the experation time was between 12:00pm and 1:00pm. Thank you to @donut87 for discovering the issue and providing the fix.
 
 ### Other Changes
 

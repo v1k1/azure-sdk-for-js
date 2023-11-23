@@ -10,16 +10,18 @@
 // Licensed under the MIT License.
 const { TrafficManagerManagementClient } = require("@azure/arm-trafficmanager");
 const { DefaultAzureCredential } = require("@azure/identity");
+require("dotenv").config();
 
 /**
  * This sample demonstrates how to Update a Traffic Manager profile.
  *
  * @summary Update a Traffic Manager profile.
- * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2018-08-01/examples/Profile-PATCH-MonitorConfig.json
+ * x-ms-original-file: specification/trafficmanager/resource-manager/Microsoft.Network/stable/2022-04-01/examples/Profile-PATCH-MonitorConfig.json
  */
 async function profilePatchMonitorConfig() {
-  const subscriptionId = "{subscription-id}";
-  const resourceGroupName = "azuresdkfornetautoresttrafficmanager2583";
+  const subscriptionId = process.env["TRAFFICMANAGER_SUBSCRIPTION_ID"] || "{subscription-id}";
+  const resourceGroupName =
+    process.env["TRAFFICMANAGER_RESOURCE_GROUP"] || "azuresdkfornetautoresttrafficmanager2583";
   const profileName = "azuresdkfornetautoresttrafficmanager6192";
   const parameters = {
     monitorConfig: {
@@ -41,4 +43,8 @@ async function profilePatchMonitorConfig() {
   console.log(result);
 }
 
-profilePatchMonitorConfig().catch(console.error);
+async function main() {
+  profilePatchMonitorConfig();
+}
+
+main().catch(console.error);

@@ -14,6 +14,7 @@ import {
 import {
   Capability as CapabilityMapper,
   Experiment as ExperimentMapper,
+  ExperimentUpdate as ExperimentUpdateMapper,
   Target as TargetMapper
 } from "../models/mappers";
 
@@ -44,7 +45,7 @@ export const $host: OperationURLParameter = {
 export const apiVersion: OperationQueryParameter = {
   parameterPath: "apiVersion",
   mapper: {
-    defaultValue: "2022-07-01-preview",
+    defaultValue: "2023-04-15-preview",
     isConstant: true,
     serializedName: "api-version",
     type: {
@@ -192,73 +193,6 @@ export const nextLink: OperationURLParameter = {
   skipEncoding: true
 };
 
-export const running: OperationQueryParameter = {
-  parameterPath: ["options", "running"],
-  mapper: {
-    serializedName: "running",
-    type: {
-      name: "Boolean"
-    }
-  }
-};
-
-export const experimentName: OperationURLParameter = {
-  parameterPath: "experimentName",
-  mapper: {
-    constraints: {
-      Pattern: new RegExp("^[^<>%&:?#/\\\\]+$"),
-      MinLength: 1
-    },
-    serializedName: "experimentName",
-    required: true,
-    type: {
-      name: "String"
-    }
-  }
-};
-
-export const experiment: OperationParameter = {
-  parameterPath: "experiment",
-  mapper: ExperimentMapper
-};
-
-export const statusId: OperationURLParameter = {
-  parameterPath: "statusId",
-  mapper: {
-    constraints: {
-      Pattern: new RegExp(
-        "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
-      )
-    },
-    serializedName: "statusId",
-    required: true,
-    type: {
-      name: "String"
-    }
-  }
-};
-
-export const executionDetailsId: OperationURLParameter = {
-  parameterPath: "executionDetailsId",
-  mapper: {
-    constraints: {
-      Pattern: new RegExp(
-        "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
-      )
-    },
-    serializedName: "executionDetailsId",
-    required: true,
-    type: {
-      name: "String"
-    }
-  }
-};
-
-export const target: OperationParameter = {
-  parameterPath: "target",
-  mapper: TargetMapper
-};
-
 export const locationName: OperationURLParameter = {
   parameterPath: "locationName",
   mapper: {
@@ -299,4 +233,76 @@ export const capabilityTypeName: OperationURLParameter = {
       name: "String"
     }
   }
+};
+
+export const running: OperationQueryParameter = {
+  parameterPath: ["options", "running"],
+  mapper: {
+    serializedName: "running",
+    type: {
+      name: "Boolean"
+    }
+  }
+};
+
+export const experimentName: OperationURLParameter = {
+  parameterPath: "experimentName",
+  mapper: {
+    constraints: {
+      Pattern: new RegExp("^[^<>%&:?#/\\\\]+$"),
+      MinLength: 1
+    },
+    serializedName: "experimentName",
+    required: true,
+    type: {
+      name: "String"
+    }
+  }
+};
+
+export const experiment: OperationParameter = {
+  parameterPath: "experiment",
+  mapper: ExperimentMapper
+};
+
+export const experiment1: OperationParameter = {
+  parameterPath: "experiment",
+  mapper: ExperimentUpdateMapper
+};
+
+export const statusId: OperationURLParameter = {
+  parameterPath: "statusId",
+  mapper: {
+    constraints: {
+      Pattern: new RegExp(
+        "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+      )
+    },
+    serializedName: "statusId",
+    required: true,
+    type: {
+      name: "String"
+    }
+  }
+};
+
+export const executionDetailsId: OperationURLParameter = {
+  parameterPath: "executionDetailsId",
+  mapper: {
+    constraints: {
+      Pattern: new RegExp(
+        "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+      )
+    },
+    serializedName: "executionDetailsId",
+    required: true,
+    type: {
+      name: "String"
+    }
+  }
+};
+
+export const target: OperationParameter = {
+  parameterPath: "target",
+  mapper: TargetMapper
 };

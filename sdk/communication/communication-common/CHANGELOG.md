@@ -1,12 +1,40 @@
 # Release History
 
-## 2.1.1 (Unreleased)
+## 2.3.0 (2023-09-27)
 
 ### Features Added
 
-### Breaking Changes
+- Added support for a new communication identifier `MicrosoftTeamsAppIdentifier`.
+    - Added a type `MicrosoftTeamsAppKind`.
+    - Added a method `isMicrosoftTeamsAppIdentifier` to check if the identifier is `MicrosoftTeamsAppIdentifier`.
+    - Added a field `teamsAppId` to `MicrosoftTeamsAppIdentifier`.
+    - With this version, any rawId starting with `28:` will map to MicrosoftTeamsAppIdentifier. Previously it mapped to `UnknownIdentifier`.
+
+## 2.2.1 (2023-06-16)
 
 ### Bugs Fixed
+
+- Bug fix for when running the policy, a query param is always being detected as the URLSearchParams object exists, even if it is empty.
+
+## 3.0.0-beta.1 (2023-03-27)
+
+### Features Added
+
+- Added support for a new communication identifier `MicrosoftBotIdentifier`.
+
+### Breaking Changes
+
+- Introduction of `MicrosoftBotIdentifier` is a breaking change. It will affect code that relied on using `UnknownIdentifier` with a rawID starting with `28:`
+
+## 2.2.0 (2022-11-03)
+
+### Features Added
+
+- Optimized the logic for deserializing types derived from the `CommunicationIdentifier`.
+
+### Bugs Fixed
+
+- Fixed the logic of `getIdentifierRawId` and `createIdentifierFromRawId` for `PhoneNumberIdentifier` to always maintain the original phone number string whether it included the leading `+` sign or not.
 
 ### Other Changes
 

@@ -1,16 +1,38 @@
 # Release History
 
-## 12.10.1 (Unreleased)
+## 12.22.0-beta.1 (2023-11-01)
+
+### Other Changes
+
+- Migrated dependency on `@azure/core-http` to `@azure/core-rest-pipeline`.
+
+## 12.14.0 (2023-07-12)
 
 ### Features Added
 
-### Breaking Changes
+- Added support for service version 2023-01-03.
+
+## 12.13.0 (2023-04-13)
+
+### Features Added
+
+- Added support for service version 2022-11-02.
+
+## 12.12.0 (2023-02-23)
+
+### Other Changes
+
+- Update dependency `@azure/core-http` version to `^3.0.0`.
+
+## 12.11.0 (2022-10-14)
+
+### Features 
+
+- Added support for service version 2021-10-04.
 
 ### Bugs Fixed
 
 - Refined URL parsing method to let it be able to correctly parse URLs with account name in path.
-
-### Other Changes
 
 ## 12.10.0 (2022-07-08)
 

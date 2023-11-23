@@ -6,7 +6,7 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
 import { PrivateLinkResources } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
@@ -33,7 +33,7 @@ export class PrivateLinkResourcesImpl implements PrivateLinkResources {
 
   /**
    * Gets the private link resources that need to be created for a redis cache.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param cacheName The name of the Redis cache.
    * @param options The options parameters.
    */
@@ -54,11 +54,15 @@ export class PrivateLinkResourcesImpl implements PrivateLinkResources {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listByRedisCachePagingPage(
           resourceGroupName,
           cacheName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -67,9 +71,11 @@ export class PrivateLinkResourcesImpl implements PrivateLinkResources {
   private async *listByRedisCachePagingPage(
     resourceGroupName: string,
     cacheName: string,
-    options?: PrivateLinkResourcesListByRedisCacheOptionalParams
+    options?: PrivateLinkResourcesListByRedisCacheOptionalParams,
+    _settings?: PageSettings
   ): AsyncIterableIterator<PrivateLinkResource[]> {
-    let result = await this._listByRedisCache(
+    let result: PrivateLinkResourcesListByRedisCacheResponse;
+    result = await this._listByRedisCache(
       resourceGroupName,
       cacheName,
       options
@@ -93,7 +99,7 @@ export class PrivateLinkResourcesImpl implements PrivateLinkResources {
 
   /**
    * Gets the private link resources that need to be created for a redis cache.
-   * @param resourceGroupName The name of the resource group.
+   * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param cacheName The name of the Redis cache.
    * @param options The options parameters.
    */

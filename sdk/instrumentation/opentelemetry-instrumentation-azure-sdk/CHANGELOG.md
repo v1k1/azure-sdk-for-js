@@ -1,15 +1,29 @@
 # Release History
 
-## 1.0.0-beta.2 (Unreleased)
+## 1.0.0-beta.5 (2023-08-09)
+
+### Other Changes
+
+- Updated to latest OTEL libraries
+
+## 1.0.0-beta.4 (2023-06-14)
+
+### Other Changes
+
+- Updated to latest OTEL libraries
+
+## 1.0.0-beta.3 (2023-04-25)
+
+### Other Changes
+
+- Updated to latest OTEL libraries
+
+## 1.0.0-beta.2 (2022-10-22)
 
 ### Features Added
 
 - Added the ability to disable Azure SDK Spans from being recorded by setting the `AZURE_TRACING_DISABLED` environment variable to true.
-- Added support for `AZURE_HTTP_TRACING_DISABLED` environment variable which allows disabling all children of our core HTTP spans from being recorded.
-
-### Breaking Changes
-
-### Bugs Fixed
+- Added support for `AZURE_HTTP_TRACING_CHILDREN_DISABLED` environment variable which allows disabling all children of our core HTTP spans from being recorded.
 
 ### Other Changes
 

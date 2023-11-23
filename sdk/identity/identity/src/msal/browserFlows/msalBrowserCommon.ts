@@ -5,21 +5,41 @@ import * as msalBrowser from "@azure/msal-browser";
 import { AuthenticationRequiredError, CredentialUnavailableError } from "../../errors";
 import { MsalBaseUtilities, getAuthority, getKnownAuthorities } from "../utils";
 import { MsalFlow, MsalFlowOptions } from "../flows";
-import { processMultiTenantRequest, resolveTenantId } from "../../util/tenantIdUtils";
+import {
+  processMultiTenantRequest,
+  resolveAdditionallyAllowedTenantIds,
+  resolveTenantId,
+} from "../../util/tenantIdUtils";
 import { AccessToken } from "@azure/core-auth";
 import { AuthenticationRecord } from "../types";
 import { BrowserLoginStyle } from "../../credentials/interactiveBrowserCredentialOptions";
 import { CredentialFlowGetTokenOptions } from "../credentials";
 import { DefaultTenantId } from "../../constants";
+import { MultiTenantTokenCredentialOptions } from "../../credentials/multiTenantTokenCredentialOptions";
+import { LogPolicyOptions } from "@azure/core-rest-pipeline";
 
 /**
  * Union of the constructor parameters that all MSAL flow types take.
  * Some properties might not be used by some flow types.
  */
 export interface MsalBrowserFlowOptions extends MsalFlowOptions {
+  tokenCredentialOptions: MultiTenantTokenCredentialOptions;
   redirectUri?: string;
   loginStyle: BrowserLoginStyle;
   loginHint?: string;
+  /**
+   * Allows users to configure settings for logging policy options, allow logging account information and personally identifiable information for customer support.
+   */
+  loggingOptions?: LogPolicyOptions & {
+    /**
+     * Allows logging account information once the authentication flow succeeds.
+     */
+    allowLoggingAccountIdentifiers?: boolean;
+    /**
+     * Allows logging personally identifiable information for customer support.
+     */
+    enableUnsafeSupportLogging?: boolean;
+  };
 }
 
 /**
@@ -44,7 +64,7 @@ export function defaultBrowserMsalConfig(
     auth: {
       clientId: options.clientId!,
       authority,
-      knownAuthorities: getKnownAuthorities(tenantId, authority),
+      knownAuthorities: getKnownAuthorities(tenantId, authority, options.disableInstanceDiscovery),
       // If the users picked redirect as their login style,
       // but they didn't provide a redirectUri,
       // we can try to use the current page we're in as a default value.
@@ -66,6 +86,7 @@ export abstract class MsalBrowser extends MsalBaseUtilities implements MsalBrows
   protected loginStyle: BrowserLoginStyle;
   protected clientId: string;
   protected tenantId: string;
+  protected additionallyAllowedTenantIds: string[];
   protected authorityHost?: string;
   protected account: AuthenticationRecord | undefined;
   protected msalConfig: msalBrowser.Configuration;
@@ -80,6 +101,9 @@ export abstract class MsalBrowser extends MsalBaseUtilities implements MsalBrows
       throw new CredentialUnavailableError("A client ID is required in browsers");
     }
     this.clientId = options.clientId;
+    this.additionallyAllowedTenantIds = resolveAdditionallyAllowedTenantIds(
+      options?.tokenCredentialOptions?.additionallyAllowedTenants
+    );
     this.tenantId = resolveTenantId(this.logger, options.tenantId, options.clientId);
     this.authorityHost = options.authorityHost;
     this.msalConfig = defaultBrowserMsalConfig(options);
@@ -139,7 +163,9 @@ export abstract class MsalBrowser extends MsalBaseUtilities implements MsalBrows
     scopes: string[],
     options: CredentialFlowGetTokenOptions = {}
   ): Promise<AccessToken> {
-    const tenantId = processMultiTenantRequest(this.tenantId, options) || this.tenantId;
+    const tenantId =
+      processMultiTenantRequest(this.tenantId, options, this.additionallyAllowedTenantIds) ||
+      this.tenantId;
 
     if (!options.authority) {
       options.authority = getAuthority(tenantId, this.authorityHost);

@@ -13,6 +13,8 @@ import { S_IRWXO } from "constants";
 import { resolveProject } from "../../util/resolveProject";
 import { findSamplesRelativeDir } from "../../util/findSamplesDir";
 
+const defaultVersions = [18, 20, 21];
+
 const log = createPrinter("check-node-versions-samples");
 
 async function spawnCMD(cmd: string, args: string[], errorMessage?: string): Promise<void> {
@@ -188,12 +190,15 @@ async function runDockerContainer(
     containerWorkspace,
     "-v",
     `${dockerContextDirectory}:${containerWorkspace}`,
+    "--entrypoint",
+    "sh",
     dockerImageName,
     "./run_samples.sh",
   ];
   const dockerContainerRunProcess = pr.spawn("docker", args, {
     cwd: dockerContextDirectory,
   });
+  log.debug(`Running docker container with the following args: ${args.join(" ")}`);
   log.info(`Started running the docker container ${dockerContainerName}`);
   dockerContainerRunProcess.stdout.on("data", stdoutListener);
   dockerContainerRunProcess.stderr.on("data", stderrListener);
@@ -224,7 +229,7 @@ export const commandInfo = makeCommandInfo(
     "node-versions": {
       kind: "string",
       description: "A comma separated list of node versions to use",
-      default: "12,14,16,17",
+      default: defaultVersions.join(","),
     },
     "node-version": {
       kind: "string",

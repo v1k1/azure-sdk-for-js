@@ -50,7 +50,7 @@ export interface PagedResult<TPage, TPageSettings = PageSettings, TLink = string
   getPage: (
     pageLink: TLink,
     maxPageSize?: number
-  ) => Promise<{ page: TPage; nextPageLink?: TLink }>;
+  ) => Promise<{ page: TPage; nextPageLink?: TLink } | undefined>;
   /**
    * a function to implement the `byPage` method on the paged async iterator. The default is
    * one that sets the `maxPageSizeParam` from `settings.maxPageSize`.
@@ -62,3 +62,17 @@ export interface PagedResult<TPage, TPageSettings = PageSettings, TLink = string
    */
   toElements?: (page: TPage) => unknown[];
 }
+
+/**
+ * Paged collection of T items
+ */
+export type Paged<T> = {
+  /**
+   * The T items on this page
+   */
+  value: T[];
+  /**
+   * The link to the next page of items
+   */
+  nextLink?: string;
+};

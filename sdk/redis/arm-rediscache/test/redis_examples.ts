@@ -27,7 +27,19 @@ const replaceableVariables: Record<string, string> = {
 };
 
 const recorderOptions: RecorderStartOptions = {
-  envSetupForPlayback: replaceableVariables
+  envSetupForPlayback: replaceableVariables,
+  sanitizerOptions: {
+    bodySanitizers: [{
+      regex: true,
+      value: `fakeKey`,
+      target: `[a-z0-9_A-z=]{40,100}`
+    }],
+    uriSanitizers: [{
+      regex: true,
+      value: `fakeKey`,
+      target: `[a-z0-9_A-z=]{40,100}`
+    }]
+  }
 };
 
 export const testPollingOptions = {
@@ -155,7 +167,7 @@ describe("Redis test", () => {
       count++;
       const res = await client.redis.get(resourceGroupName, name);
       if (res.provisioningState == "Succeeded") {
-        const res = await client.redis.beginUpdateAndWait(resourceGroupName, name, { enableNonSslPort: true });
+        const res = await client.redis.beginUpdateAndWait(resourceGroupName, name, { enableNonSslPort: true }, testPollingOptions);
         assert.equal(res.enableNonSslPort, true);
         break;
       } else {

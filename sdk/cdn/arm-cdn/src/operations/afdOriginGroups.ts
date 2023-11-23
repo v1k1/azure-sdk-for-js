@@ -6,22 +6,28 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { AfdOriginGroups } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { CdnManagementClient } from "../cdnManagementClient";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   AFDOriginGroup,
   AfdOriginGroupsListByProfileNextOptionalParams,
   AfdOriginGroupsListByProfileOptionalParams,
+  AfdOriginGroupsListByProfileResponse,
   Usage,
   AfdOriginGroupsListResourceUsageNextOptionalParams,
   AfdOriginGroupsListResourceUsageOptionalParams,
-  AfdOriginGroupsListByProfileResponse,
+  AfdOriginGroupsListResourceUsageResponse,
   AfdOriginGroupsGetOptionalParams,
   AfdOriginGroupsGetResponse,
   AfdOriginGroupsCreateOptionalParams,
@@ -30,7 +36,6 @@ import {
   AfdOriginGroupsUpdateOptionalParams,
   AfdOriginGroupsUpdateResponse,
   AfdOriginGroupsDeleteOptionalParams,
-  AfdOriginGroupsListResourceUsageResponse,
   AfdOriginGroupsListByProfileNextResponse,
   AfdOriginGroupsListResourceUsageNextResponse
 } from "../models";
@@ -72,11 +77,15 @@ export class AfdOriginGroupsImpl implements AfdOriginGroups {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listByProfilePagingPage(
           resourceGroupName,
           profileName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -85,15 +94,22 @@ export class AfdOriginGroupsImpl implements AfdOriginGroups {
   private async *listByProfilePagingPage(
     resourceGroupName: string,
     profileName: string,
-    options?: AfdOriginGroupsListByProfileOptionalParams
+    options?: AfdOriginGroupsListByProfileOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<AFDOriginGroup[]> {
-    let result = await this._listByProfile(
-      resourceGroupName,
-      profileName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: AfdOriginGroupsListByProfileResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listByProfile(
+        resourceGroupName,
+        profileName,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listByProfileNext(
         resourceGroupName,
@@ -102,7 +118,9 @@ export class AfdOriginGroupsImpl implements AfdOriginGroups {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -121,7 +139,7 @@ export class AfdOriginGroupsImpl implements AfdOriginGroups {
   }
 
   /**
-   * Checks the quota and actual usage of endpoints under the given CDN profile.
+   * Checks the quota and actual usage of endpoints under the given Azure Front Door profile..
    * @param resourceGroupName Name of the Resource group within the Azure subscription.
    * @param profileName Name of the Azure Front Door Standard or Azure Front Door Premium profile which
    *                    is unique within the resource group.
@@ -147,12 +165,16 @@ export class AfdOriginGroupsImpl implements AfdOriginGroups {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listResourceUsagePagingPage(
           resourceGroupName,
           profileName,
           originGroupName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -162,16 +184,23 @@ export class AfdOriginGroupsImpl implements AfdOriginGroups {
     resourceGroupName: string,
     profileName: string,
     originGroupName: string,
-    options?: AfdOriginGroupsListResourceUsageOptionalParams
+    options?: AfdOriginGroupsListResourceUsageOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<Usage[]> {
-    let result = await this._listResourceUsage(
-      resourceGroupName,
-      profileName,
-      originGroupName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: AfdOriginGroupsListResourceUsageResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listResourceUsage(
+        resourceGroupName,
+        profileName,
+        originGroupName,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listResourceUsageNext(
         resourceGroupName,
@@ -181,7 +210,9 @@ export class AfdOriginGroupsImpl implements AfdOriginGroups {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -255,8 +286,8 @@ export class AfdOriginGroupsImpl implements AfdOriginGroups {
     originGroup: AFDOriginGroup,
     options?: AfdOriginGroupsCreateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<AfdOriginGroupsCreateResponse>,
+    SimplePollerLike<
+      OperationState<AfdOriginGroupsCreateResponse>,
       AfdOriginGroupsCreateResponse
     >
   > {
@@ -266,7 +297,7 @@ export class AfdOriginGroupsImpl implements AfdOriginGroups {
     ): Promise<AfdOriginGroupsCreateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -299,15 +330,24 @@ export class AfdOriginGroupsImpl implements AfdOriginGroups {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, profileName, originGroupName, originGroup, options },
-      createOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
+        resourceGroupName,
+        profileName,
+        originGroupName,
+        originGroup,
+        options
+      },
+      spec: createOperationSpec
+    });
+    const poller = await createHttpPoller<
+      AfdOriginGroupsCreateResponse,
+      OperationState<AfdOriginGroupsCreateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -355,8 +395,8 @@ export class AfdOriginGroupsImpl implements AfdOriginGroups {
     originGroupUpdateProperties: AFDOriginGroupUpdateParameters,
     options?: AfdOriginGroupsUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<AfdOriginGroupsUpdateResponse>,
+    SimplePollerLike<
+      OperationState<AfdOriginGroupsUpdateResponse>,
       AfdOriginGroupsUpdateResponse
     >
   > {
@@ -366,7 +406,7 @@ export class AfdOriginGroupsImpl implements AfdOriginGroups {
     ): Promise<AfdOriginGroupsUpdateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -399,21 +439,24 @@ export class AfdOriginGroupsImpl implements AfdOriginGroups {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
         resourceGroupName,
         profileName,
         originGroupName,
         originGroupUpdateProperties,
         options
       },
-      updateOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: updateOperationSpec
+    });
+    const poller = await createHttpPoller<
+      AfdOriginGroupsUpdateResponse,
+      OperationState<AfdOriginGroupsUpdateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -458,14 +501,14 @@ export class AfdOriginGroupsImpl implements AfdOriginGroups {
     profileName: string,
     originGroupName: string,
     options?: AfdOriginGroupsDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -498,15 +541,15 @@ export class AfdOriginGroupsImpl implements AfdOriginGroups {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, profileName, originGroupName, options },
-      deleteOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, profileName, originGroupName, options },
+      spec: deleteOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -536,7 +579,7 @@ export class AfdOriginGroupsImpl implements AfdOriginGroups {
   }
 
   /**
-   * Checks the quota and actual usage of endpoints under the given CDN profile.
+   * Checks the quota and actual usage of endpoints under the given Azure Front Door profile..
    * @param resourceGroupName Name of the Resource group within the Azure subscription.
    * @param profileName Name of the Azure Front Door Standard or Azure Front Door Premium profile which
    *                    is unique within the resource group.
@@ -617,7 +660,7 @@ const listByProfileOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName
+    Parameters.profileName1
   ],
   headerParameters: [Parameters.accept],
   serializer
@@ -639,7 +682,7 @@ const getOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.originGroupName
   ],
   headerParameters: [Parameters.accept],
@@ -672,7 +715,7 @@ const createOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.originGroupName
   ],
   headerParameters: [Parameters.contentType, Parameters.accept],
@@ -706,7 +749,7 @@ const updateOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.originGroupName
   ],
   headerParameters: [Parameters.contentType, Parameters.accept],
@@ -731,7 +774,7 @@ const deleteOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.originGroupName
   ],
   headerParameters: [Parameters.accept],
@@ -754,7 +797,7 @@ const listResourceUsageOperationSpec: coreClient.OperationSpec = {
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.originGroupName
   ],
   headerParameters: [Parameters.accept],
@@ -771,12 +814,11 @@ const listByProfileNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.AfdErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.nextLink
   ],
   headerParameters: [Parameters.accept],
@@ -793,12 +835,11 @@ const listResourceUsageNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.AfdErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,
     Parameters.resourceGroupName,
-    Parameters.profileName,
+    Parameters.profileName1,
     Parameters.nextLink,
     Parameters.originGroupName
   ],

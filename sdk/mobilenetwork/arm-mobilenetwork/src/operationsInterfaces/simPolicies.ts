@@ -7,7 +7,7 @@
  */
 
 import { PagedAsyncIterableIterator } from "@azure/core-paging";
-import { PollerLike, PollOperationState } from "@azure/core-lro";
+import { SimplePollerLike, OperationState } from "@azure/core-lro";
 import {
   SimPolicy,
   SimPoliciesListByMobileNetworkOptionalParams,
@@ -47,7 +47,7 @@ export interface SimPolicies {
     mobileNetworkName: string,
     simPolicyName: string,
     options?: SimPoliciesDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<SimplePollerLike<OperationState<void>, void>>;
   /**
    * Deletes the specified SIM policy.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
@@ -75,7 +75,7 @@ export interface SimPolicies {
     options?: SimPoliciesGetOptionalParams
   ): Promise<SimPoliciesGetResponse>;
   /**
-   * Creates or updates a SIM policy.
+   * Creates or updates a SIM policy. Must be created in the same location as its parent mobile network.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param mobileNetworkName The name of the mobile network.
    * @param simPolicyName The name of the SIM policy.
@@ -89,13 +89,13 @@ export interface SimPolicies {
     parameters: SimPolicy,
     options?: SimPoliciesCreateOrUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<SimPoliciesCreateOrUpdateResponse>,
+    SimplePollerLike<
+      OperationState<SimPoliciesCreateOrUpdateResponse>,
       SimPoliciesCreateOrUpdateResponse
     >
   >;
   /**
-   * Creates or updates a SIM policy.
+   * Creates or updates a SIM policy. Must be created in the same location as its parent mobile network.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param mobileNetworkName The name of the mobile network.
    * @param simPolicyName The name of the SIM policy.

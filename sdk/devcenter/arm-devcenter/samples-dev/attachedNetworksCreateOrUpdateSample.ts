@@ -13,21 +13,26 @@ import {
   DevCenterClient
 } from "@azure/arm-devcenter";
 import { DefaultAzureCredential } from "@azure/identity";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 /**
  * This sample demonstrates how to Creates or updates an attached NetworkConnection.
  *
  * @summary Creates or updates an attached NetworkConnection.
- * x-ms-original-file: specification/devcenter/resource-manager/Microsoft.DevCenter/preview/2022-09-01-preview/examples/AttachedNetworks_Create.json
+ * x-ms-original-file: specification/devcenter/resource-manager/Microsoft.DevCenter/preview/2023-10-01-preview/examples/AttachedNetworks_Create.json
  */
 async function attachedNetworksCreate() {
-  const subscriptionId = "{subscriptionId}";
-  const resourceGroupName = "rg1";
+  const subscriptionId =
+    process.env["DEVCENTER_SUBSCRIPTION_ID"] ||
+    "0ac520ee-14c0-480f-b6c9-0a90c58ffff";
+  const resourceGroupName = process.env["DEVCENTER_RESOURCE_GROUP"] || "rg1";
   const devCenterName = "Contoso";
-  const attachedNetworkConnectionName = "{attachedNetworkConnectionName}";
+  const attachedNetworkConnectionName = "network-uswest3";
   const body: AttachedNetworkConnection = {
     networkConnectionId:
-      "/subscriptions/{subscriptionId}/resourceGroups/rg1/providers/Microsoft.DevCenter/NetworkConnections/network-uswest3"
+      "/subscriptions/0ac520ee-14c0-480f-b6c9-0a90c58ffff/resourceGroups/rg1/providers/Microsoft.DevCenter/NetworkConnections/network-uswest3"
   };
   const credential = new DefaultAzureCredential();
   const client = new DevCenterClient(credential, subscriptionId);
@@ -40,4 +45,8 @@ async function attachedNetworksCreate() {
   console.log(result);
 }
 
-attachedNetworksCreate().catch(console.error);
+async function main() {
+  attachedNetworksCreate();
+}
+
+main().catch(console.error);

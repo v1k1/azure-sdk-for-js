@@ -5,7 +5,7 @@ import { AccessToken, GetTokenOptions, TokenCredential } from "@azure/core-auth"
 import { credentialLogger, formatError, formatSuccess } from "../util/logging";
 import {
   processMultiTenantRequest,
-  resolveAddionallyAllowedTenantIds,
+  resolveAdditionallyAllowedTenantIds,
 } from "../util/tenantIdUtils";
 import { AzureAuthorityHosts } from "../constants";
 import { CredentialUnavailableError } from "../errors";
@@ -90,6 +90,11 @@ export function getPropertyFromVSCode(property: string): string | undefined {
  * Connects to Azure using the credential provided by the VSCode extension 'Azure Account'.
  * Once the user has logged in via the extension, this credential can share the same refresh token
  * that is cached by the extension.
+ *
+ * It's a [known issue](https://github.com/Azure/azure-sdk-for-js/issues/20500) that this credential doesn't
+ * work with [Azure Account extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.azure-account)
+ * versions newer than **0.9.11**. A long-term fix to this problem is in progress. In the meantime, consider
+ * authenticating with {@link AzureCliCredential}.
  */
 export class VisualStudioCodeCredential implements TokenCredential {
   private identityClient: IdentityClient;
@@ -127,7 +132,7 @@ export class VisualStudioCodeCredential implements TokenCredential {
       this.tenantId = CommonTenantId;
     }
 
-    this.additionallyAllowedTenantIds = resolveAddionallyAllowedTenantIds(
+    this.additionallyAllowedTenantIds = resolveAdditionallyAllowedTenantIds(
       options?.additionallyAllowedTenants
     );
 
@@ -176,8 +181,12 @@ export class VisualStudioCodeCredential implements TokenCredential {
     await this.prepareOnce();
 
     const tenantId =
-      processMultiTenantRequest(this.tenantId, options, this.additionallyAllowedTenantIds) ||
-      this.tenantId;
+      processMultiTenantRequest(
+        this.tenantId,
+        options,
+        this.additionallyAllowedTenantIds,
+        logger
+      ) || this.tenantId;
 
     if (findCredentials === undefined) {
       throw new CredentialUnavailableError(

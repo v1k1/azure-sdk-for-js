@@ -277,6 +277,28 @@ export interface StorageBlobInventoryPolicyCompletedEventData {
   manifestBlobUrl: string;
 }
 
+/** Schema of the Data property of an EventGridEvent for an Microsoft.Storage.StorageTaskQueued event. */
+export interface StorageTaskQueuedEventData {
+  /** The time at which a storage task was queued. */
+  queuedDateTime: string;
+  /** The execution id for a storage task. */
+  taskExecutionId: string;
+}
+
+/** Schema of the Data property of an EventGridEvent for an Microsoft.Storage.StorageTaskCompleted event. */
+export interface StorageTaskCompletedEventData {
+  /** The status for a storage task. */
+  status: StorageTaskCompletedStatus;
+  /** The time at which a storage task was completed. */
+  completedDateTime: string;
+  /** The execution id for a storage task. */
+  taskExecutionId: string;
+  /** The task name for a storage task. */
+  taskName: string;
+  /** The summary report blob url for a storage task */
+  summaryReportBlobUrl: string;
+}
+
 /** Schema of the Data property of an EventGridEvent for a Microsoft.EventHub.CaptureFileCreated event. */
 export interface EventHubCaptureFileCreatedEventData {
   /** The path to the capture file. */
@@ -582,6 +604,46 @@ export interface SubscriptionDeletedEventData {
    * NOTE: This property will not be serialized. It can only be populated by the server.
    */
   readonly eventSubscriptionId: string;
+}
+
+/** Schema of the Data property of an EventGridEvent for MQTT Client state changes. */
+export interface EventGridMqttClientEventData {
+  /** Unique identifier for the MQTT client that the client presents to the service for authentication. This case-sensitive string can be up to 128 characters long, and supports UTF-8 characters. */
+  clientAuthenticationName: string;
+  /** Name of the client resource in the Event Grid namespace. */
+  clientName: string;
+  /** Name of the Event Grid namespace where the MQTT client was created or updated. */
+  namespaceName: string;
+}
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.DataBox.CopyStarted event. */
+export interface DataBoxCopyStartedEventData {
+  /** Serial Number of the device associated with the event. The list is comma separated if more than one serial number is associated. */
+  serialNumber: string;
+  /** Name of the current Stage */
+  stageName: DataBoxStageName;
+  /** The time at which the stage happened. */
+  stageTime: string;
+}
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.DataBox.CopyCompleted event. */
+export interface DataBoxCopyCompletedEventData {
+  /** Serial Number of the device associated with the event. The list is comma separated if more than one serial number is associated. */
+  serialNumber: string;
+  /** Name of the current Stage */
+  stageName: DataBoxStageName;
+  /** The time at which the stage happened. */
+  stageTime: string;
+}
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.DataBox.OrderCompleted event. */
+export interface DataBoxOrderCompletedEventData {
+  /** Serial Number of the device associated with the event. The list is comma separated if more than one serial number is associated. */
+  serialNumber: string;
+  /** Name of the current Stage */
+  stageName: DataBoxStageName;
+  /** The time at which the stage happened. */
+  stageTime: string;
 }
 
 /** Schema of the Data property of an EventGridEvent for a device life cycle event (DeviceCreated, DeviceDeleted). */
@@ -1363,6 +1425,16 @@ export interface AppConfigurationKeyValueDeletedEventData {
   syncToken: string;
 }
 
+/** Schema of common properties of snapshot events */
+export interface AppConfigurationSnapshotEventData {
+  /** The name of the snapshot. */
+  name: string;
+  /** The etag representing the new state of the snapshot. */
+  etag: string;
+  /** The sync token representing the server state after the event. */
+  syncToken: string;
+}
+
 /** Schema of the Data property of an EventGridEvent for a Microsoft.SignalRService.ClientConnectionConnected event. */
 export interface SignalRServiceClientConnectionConnectedEventData {
   /** The time at which the event occurred. */
@@ -1955,10 +2027,22 @@ export interface WebAppServicePlanUpdatedEventDataSku {
   capacity?: string;
 }
 
-/** Schema of the Data property of an EventGridEvent for an Microsoft.Communication.UserDisconnected event. */
-export interface AcsUserDisconnectedEventData {
-  /** The communication identifier of the user who was disconnected */
-  userCommunicationIdentifier: CommunicationIdentifierModel;
+/** Schema of the Data property of an EventGridEvent for an Microsoft.Communication.IncomingCall event */
+export interface AcsIncomingCallEventData {
+  /** The communication identifier of the target user. */
+  toCommunicationIdentifier: CommunicationIdentifierModel;
+  /** The communication identifier of the user who initiated the call. */
+  fromCommunicationIdentifier: CommunicationIdentifierModel;
+  /** The Id of the server call */
+  serverCallId: string;
+  /** Display name of caller. */
+  callerDisplayName: string;
+  /** Custom Context of Incoming Call */
+  customContext: AcsIncomingCallCustomContext;
+  /** Signed incoming call context. */
+  incomingCallContext: string;
+  /** CorrelationId (CallId). */
+  correlationId: string;
 }
 
 /** Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set. */
@@ -1993,6 +2077,102 @@ export interface MicrosoftTeamsUserIdentifierModel {
   isAnonymous?: boolean;
   /** The cloud that the Microsoft Teams user belongs to. By default 'public' if missing. */
   cloud?: CommunicationCloudEnvironmentModel;
+}
+
+/** Custom Context of Incoming Call */
+export interface AcsIncomingCallCustomContext {
+  /** Sip Headers for incoming call */
+  sipHeaders: { [propertyName: string]: string };
+  /** Voip Headers for incoming call */
+  voipHeaders: { [propertyName: string]: string };
+}
+
+/** Schema of the Data property of an EventGridEvent for an Microsoft.Communication.UserDisconnected event. */
+export interface AcsUserDisconnectedEventData {
+  /** The communication identifier of the user who was disconnected */
+  userCommunicationIdentifier: CommunicationIdentifierModel;
+}
+
+/** Schema of common properties of all Router events */
+export interface AcsRouterEventData {
+  /** Router Event Job ID */
+  jobId: string;
+  /** Router Event Channel Reference */
+  channelReference: string;
+  /** Router Event Channel ID */
+  channelId: string;
+}
+
+/** Router Communication Error */
+export interface AcsRouterCommunicationError {
+  /** Router Communication Error Code */
+  code: string;
+  /** Router Communication Error Message */
+  message: string;
+  /** Router Communication Error Target */
+  target: string;
+  /** Router Communication Inner Error */
+  innererror: AcsRouterCommunicationError;
+  /** List of Router Communication Errors */
+  details: AcsRouterCommunicationError[];
+}
+
+/** Router Queue Details */
+export interface AcsRouterQueueDetails {
+  /** Router Queue Id */
+  id: string;
+  /** Router Queue Name */
+  name: string;
+  /** Router Queue Labels */
+  labels: { [propertyName: string]: string };
+}
+
+/** Router Job Worker Selector */
+export interface AcsRouterWorkerSelector {
+  /** Router Job Worker Selector Key */
+  key: string;
+  /** Router Job Worker Selector Label Operator */
+  labelOperator: AcsRouterLabelOperator;
+  /** Router Job Worker Selector Value */
+  labelValue: any;
+  /** Router Job Worker Selector Time to Live in Seconds */
+  ttlSeconds: number;
+  /** Router Job Worker Selector State */
+  state: AcsRouterWorkerSelectorState;
+  /** Router Job Worker Selector Expiration Time */
+  expirationTime: string;
+}
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerDeregistered event */
+export interface AcsRouterWorkerDeregisteredEventData {
+  /** Router Worker Deregistered Worker Id */
+  workerId: string;
+}
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerRegistered event */
+export interface AcsRouterWorkerRegisteredEventData {
+  /** Router Worker Registered Worker Id */
+  workerId: string;
+  /** Router Worker Registered Queue Info */
+  queueAssignments: AcsRouterQueueDetails[];
+  /** Router Worker Registered Channel Configuration */
+  channelConfigurations: AcsRouterChannelConfiguration[];
+  /** Router Worker Register Total Capacity */
+  totalCapacity: number;
+  /** Router Worker Registered Labels */
+  labels: { [propertyName: string]: string };
+  /** Router Worker Registered Tags */
+  tags: { [propertyName: string]: string };
+}
+
+/** Router Channel Configuration */
+export interface AcsRouterChannelConfiguration {
+  /** Channel ID for Router Job */
+  channelId: string;
+  /** Capacity Cost Per Job for Router Job */
+  capacityCostPerJob: number;
+  /** Max Number of Jobs for Router Job */
+  maxNumberOfJobs: number;
 }
 
 /** Schema of common properties of all chat events */
@@ -2081,6 +2261,46 @@ export interface AcsRecordingChunkInfo {
   deleteLocation: string;
 }
 
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.EmailDeliveryReportReceived event. */
+export interface AcsEmailDeliveryReportReceivedEventData {
+  /** The Sender Email Address */
+  sender: string;
+  /** The recipient Email Address */
+  recipient: string;
+  /** The Id of the email been sent */
+  messageId: string;
+  /** The status of the email. Any value other than Delivered is considered failed. */
+  status: AcsEmailDeliveryReportStatus;
+  /** Detailed information about the status if any */
+  deliveryStatusDetails: AcsEmailDeliveryReportStatusDetails;
+  /** The time at which the email delivery report received timestamp */
+  deliveryAttemptTimestamp: string;
+}
+
+/** Detailed information about the status if any */
+export interface AcsEmailDeliveryReportStatusDetails {
+  /** Detailed status message */
+  statusMessage: string;
+}
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.EmailEngagementTrackingReportReceived event. */
+export interface AcsEmailEngagementTrackingReportReceivedEventData {
+  /** The Sender Email Address */
+  sender: string;
+  /** The Recipient Email Address */
+  recipient: string;
+  /** The Id of the email that has been sent */
+  messageId: string;
+  /** The time at which the user interacted with the email */
+  userActionTimestamp: string;
+  /** The context of the type of engagement user had with email */
+  engagementContext: string;
+  /** The user agent interacting with the email */
+  userAgent: string;
+  /** The type of engagement user have with email */
+  engagement: AcsUserEngagement;
+}
+
 /** Schema of the Data property of an EventGridEvent for a Microsoft.PolicyInsights.PolicyStateCreated event. */
 export interface PolicyInsightsPolicyStateCreatedEventData {
   /** The time that the resource was scanned by Azure Policy in the Universal ISO 8601 DateTime format yyyy-MM-ddTHH:mm:ss.fffffffZ. */
@@ -2145,6 +2365,18 @@ export interface ContainerServiceNewKubernetesVersionAvailableEventData {
   lowestMinorKubernetesVersion: string;
   /** The highest PATCH Kubernetes version considered preview for the ManagedCluster resource. There might not be any version in preview at the time of publishing the event */
   latestPreviewKubernetesVersion: string;
+}
+
+/** Schema of common properties of cluster support events */
+export interface ContainerServiceClusterSupportEventData {
+  /** The Kubernetes version of the ManagedCluster resource */
+  kubernetesVersion: string;
+}
+
+/** Schema of common properties of node pool rolling events */
+export interface ContainerServiceNodePoolRollingEventData {
+  /** The name of the node pool in the ManagedCluster resource */
+  nodePoolName: string;
 }
 
 /** Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.UserCreated event. */
@@ -2237,6 +2469,72 @@ export interface ApiManagementApiReleaseDeletedEventData {
   resourceUri: string;
 }
 
+/** Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayCreated event. */
+export interface ApiManagementGatewayCreatedEventData {
+  /** The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<ResourceName>` */
+  resourceUri: string;
+}
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayUpdated event. */
+export interface ApiManagementGatewayUpdatedEventData {
+  /** The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<ResourceName>` */
+  resourceUri: string;
+}
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayDeleted event. */
+export interface ApiManagementGatewayDeletedEventData {
+  /** The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<ResourceName>` */
+  resourceUri: string;
+}
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayHostnameConfigurationCreated event. */
+export interface ApiManagementGatewayHostnameConfigurationCreatedEventData {
+  /** The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<GatewayName>/hostnameConfigurations/<ResourceName>` */
+  resourceUri: string;
+}
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayHostnameConfigurationUpdated event. */
+export interface ApiManagementGatewayHostnameConfigurationUpdatedEventData {
+  /** The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<GatewayName>/hostnameConfigurations/<ResourceName>` */
+  resourceUri: string;
+}
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayHostnameConfigurationDeleted event. */
+export interface ApiManagementGatewayHostnameConfigurationDeletedEventData {
+  /** The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<GatewayName>/hostnameConfigurations/<ResourceName>` */
+  resourceUri: string;
+}
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayCertificateAuthorityCreated event. */
+export interface ApiManagementGatewayCertificateAuthorityCreatedEventData {
+  /** The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<GatewayName>/certificateAuthorities/<ResourceName>` */
+  resourceUri: string;
+}
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayCertificateAuthorityUpdated event. */
+export interface ApiManagementGatewayCertificateAuthorityUpdatedEventData {
+  /** The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<GatewayName>/certificateAuthorities/<ResourceName>` */
+  resourceUri: string;
+}
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayCertificateAuthorityDeleted event. */
+export interface ApiManagementGatewayCertificateAuthorityDeletedEventData {
+  /** The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<GatewayName>/certificateAuthorities/<ResourceName>` */
+  resourceUri: string;
+}
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayAPIAdded event. */
+export interface ApiManagementGatewayApiAddedEventData {
+  /** The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<GatewayName>/apis/<ResourceName>` */
+  resourceUri: string;
+}
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayAPIRemoved event. */
+export interface ApiManagementGatewayApiRemovedEventData {
+  /** The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<GatewayName>/apis/<ResourceName>` */
+  resourceUri: string;
+}
+
 /** Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.FhirResourceCreated event. */
 export interface HealthcareFhirResourceCreatedEventData {
   /** Type of HL7 FHIR resource. */
@@ -2272,6 +2570,119 @@ export interface HealthcareFhirResourceDeletedEventData {
   /** VersionId of HL7 FHIR resource. It changes when the resource is created, updated, or deleted(soft-deletion). */
   resourceVersionId: number;
 }
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.DicomImageCreated event. */
+export interface HealthcareDicomImageCreatedEventData {
+  /** Data partition name */
+  partitionName: string;
+  /** Unique identifier for the Study */
+  imageStudyInstanceUid: string;
+  /** Unique identifier for the Series */
+  imageSeriesInstanceUid: string;
+  /** Unique identifier for the DICOM Image */
+  imageSopInstanceUid: string;
+  /** Domain name of the DICOM account for this image. */
+  serviceHostName: string;
+  /** Sequence number of the DICOM Service within Azure Health Data Services. It is unique for every image creation and deletion within the service. */
+  sequenceNumber: number;
+}
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.DicomImageUpdated event. */
+export interface HealthcareDicomImageUpdatedEventData {
+  /** Data partition name */
+  partitionName: string;
+  /** Unique identifier for the Study */
+  imageStudyInstanceUid: string;
+  /** Unique identifier for the Series */
+  imageSeriesInstanceUid: string;
+  /** Unique identifier for the DICOM Image */
+  imageSopInstanceUid: string;
+  /** Domain name of the DICOM account for this image. */
+  serviceHostName: string;
+  /** Sequence number of the DICOM Service within Azure Health Data Services. It is unique for every image creation, updation and deletion within the service. */
+  sequenceNumber: number;
+}
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.DicomImageDeleted event. */
+export interface HealthcareDicomImageDeletedEventData {
+  /** Data partition name */
+  partitionName: string;
+  /** Unique identifier for the Study */
+  imageStudyInstanceUid: string;
+  /** Unique identifier for the Series */
+  imageSeriesInstanceUid: string;
+  /** Unique identifier for the DICOM Image */
+  imageSopInstanceUid: string;
+  /** Host name of the DICOM account for this image. */
+  serviceHostName: string;
+  /** Sequence number of the DICOM Service within Azure Health Data Services. It is unique for every image creation and deletion within the service. */
+  sequenceNumber: number;
+}
+
+/** Describes the schema of the properties under resource info which are common across all ARN system topic events */
+export interface ResourceNotificationsResourceUpdatedDetails {
+  /** id of the resource for which the event is being emitted */
+  id: string;
+  /** name of the resource for which the event is being emitted */
+  name: string;
+  /** the type of the resource for which the event is being emitted */
+  type: string;
+  /** the location of the resource for which the event is being emitted */
+  location: string;
+  /** the tags on the resource for which the event is being emitted */
+  tags: string;
+  /** properties in the payload of the resource for which the event is being emitted */
+  properties: { [propertyName: string]: any };
+}
+
+/** details of operational info */
+export interface ResourceNotificationsOperationalDetails {
+  /** Date and Time when resource was updated */
+  resourceEventTime: string;
+}
+
+/** Describes the schema of the common properties across all ARN system topic events */
+export interface ResourceNotificationsResourceUpdatedEventData {
+  /** resourceInfo details for update event */
+  resourceDetails: ResourceNotificationsResourceUpdatedDetails;
+  /** details about operational info */
+  operationalDetails: ResourceNotificationsOperationalDetails;
+  /** api version of the resource properties bag */
+  apiVersion: string;
+}
+
+/** Event data for Microsoft.EventGrid.MQTTClientCreatedOrUpdated event. */
+export type EventGridMqttClientCreatedOrUpdatedEventData = EventGridMqttClientEventData & {
+  /** Configured state of the client. The value could be Enabled or Disabled */
+  state: EventGridMqttClientState;
+  /** Time the client resource is created based on the provider's UTC time. */
+  createdOn: string;
+  /** Time the client resource is last updated based on the provider's UTC time. If the client resource was never updated, this value is identical to the value of the 'createdOn' property. */
+  updatedOn: string;
+  /** The key-value attributes that are assigned to the client resource. */
+  attributes: { [propertyName: string]: string };
+};
+
+/** Event data for Microsoft.EventGrid.MQTTClientDeleted event. */
+export type EventGridMqttClientDeletedEventData = EventGridMqttClientEventData & {};
+
+/** Event data for Microsoft.EventGrid.MQTTClientSessionConnected event. */
+export type EventGridMqttClientSessionConnectedEventData = EventGridMqttClientEventData & {
+  /** Unique identifier for the MQTT client's session. This case-sensitive string can be up to 128 characters long, and supports UTF-8 characters. */
+  clientSessionName: string;
+  /** A number that helps indicate order of MQTT client session connected or disconnected events. Latest event will have a sequence number that is higher than the previous event. */
+  sequenceNumber: number;
+};
+
+/** Event data for Microsoft.EventGrid.MQTTClientSessionDisconnected event. */
+export type EventGridMqttClientSessionDisconnectedEventData = EventGridMqttClientEventData & {
+  /** Unique identifier for the MQTT client's session. This case-sensitive string can be up to 128 characters long, and supports UTF-8 characters. */
+  clientSessionName: string;
+  /** A number that helps indicate order of MQTT client session connected or disconnected events. Latest event will have a sequence number that is higher than the previous event. */
+  sequenceNumber: number;
+  /** Reason for the disconnection of the MQTT client's session. The value could be one of the values in the disconnection reasons table. */
+  disconnectionReason: EventGridMqttClientDisconnectionReason;
+};
 
 /** Event data for Microsoft.Devices.DeviceCreated event. */
 export type IotHubDeviceCreatedEventData = DeviceLifeCycleEvent & {};
@@ -2361,6 +2772,28 @@ export type MapsGeofenceExitedEventData = MapsGeofenceEvent & {};
 
 /** Schema of the Data property of an EventGridEvent for a Microsoft.Maps.GeofenceResult event. */
 export type MapsGeofenceResultEventData = MapsGeofenceEvent & {};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.AppConfiguration.SnapshotCreated event. */
+export type AppConfigurationSnapshotCreatedEventData = AppConfigurationSnapshotEventData & {};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.AppConfiguration.SnapshotModified event. */
+export type AppConfigurationSnapshotModifiedEventData = AppConfigurationSnapshotEventData & {};
+
+/** Schema of common properties of all Router Job events */
+export type AcsRouterJobEventData = AcsRouterEventData & {
+  /** Router Job events Queue Id */
+  queueId: string;
+  /** Router Job events Labels */
+  labels: { [propertyName: string]: string };
+  /** Router Jobs events Tags */
+  tags: { [propertyName: string]: string };
+};
+
+/** Schema of common properties of all Router Worker events */
+export type AcsRouterWorkerEventData = AcsRouterEventData & {
+  /** Router Worker events Worker Id */
+  workerId: string;
+};
 
 /** Schema of common properties of all chat message events */
 export type AcsChatMessageEventBase = AcsChatEventBase & {
@@ -2454,6 +2887,223 @@ export type AcsSmsReceivedEventData = AcsSmsEventBase & {
   message: string;
   /** The time at which the SMS was received */
   receivedTimestamp: string;
+};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.ContainerService.ClusterSupportEnded event */
+export type ContainerServiceClusterSupportEndedEventData = ContainerServiceClusterSupportEventData & {};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.ContainerService.ClusterSupportEnding event */
+export type ContainerServiceClusterSupportEndingEventData = ContainerServiceClusterSupportEventData & {};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.ContainerService.NodePoolRollingStarted event */
+export type ContainerServiceNodePoolRollingStartedEventData = ContainerServiceNodePoolRollingEventData & {};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.ContainerService.NodePoolRollingSucceeded event */
+export type ContainerServiceNodePoolRollingSucceededEventData = ContainerServiceNodePoolRollingEventData & {};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.ContainerService.NodePoolRollingFailed event */
+export type ContainerServiceNodePoolRollingFailedEventData = ContainerServiceNodePoolRollingEventData & {};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.ResourceNotifications.HealthResources.AvailabilityStatusChanged event. */
+export type ResourceNotificationsHealthResourcesAvailabilityStatusChangedEventData = ResourceNotificationsResourceUpdatedEventData & {};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.ResourceNotifications.HealthResources.ResourceAnnotated event. */
+export type ResourceNotificationsHealthResourcesAnnotatedEventData = ResourceNotificationsResourceUpdatedEventData & {};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobCancelled event */
+export type AcsRouterJobCancelledEventData = AcsRouterJobEventData & {
+  /** Router Job Note */
+  note: string;
+  /** Router Job Disposition Code */
+  dispositionCode: string;
+};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobClassificationFailed event */
+export type AcsRouterJobClassificationFailedEventData = AcsRouterJobEventData & {
+  /** Router Job Classification Policy Id */
+  classificationPolicyId: string;
+  /** Router Job Classification Failed Errors */
+  errors: AcsRouterCommunicationError[];
+};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobClassified event */
+export type AcsRouterJobClassifiedEventData = AcsRouterJobEventData & {
+  /** Router Job Queue Info */
+  queueDetails: AcsRouterQueueDetails;
+  /** Router Job Classification Policy Id */
+  classificationPolicyId: string;
+  /** Router Job Priority */
+  priority: number;
+  /** Router Job Attached Worker Selector */
+  attachedWorkerSelectors: AcsRouterWorkerSelector[];
+};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobClosed event */
+export type AcsRouterJobClosedEventData = AcsRouterJobEventData & {
+  /** Router Job Closed Assignment Id */
+  assignmentId: string;
+  /** Router Job Closed Worker Id */
+  workerId: string;
+  /** Router Job Closed Disposition Code */
+  dispositionCode: string;
+};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobCompleted event */
+export type AcsRouterJobCompletedEventData = AcsRouterJobEventData & {
+  /** Router Job Completed Assignment Id */
+  assignmentId: string;
+  /** Router Job Completed Worker Id */
+  workerId: string;
+};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobDeleted event */
+export type AcsRouterJobDeletedEventData = AcsRouterJobEventData & {};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobExceptionTriggered event */
+export type AcsRouterJobExceptionTriggeredEventData = AcsRouterJobEventData & {
+  /** Router Job Exception Triggered Rule Key */
+  ruleKey: string;
+  /** Router Job Exception Triggered Rule Id */
+  exceptionRuleId: string;
+};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobQueued event */
+export type AcsRouterJobQueuedEventData = AcsRouterJobEventData & {
+  /** Router Job Priority */
+  priority: number;
+  /** Router Job Queued Attached Worker Selector */
+  attachedWorkerSelectors: AcsRouterWorkerSelector[];
+  /** Router Job Queued Requested Worker Selector */
+  requestedWorkerSelectors: AcsRouterWorkerSelector[];
+};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobReceived event */
+export type AcsRouterJobReceivedEventData = AcsRouterJobEventData & {
+  /** Router Job Received Job Status */
+  jobStatus?: AcsRouterJobStatus;
+  /** Router Job Classification Policy Id */
+  classificationPolicyId?: string;
+  /** Router Job Priority */
+  priority?: number;
+  /** Router Job Received Requested Worker Selectors */
+  requestedWorkerSelectors?: AcsRouterWorkerSelector[];
+  /** Router Job Received Scheduled Time in UTC */
+  scheduledOn?: string;
+  /** Unavailable For Matching for Router Job Received */
+  unavailableForMatching: boolean;
+};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobSchedulingFailed event */
+export type AcsRouterJobSchedulingFailedEventData = AcsRouterJobEventData & {
+  /** Router Job Priority */
+  priority: number;
+  /** Router Job Scheduling Failed Attached Worker Selector Expired */
+  expiredAttachedWorkerSelectors: AcsRouterWorkerSelector[];
+  /** Router Job Scheduling Failed Requested Worker Selector Expired */
+  expiredRequestedWorkerSelectors: AcsRouterWorkerSelector[];
+  /** Router Job Scheduling Failed Scheduled Time in UTC */
+  scheduledOn: string;
+  /** Router Job Scheduling Failed Reason */
+  failureReason: string;
+};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobUnassigned event */
+export type AcsRouterJobUnassignedEventData = AcsRouterJobEventData & {
+  /** Router Job Unassigned Assignment Id */
+  assignmentId: string;
+  /** Router Job Unassigned Worker Id */
+  workerId: string;
+};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobWaitingForActivation event */
+export type AcsRouterJobWaitingForActivationEventData = AcsRouterJobEventData & {
+  /** Router Job Waiting For Activation Priority */
+  priority?: number;
+  /** Router Job Waiting For Activation Worker Selector Expired */
+  expiredAttachedWorkerSelectors?: AcsRouterWorkerSelector[];
+  /** Router Job Waiting For Activation Requested Worker Selector Expired */
+  expiredRequestedWorkerSelectors?: AcsRouterWorkerSelector[];
+  /** Router Job Waiting For Activation Scheduled Time in UTC */
+  scheduledOn?: string;
+  /** Router Job Waiting For Activation Unavailable For Matching */
+  unavailableForMatching: boolean;
+};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobWorkerSelectorsExpired event */
+export type AcsRouterJobWorkerSelectorsExpiredEventData = AcsRouterJobEventData & {
+  /** Router Job Worker Selectors Expired Requested Worker Selectors */
+  expiredRequestedWorkerSelectors: AcsRouterWorkerSelector[];
+  /** Router Job Worker Selectors Expired Attached Worker Selectors */
+  expiredAttachedWorkerSelectors: AcsRouterWorkerSelector[];
+};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerDeleted event */
+export type AcsRouterWorkerDeletedEventData = AcsRouterWorkerEventData & {};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerOfferAccepted event */
+export type AcsRouterWorkerOfferAcceptedEventData = AcsRouterWorkerEventData & {
+  /** Router Worker Offer Accepted Queue Id */
+  queueId: string;
+  /** Router Worker Offer Accepted Offer Id */
+  offerId: string;
+  /** Router Worker Offer Accepted Assignment Id */
+  assignmentId: string;
+  /** Router Worker Offer Accepted Job Priority */
+  jobPriority: number;
+  /** Router Worker Offer Accepted Worker Labels */
+  workerLabels: { [propertyName: string]: string };
+  /** Router Worker Offer Accepted Worker Tags */
+  workerTags: { [propertyName: string]: string };
+  /** Router Worker Offer Accepted Job Labels */
+  jobLabels: { [propertyName: string]: string };
+  /** Router Worker Offer Accepted Job Tags */
+  jobTags: { [propertyName: string]: string };
+};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerOfferDeclined event */
+export type AcsRouterWorkerOfferDeclinedEventData = AcsRouterWorkerEventData & {
+  /** Router Worker Offer Declined Queue Id */
+  queueId: string;
+  /** Router Worker Offer Declined Offer Id */
+  offerId: string;
+};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerOfferExpired event */
+export type AcsRouterWorkerOfferExpiredEventData = AcsRouterWorkerEventData & {
+  /** Router Worker Offer Expired Queue Id */
+  queueId: string;
+  /** Router Worker Offer Expired Offer Id */
+  offerId: string;
+};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerOfferIssued event */
+export type AcsRouterWorkerOfferIssuedEventData = AcsRouterWorkerEventData & {
+  /** Router Worker Offer Issued Queue Id */
+  queueId: string;
+  /** Router Worker Offer Issued Offer Id */
+  offerId: string;
+  /** Router Worker Offer Issued Job Priority */
+  jobPriority: number;
+  /** Router Worker Offer Issued Worker Labels */
+  workerLabels: { [propertyName: string]: string };
+  /** Router Worker Offer Issued Time in UTC */
+  offeredOn: string;
+  /** Router Worker Offer Issued Expiration Time in UTC */
+  expiresOn: string;
+  /** Router Worker Offer Issued Worker Tags */
+  workerTags: { [propertyName: string]: string };
+  /** Router Worker Offer Issued Job Labels */
+  jobLabels: { [propertyName: string]: string };
+  /** Router Worker Offer Issued Job Tags */
+  jobTags: { [propertyName: string]: string };
+};
+
+/** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerOfferRevoked event */
+export type AcsRouterWorkerOfferRevokedEventData = AcsRouterWorkerEventData & {
+  /** Router Worker Offer Revoked Queue Id */
+  queueId: string;
+  /** Router Worker Offer Revoked Offer Id */
+  offerId: string;
 };
 
 /** Schema of the Data property of an EventGridEvent for a Microsoft.Communication.ChatMessageReceived event. */
@@ -2580,6 +3230,104 @@ export type AcsChatThreadPropertiesUpdatedEventData = AcsChatThreadEventInThread
   properties: { [propertyName: string]: any };
 };
 
+/** Known values of {@link StorageTaskCompletedStatus} that the service accepts. */
+export const enum KnownStorageTaskCompletedStatus {
+  Succeeded = "Succeeded",
+  Failed = "Failed"
+}
+
+/**
+ * Defines values for StorageTaskCompletedStatus. \
+ * {@link KnownStorageTaskCompletedStatus} can be used interchangeably with StorageTaskCompletedStatus,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **Succeeded** \
+ * **Failed**
+ */
+export type StorageTaskCompletedStatus = string;
+
+/** Known values of {@link EventGridMqttClientState} that the service accepts. */
+export const enum KnownEventGridMqttClientState {
+  Enabled = "Enabled",
+  Disabled = "Disabled"
+}
+
+/**
+ * Defines values for EventGridMqttClientState. \
+ * {@link KnownEventGridMqttClientState} can be used interchangeably with EventGridMqttClientState,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **Enabled** \
+ * **Disabled**
+ */
+export type EventGridMqttClientState = string;
+
+/** Known values of {@link EventGridMqttClientDisconnectionReason} that the service accepts. */
+export const enum KnownEventGridMqttClientDisconnectionReason {
+  /** The client got disconnected for any authentication reasons (for example, certificate expired, client got disabled, or client configuration changed). */
+  ClientAuthenticationError = "ClientAuthenticationError",
+  /** The client got disconnected for any authorization reasons (for example, because of a change in the configuration of topic spaces, permission bindings, or client groups). */
+  ClientAuthorizationError = "ClientAuthorizationError",
+  /** The client sent a bad request or used one of the unsupported features that resulted in a connection termination by the service. */
+  ClientError = "ClientError",
+  /** The client initiates a graceful disconnect through a DISCONNECT packet for MQTT or a close frame for MQTT over WebSocket. */
+  ClientInitiatedDisconnect = "ClientInitiatedDisconnect",
+  /** The client-server connection is lost. (EXCHANGE ONLINE PROTECTION). */
+  ConnectionLost = "ConnectionLost",
+  /** The client's IP address is blocked by IP filter or Private links configuration. */
+  IpForbidden = "IpForbidden",
+  /** The client exceeded one or more of the throttling limits that resulted in a connection termination by the service. */
+  QuotaExceeded = "QuotaExceeded",
+  /** The connection got terminated due to an unexpected server error. */
+  ServerError = "ServerError",
+  /** The server initiates a graceful disconnect for any operational reason. */
+  ServerInitiatedDisconnect = "ServerInitiatedDisconnect",
+  /** The client's queue for unacknowledged QoS1 messages reached its limit, which resulted in a connection termination by the server. */
+  SessionOverflow = "SessionOverflow",
+  /** The client reconnected with the same authentication name, which resulted in the termination of the previous connection. */
+  SessionTakenOver = "SessionTakenOver"
+}
+
+/**
+ * Defines values for EventGridMqttClientDisconnectionReason. \
+ * {@link KnownEventGridMqttClientDisconnectionReason} can be used interchangeably with EventGridMqttClientDisconnectionReason,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **ClientAuthenticationError**: The client got disconnected for any authentication reasons (for example, certificate expired, client got disabled, or client configuration changed). \
+ * **ClientAuthorizationError**: The client got disconnected for any authorization reasons (for example, because of a change in the configuration of topic spaces, permission bindings, or client groups). \
+ * **ClientError**: The client sent a bad request or used one of the unsupported features that resulted in a connection termination by the service. \
+ * **ClientInitiatedDisconnect**: The client initiates a graceful disconnect through a DISCONNECT packet for MQTT or a close frame for MQTT over WebSocket. \
+ * **ConnectionLost**: The client-server connection is lost. (EXCHANGE ONLINE PROTECTION). \
+ * **IpForbidden**: The client's IP address is blocked by IP filter or Private links configuration. \
+ * **QuotaExceeded**: The client exceeded one or more of the throttling limits that resulted in a connection termination by the service. \
+ * **ServerError**: The connection got terminated due to an unexpected server error. \
+ * **ServerInitiatedDisconnect**: The server initiates a graceful disconnect for any operational reason. \
+ * **SessionOverflow**: The client's queue for unacknowledged QoS1 messages reached its limit, which resulted in a connection termination by the server. \
+ * **SessionTakenOver**: The client reconnected with the same authentication name, which resulted in the termination of the previous connection.
+ */
+export type EventGridMqttClientDisconnectionReason = string;
+
+/** Known values of {@link DataBoxStageName} that the service accepts. */
+export const enum KnownDataBoxStageName {
+  /** Copy has started */
+  CopyStarted = "CopyStarted",
+  /** Copy has completed */
+  CopyCompleted = "CopyCompleted",
+  /** Order has been completed */
+  OrderCompleted = "OrderCompleted"
+}
+
+/**
+ * Defines values for DataBoxStageName. \
+ * {@link KnownDataBoxStageName} can be used interchangeably with DataBoxStageName,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **CopyStarted**: Copy has started \
+ * **CopyCompleted**: Copy has completed \
+ * **OrderCompleted**: Order has been completed
+ */
+export type DataBoxStageName = string;
+
 /** Known values of {@link AppAction} that the service accepts. */
 export const enum KnownAppAction {
   /** Web app was restarted. */
@@ -2685,6 +3433,90 @@ export const enum KnownCommunicationCloudEnvironmentModel {
  */
 export type CommunicationCloudEnvironmentModel = string;
 
+/** Known values of {@link AcsRouterLabelOperator} that the service accepts. */
+export const enum KnownAcsRouterLabelOperator {
+  /** = */
+  Equal = "Equal",
+  /** != */
+  NotEqual = "NotEqual",
+  /** > */
+  Greater = "Greater",
+  /** < */
+  Less = "Less",
+  /** >= */
+  GreaterThanOrEqual = "GreaterThanOrEqual",
+  /** <= */
+  LessThanOrEqual = "LessThanOrEqual"
+}
+
+/**
+ * Defines values for AcsRouterLabelOperator. \
+ * {@link KnownAcsRouterLabelOperator} can be used interchangeably with AcsRouterLabelOperator,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **Equal**: = \
+ * **NotEqual**: != \
+ * **Greater**: > \
+ * **Less**: < \
+ * **GreaterThanOrEqual**: >= \
+ * **LessThanOrEqual**: <=
+ */
+export type AcsRouterLabelOperator = string;
+
+/** Known values of {@link AcsRouterWorkerSelectorState} that the service accepts. */
+export const enum KnownAcsRouterWorkerSelectorState {
+  /** Router Job Worker Selector is Active */
+  Active = "active",
+  /** Router Job Worker Selector has Expire */
+  Expired = "expired"
+}
+
+/**
+ * Defines values for AcsRouterWorkerSelectorState. \
+ * {@link KnownAcsRouterWorkerSelectorState} can be used interchangeably with AcsRouterWorkerSelectorState,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **active**: Router Job Worker Selector is Active \
+ * **expired**: Router Job Worker Selector has Expire
+ */
+export type AcsRouterWorkerSelectorState = string;
+
+/** Known values of {@link AcsRouterJobStatus} that the service accepts. */
+export const enum KnownAcsRouterJobStatus {
+  PendingClassification = "PendingClassification",
+  Queued = "Queued",
+  Assigned = "Assigned",
+  Completed = "Completed",
+  Closed = "Closed",
+  Cancelled = "Cancelled",
+  ClassificationFailed = "ClassificationFailed",
+  Created = "Created",
+  PendingSchedule = "PendingSchedule",
+  Scheduled = "Scheduled",
+  ScheduleFailed = "ScheduleFailed",
+  WaitingForActivation = "WaitingForActivation"
+}
+
+/**
+ * Defines values for AcsRouterJobStatus. \
+ * {@link KnownAcsRouterJobStatus} can be used interchangeably with AcsRouterJobStatus,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **PendingClassification** \
+ * **Queued** \
+ * **Assigned** \
+ * **Completed** \
+ * **Closed** \
+ * **Cancelled** \
+ * **ClassificationFailed** \
+ * **Created** \
+ * **PendingSchedule** \
+ * **Scheduled** \
+ * **ScheduleFailed** \
+ * **WaitingForActivation**
+ */
+export type AcsRouterJobStatus = string;
+
 /** Known values of {@link RecordingContentType} that the service accepts. */
 export const enum KnownRecordingContentType {
   AudioVideo = "AudioVideo",
@@ -2734,6 +3566,52 @@ export const enum KnownRecordingFormatType {
  * **Mp4**
  */
 export type RecordingFormatType = string;
+
+/** Known values of {@link AcsEmailDeliveryReportStatus} that the service accepts. */
+export const enum KnownAcsEmailDeliveryReportStatus {
+  /** Hard bounce detected while sending the email */
+  Bounced = "Bounced",
+  /** The email was delivered */
+  Delivered = "Delivered",
+  /** The email failed to be delivered */
+  Failed = "Failed",
+  /** The message was identified spam and was rejected or blocked (not quarantined). */
+  FilteredSpam = "FilteredSpam",
+  /** The message was quarantined (as spam, bulk mail, or phishing). For more information, see Quarantined email messages in EOP (EXCHANGE ONLINE PROTECTION). */
+  Quarantined = "Quarantined",
+  /** The email was suppressed */
+  Suppressed = "Suppressed"
+}
+
+/**
+ * Defines values for AcsEmailDeliveryReportStatus. \
+ * {@link KnownAcsEmailDeliveryReportStatus} can be used interchangeably with AcsEmailDeliveryReportStatus,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **Bounced**: Hard bounce detected while sending the email \
+ * **Delivered**: The email was delivered \
+ * **Failed**: The email failed to be delivered \
+ * **FilteredSpam**: The message was identified spam and was rejected or blocked (not quarantined). \
+ * **Quarantined**: The message was quarantined (as spam, bulk mail, or phishing). For more information, see Quarantined email messages in EOP (EXCHANGE ONLINE PROTECTION). \
+ * **Suppressed**: The email was suppressed
+ */
+export type AcsEmailDeliveryReportStatus = string;
+
+/** Known values of {@link AcsUserEngagement} that the service accepts. */
+export const enum KnownAcsUserEngagement {
+  View = "view",
+  Click = "click"
+}
+
+/**
+ * Defines values for AcsUserEngagement. \
+ * {@link KnownAcsUserEngagement} can be used interchangeably with AcsUserEngagement,
+ *  this enum contains the known values that the service supports.
+ * ### Known values supported by the service
+ * **view** \
+ * **click**
+ */
+export type AcsUserEngagement = string;
 
 /** Known values of {@link HealthcareFhirResourceType} that the service accepts. */
 export const enum KnownHealthcareFhirResourceType {
@@ -3262,7 +4140,7 @@ export type MediaJobErrorCategory =
 export type MediaJobRetry = "DoNotRetry" | "MayRetry";
 
 /** Optional parameters. */
-export interface GeneratedClientPublishEventsOptionalParams
+export interface GeneratedClientPublishEventGridEventsOptionalParams
   extends coreClient.OperationOptions {}
 
 /** Optional parameters. */

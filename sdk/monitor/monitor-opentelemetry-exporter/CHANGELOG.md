@@ -1,21 +1,114 @@
 # Release History
 
-## 1.0.0-beta.9 (Unreleased)
+## 1.0.0-beta.18 ()
 
 ### Features Added
 
+### Breaking Changes
+
+### Bugs Fixed
+
+- Fix Feature and Instrumentation Statsbeat type value.
+
+### Other Changes
+
+## 1.0.0-beta.17 (2023-10-09)
+
+### Features Added
+
+- Update OpenTelemetry dependency packages.
+- Add support for aadAudience configuration using connection string.
+
+### Bugs Fixed
+
+- Fix issue with credentialScopes setup not being passed to core-client.
+- Fix Statsbeat metric names.
+
+### Other Changes
+
+- Add performance tests.
+- Add metric and span util tests.
+
+## 1.0.0-beta.16 (2023-08-30)
+
+### Bugs Fixed
+
+- Avoid dependency telemetry for ingestion endpoint calls.
+
+## 1.0.0-beta.15 (2023-08-24)
+
+### Breaking Changes
+
+- `AzureMonitorExporterOptions.aadTokenCredential` is now `AzureMonitorExporterOptions.credential`.
+- No longer expose the `MonitorBase`, `MonitorDomain`, or `TelemetryItem` interfaces.
+
+### Bugs Fixed
+
+- Fix issue with wrong name for _OTELRESOURCE_ metric.
+- Fix an issue with serializing nested log messages.
+
+## 1.0.0-beta.14 (2023-06-15)
+
+### Features Added
+
+- Update OpenTelemetry dependency packages.
+
+### Bugs Fixed
+
+- Fix issues with Breeze events format for new Resource attributes telemetry event
+  and legacy Application Insights events.
+- Metrics Exporter use delta aggregation temporality.
+
+## 1.0.0-beta.13 (2023-06-06)
+
+### Features Added
+
+- Update opentelemetry/instrumentation packages.
+- Add support for Application Insights log events.
+- Add AiCloudRole and AiCloudRoleInstance to OTel Resource event.
+- Add OTel resource metric envelope.
+- Add OpenTelemetry Log Exporter
+- Use Kubernetes resource attributes to populate cloud role and role instance.
+
+## 1.0.0-beta.12 (2023-04-04)
+
+### Features Added
+
+- Use Prefix/Distro version if available.
+- Remove standard metrics custom handling.
+- Remove mapped Span attributes and remaining as properties.
+- Updated OpenTelemetry dependencies to their latest available versions.
+
+## 1.0.0-beta.11 (2023-02-02)
+
+### Features Added
+
+- Add attach and feature Statsbeat Metrics.
+
+## 1.0.0-beta.10 (2022-11-09)
+
+### Features Added
+
+- Add network Statsbeat Metrics.
+
+## 1.0.0-beta.9 (2022-10-20)
+
+### Features Added
+
+- Application Insights Sampler.
 - Added retriable behavior for 502, 503 and 504 status codes.
 - Export Metric attributes and Histogram Min/Max values.
 - Added new config options disableOfflineStorage, storageDirectory and exposed ApplicationInsightsClientOptionalParams for HTTP client extra configuration.
+- Added Network Statsbeat Metrics.
 
 ### Breaking Changes
 
 - Azure Monitor OpenTelemetry Metrics Exporter Configuration updated.
 
-
 ### Bugs Fixed
 
-### Other Changes
+- Suppress tracing while exporting metrics.
+- Envelopes not populating sampleRate correctly.
 
 ## 1.0.0-beta.8 (2022-07-07)
 

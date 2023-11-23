@@ -7,7 +7,7 @@
  */
 
 import { PagedAsyncIterableIterator } from "@azure/core-paging";
-import { PollerLike, PollOperationState } from "@azure/core-lro";
+import { SimplePollerLike, OperationState } from "@azure/core-lro";
 import {
   CustomDomain,
   CustomDomainsListByEndpointOptionalParams,
@@ -71,8 +71,8 @@ export interface CustomDomains {
     customDomainProperties: CustomDomainParameters,
     options?: CustomDomainsCreateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<CustomDomainsCreateResponse>,
+    SimplePollerLike<
+      OperationState<CustomDomainsCreateResponse>,
       CustomDomainsCreateResponse
     >
   >;
@@ -107,7 +107,7 @@ export interface CustomDomains {
     endpointName: string,
     customDomainName: string,
     options?: CustomDomainsDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>>;
+  ): Promise<SimplePollerLike<OperationState<void>, void>>;
   /**
    * Deletes an existing custom domain within an endpoint.
    * @param resourceGroupName Name of the Resource group within the Azure subscription.
@@ -131,7 +131,27 @@ export interface CustomDomains {
    * @param customDomainName Name of the custom domain within an endpoint.
    * @param options The options parameters.
    */
-  disableCustomHttps(
+  beginDisableCustomHttps(
+    resourceGroupName: string,
+    profileName: string,
+    endpointName: string,
+    customDomainName: string,
+    options?: CustomDomainsDisableCustomHttpsOptionalParams
+  ): Promise<
+    SimplePollerLike<
+      OperationState<CustomDomainsDisableCustomHttpsResponse>,
+      CustomDomainsDisableCustomHttpsResponse
+    >
+  >;
+  /**
+   * Disable https delivery of the custom domain.
+   * @param resourceGroupName Name of the Resource group within the Azure subscription.
+   * @param profileName Name of the CDN profile which is unique within the resource group.
+   * @param endpointName Name of the endpoint under the profile which is unique globally.
+   * @param customDomainName Name of the custom domain within an endpoint.
+   * @param options The options parameters.
+   */
+  beginDisableCustomHttpsAndWait(
     resourceGroupName: string,
     profileName: string,
     endpointName: string,
@@ -146,7 +166,27 @@ export interface CustomDomains {
    * @param customDomainName Name of the custom domain within an endpoint.
    * @param options The options parameters.
    */
-  enableCustomHttps(
+  beginEnableCustomHttps(
+    resourceGroupName: string,
+    profileName: string,
+    endpointName: string,
+    customDomainName: string,
+    options?: CustomDomainsEnableCustomHttpsOptionalParams
+  ): Promise<
+    SimplePollerLike<
+      OperationState<CustomDomainsEnableCustomHttpsResponse>,
+      CustomDomainsEnableCustomHttpsResponse
+    >
+  >;
+  /**
+   * Enable https delivery of the custom domain.
+   * @param resourceGroupName Name of the Resource group within the Azure subscription.
+   * @param profileName Name of the CDN profile which is unique within the resource group.
+   * @param endpointName Name of the endpoint under the profile which is unique globally.
+   * @param customDomainName Name of the custom domain within an endpoint.
+   * @param options The options parameters.
+   */
+  beginEnableCustomHttpsAndWait(
     resourceGroupName: string,
     profileName: string,
     endpointName: string,

@@ -11,12 +11,19 @@ import {
   SchemaRegistry,
   SchemaRegistryClient,
 } from "@azure/schema-registry";
-import { ClientSecretCredential } from "@azure/identity";
-import { env } from "./env";
-import { isLive } from "./isLive";
-import { testSchemaIds } from "./dummies";
+import { createTestCredential } from "@azure-tools/test-credential";
+import { testGroup, testSchemaIds } from "./dummies";
 import { v4 as uuid } from "uuid";
-
+import { Recorder, assertEnvironmentVariable, env, isLiveMode } from "@azure-tools/test-recorder";
+import {
+  createPipelineRequest,
+  createHttpHeaders,
+  bearerTokenAuthenticationPolicy,
+  createEmptyPipeline,
+  Pipeline,
+  HttpClient,
+  PipelineRequest,
+} from "@azure/core-rest-pipeline";
 type UpdatedSchemaDescription = Required<Omit<SchemaDescription, "version">>;
 
 function getEnvVar(name: string): string {
@@ -31,18 +38,17 @@ function createLiveTestRegistry(settings: {
   registerSchemaOptions?: RegisterSchemaOptions;
   getSchemaPropertiesOptions?: GetSchemaPropertiesOptions;
   getSchemaOptions?: GetSchemaOptions;
+  recorder?: Recorder;
 }): SchemaRegistry {
-  const { getSchemaOptions, getSchemaPropertiesOptions, registerSchemaOptions } = settings;
+  const { getSchemaOptions, getSchemaPropertiesOptions, registerSchemaOptions, recorder } =
+    settings;
   // NOTE: These tests don't record, they use a mocked schema registry
   // implemented below, but if we're running live, then use the real
   // service for end-to-end integration testing.
   const client = new SchemaRegistryClient(
-    getEnvVar("SCHEMA_REGISTRY_ENDPOINT"),
-    new ClientSecretCredential(
-      getEnvVar("AZURE_TENANT_ID"),
-      getEnvVar("AZURE_CLIENT_ID"),
-      getEnvVar("AZURE_CLIENT_SECRET")
-    )
+    getEnvVar("SCHEMAREGISTRY_AVRO_FULLY_QUALIFIED_NAMESPACE"),
+    createTestCredential(),
+    recorder?.configureClientOptions({})
   );
   return {
     getSchema: (id: string) => client.getSchema(id, getSchemaOptions),
@@ -120,6 +126,7 @@ export function createTestRegistry(
     registerSchemaOptions?: RegisterSchemaOptions;
     getSchemaPropertiesOptions?: GetSchemaPropertiesOptions;
     getSchemaOptions?: GetSchemaOptions;
+    recorder?: Recorder;
   } = {}
 ): SchemaRegistry {
   const {
@@ -127,12 +134,51 @@ export function createTestRegistry(
     getSchemaOptions,
     getSchemaPropertiesOptions,
     registerSchemaOptions,
+    recorder,
   } = settings;
-  return !neverLive && isLive
+  return !neverLive && isLiveMode()
     ? createLiveTestRegistry({
         getSchemaOptions,
         getSchemaPropertiesOptions,
         registerSchemaOptions,
+        recorder,
       })
     : createMockedTestRegistry();
+}
+export function createPipelineWithCredential(): Pipeline {
+  const DEFAULT_SCOPE = "https://eventhubs.azure.net/.default";
+  const pipeline = createEmptyPipeline();
+  const credential = createTestCredential();
+  const authPolicy = bearerTokenAuthenticationPolicy({ credential, scopes: DEFAULT_SCOPE });
+  pipeline.addPolicy(authPolicy);
+  return pipeline;
+}
+
+export async function removeSchemas(
+  schemaNamesList: string[],
+  pipeline: Pipeline,
+  client: HttpClient
+): Promise<void> {
+  if (!isLiveMode()) {
+    return;
+  }
+
+  function formatRequest(schemaName: string, apiVersion: string = "2022-10"): PipelineRequest {
+    const endpoint = assertEnvironmentVariable("SCHEMAREGISTRY_AVRO_FULLY_QUALIFIED_NAMESPACE");
+    const url = `${endpoint}/$schemagroups/${testGroup}/schemas/${schemaName}/?api-version=${apiVersion}`;
+    return createPipelineRequest({
+      url,
+      method: "DELETE",
+      timeout: 0,
+      withCredentials: true,
+      headers: createHttpHeaders({}),
+    });
+  }
+
+  for (const schemaName of schemaNamesList) {
+    const request = formatRequest(schemaName);
+    await pipeline.sendRequest(client, request);
+  }
+
+  schemaNamesList.length = 0;
 }

@@ -32,10 +32,7 @@ export class LockRenewer {
    * A map of link names to individual maps for each
    * link that map a message ID to its auto-renewal timer.
    */
-  private _messageRenewLockTimers: Map<string, Map<string, NodeJS.Timer | undefined>> = new Map<
-    string,
-    Map<string, NodeJS.Timer | undefined>
-  >();
+  private _messageRenewLockTimers = new Map<string, Map<string, NodeJS.Timeout | undefined>>();
 
   // just here for make unit testing a bit easier.
   private _calculateRenewAfterDuration: typeof calculateRenewAfterDuration;
@@ -147,22 +144,33 @@ export class LockRenewer {
         }' is locked until ${bMessage.lockedUntilUtc!.toString()}.`
       );
       const totalAutoLockRenewDuration = Date.now() + this._maxAutoRenewDurationInMs;
+      const totalAutoLockRenewDurationDate = new Date(totalAutoLockRenewDuration);
       logger.verbose(
         `${logPrefix} Total autolockrenew duration for message with id '${
           bMessage.messageId
-        }' is: ${new Date(totalAutoLockRenewDuration).toString()}`
+        }' is: ${totalAutoLockRenewDurationDate.toString()}`
       );
 
       const autoRenewLockTask = (): void => {
         const renewalNeededToMaintainLock =
           // if the lock expires _after_ our max auto-renew duration there's no reason to
           // spin up an auto-renewer - it's already held for the duration.
-          new Date(totalAutoLockRenewDuration) > bMessage.lockedUntilUtc!;
+          totalAutoLockRenewDurationDate > bMessage.lockedUntilUtc!;
 
-        // once we've exceeded the max amount of time we'll renew we can stop.
-        const haventExceededMaxLockRenewalTime = Date.now() < totalAutoLockRenewDuration;
-
-        if (renewalNeededToMaintainLock && haventExceededMaxLockRenewalTime) {
+        if (!renewalNeededToMaintainLock) {
+          logger.verbose(
+            `${logPrefix} Autolockrenew not needed as message's lockedUntilUtc ${bMessage.lockedUntilUtc} is after the total autolockrenew duration ${totalAutoLockRenewDurationDate} for message with messageId '${bMessage.messageId}'. Hence we will stop the autoLockRenewTask.`
+          );
+          this.stop(linkEntity, bMessage);
+        } else if (Date.now() >= totalAutoLockRenewDuration) {
+          // once we've exceeded the max amount of time we'll renew we can stop.
+          logger.verbose(
+            `${logPrefix} Current time ${new Date()} exceeds the total autolockrenew duration ${totalAutoLockRenewDurationDate} for message with messageId '${
+              bMessage.messageId
+            }'. Hence we will stop the autoLockRenewTask.`
+          );
+          this.stop(linkEntity, bMessage);
+        } else {
           if (linkMessageMap.has(bMessage.messageId as string)) {
             // TODO: We can run into problems with clock skew between the client and the server.
             // It would be better to calculate the duration based on the "lockDuration" property
@@ -212,16 +220,6 @@ export class LockRenewer {
               `${logPrefix} Looks like the message lock renew timer has already been cleared for message with id '${bMessage.messageId}'.`
             );
           }
-        } else {
-          logger.verbose(
-            `${logPrefix} Current time ${new Date()} exceeds the total autolockrenew duration ${new Date(
-              totalAutoLockRenewDuration
-            )} for message with messageId '${
-              bMessage.messageId
-            }'. Hence we will stop the autoLockRenewTask.`
-          );
-
-          this.stop(linkEntity, bMessage);
         }
       };
 
@@ -232,11 +230,11 @@ export class LockRenewer {
     }
   }
 
-  private _getOrCreateMapForLink(linkEntity: MinimalLink): Map<string, NodeJS.Timer | undefined> {
+  private _getOrCreateMapForLink(linkEntity: MinimalLink): Map<string, NodeJS.Timeout | undefined> {
     if (!this._messageRenewLockTimers.has(linkEntity.name)) {
       this._messageRenewLockTimers.set(
         linkEntity.name,
-        new Map<string, NodeJS.Timer | undefined>()
+        new Map<string, NodeJS.Timeout | undefined>()
       );
     }
 
@@ -245,7 +243,7 @@ export class LockRenewer {
 
   private _stopAndRemoveById(
     linkEntity: MinimalLink,
-    linkMessageMap: Map<string, NodeJS.Timer | undefined>,
+    linkMessageMap: Map<string, NodeJS.Timeout | undefined>,
     messageId: string | undefined
   ): void {
     if (messageId == null) {
@@ -255,7 +253,7 @@ export class LockRenewer {
     // TODO: messageId doesn't actually need to be unique. Perhaps we should use lockToken
     // instead?
     if (linkMessageMap.has(messageId)) {
-      clearTimeout(linkMessageMap.get(messageId) as NodeJS.Timer);
+      clearTimeout(linkMessageMap.get(messageId) as NodeJS.Timeout);
       logger.verbose(
         `${linkEntity.logPrefix} Cleared the message renew lock timer for message with id '${messageId}'.`
       );

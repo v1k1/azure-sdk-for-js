@@ -52,7 +52,7 @@ describe("HubClient", function () {
     let client: WebPubSubServiceClient;
     let lastResponse: FullOperationResponse | undefined;
     const credential = createTestCredential();
-    function onResponse(response: FullOperationResponse) {
+    function onResponse(response: FullOperationResponse): void {
       lastResponse = response;
     }
     beforeEach(async function () {
@@ -80,6 +80,35 @@ describe("HubClient", function () {
       const binaryMessage = new Uint8Array(10);
       await client.sendToAll(binaryMessage.buffer, { onResponse });
       assert.equal(lastResponse?.status, 202);
+    });
+
+    it("can broadcast with filter", async () => {
+      await client.sendToAll("hello", {
+        contentType: "text/plain",
+        filter: "userId ne 'user1'",
+        messageTtlSeconds: 60,
+        onResponse,
+      });
+      assert.equal(lastResponse?.status, 202);
+
+      let error;
+      try {
+        await client.sendToAll("hello", {
+          contentType: "text/plain",
+          filter: "invalid filter",
+        });
+      } catch (e: any) {
+        if (e.name !== "RestError") {
+          throw e;
+        }
+
+        error = e;
+      }
+      assert.equal(error.statusCode, 400);
+      assert.equal(
+        JSON.parse(error.message).message,
+        "Invalid syntax for 'invalid filter': Syntax error at position 14 in 'invalid filter'. (Parameter 'filter')"
+      );
     });
 
     it("can broadcast using the DAC", async () => {
@@ -136,6 +165,34 @@ describe("HubClient", function () {
       assert.equal(lastResponse?.status, 202);
     });
 
+    it("can send to a user with filter", async () => {
+      await client.sendToUser("vic", "hello", {
+        contentType: "text/plain",
+        filter: "userId ne 'user1'",
+        onResponse,
+      });
+      assert.equal(lastResponse?.status, 202);
+
+      let error;
+      try {
+        await client.sendToUser("brian", "hello", {
+          contentType: "text/plain",
+          filter: "invalid filter",
+        });
+      } catch (e: any) {
+        if (e.name !== "RestError") {
+          throw e;
+        }
+
+        error = e;
+      }
+      assert.equal(error.statusCode, 400);
+      assert.equal(
+        JSON.parse(error.message).message,
+        "Invalid syntax for 'invalid filter': Syntax error at position 14 in 'invalid filter'. (Parameter 'filter')"
+      );
+    });
+
     it("can send messages to a connection", async () => {
       await client.sendToConnection("xxxx", "hello", { contentType: "text/plain", onResponse });
       assert.equal(lastResponse?.status, 202);
@@ -148,13 +205,16 @@ describe("HubClient", function () {
       assert.equal(lastResponse?.status, 202);
     });
 
-    // `removeUserFromAllGroups` always times out.
-    it.skip("can manage users", async () => {
-      this.timeout(Infinity);
+    it("can manage users", async () => {
       const res = await client.userExists("foo");
       assert.ok(!res);
       await client.removeUserFromAllGroups("brian", { onResponse });
-      assert.equal(lastResponse?.status, 200);
+      assert.equal(lastResponse?.status, 204);
+    });
+
+    it("can manage connections", async () => {
+      await client.removeConnectionFromAllGroups("xxx", { onResponse });
+      assert.equal(lastResponse?.status, 204);
     });
 
     it("can check if a connection exists", async function () {
@@ -235,11 +295,15 @@ describe("HubClient", function () {
       );
     });
 
-    // service API doesn't work yet.
-    it.skip("can generate client tokens", async () => {
-      await client.getClientAccessToken({
+    it("can generate client tokens", async () => {
+      const res = await client.getClientAccessToken({
         userId: "brian",
+        groups: ["group1"],
       });
+      const url = new URL(res.url);
+      assert.ok(url.searchParams.has("access_token"));
+      assert.equal(url.host, new URL(client.endpoint).host);
+      assert.equal(url.pathname, `/client/hubs/${client.hubName}`);
     });
   });
 });

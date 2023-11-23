@@ -1,6 +1,6 @@
 # Release History
 
-## 5.0.2 (Unreleased)
+## 5.1.1 (Unreleased)
 
 ### Features Added
 
@@ -10,6 +10,23 @@
 
 ### Other Changes
 
+## 5.1.0 (2022-11-11)
+    
+**Features**
+
+  - Added Type Alias Provisioning
+  - Interface AcceptOwnershipStatusResponse has a new optional parameter provisioningState
+  - Interface Subscription has a new optional parameter tags
+  - Interface Subscription has a new optional parameter tenantId
+  - Interface TenantIdDescription has a new optional parameter country
+  - Interface TenantIdDescription has a new optional parameter countryCode
+  - Interface TenantIdDescription has a new optional parameter defaultDomain
+  - Interface TenantIdDescription has a new optional parameter displayName
+  - Interface TenantIdDescription has a new optional parameter domains
+  - Interface TenantIdDescription has a new optional parameter tenantCategory
+  - Interface TenantIdDescription has a new optional parameter tenantType
+  - Added Enum KnownProvisioning
+    
 ## 5.0.1 (2022-05-05)
 
 **Features**
@@ -71,4 +88,4 @@ To understand the detail of the change, please refer to [Changelog](https://aka.
 
 To migrate the existing applications to the latest version, please refer to [Migration Guide](https://aka.ms/js-track2-migration-guide).
 
-To learn more, please refer to our documentation [Quick Start](https://aka.ms/js-track2-quickstart).
+To learn more, please refer to our documentation [Quick Start](https://aka.ms/azsdk/js/mgmt/quickstart ).

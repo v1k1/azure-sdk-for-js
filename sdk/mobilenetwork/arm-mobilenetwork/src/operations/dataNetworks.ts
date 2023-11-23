@@ -6,18 +6,24 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { DataNetworks } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { MobileNetworkManagementClient } from "../mobileNetworkManagementClient";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   DataNetwork,
   DataNetworksListByMobileNetworkNextOptionalParams,
   DataNetworksListByMobileNetworkOptionalParams,
+  DataNetworksListByMobileNetworkResponse,
   DataNetworksDeleteOptionalParams,
   DataNetworksGetOptionalParams,
   DataNetworksGetResponse,
@@ -26,7 +32,6 @@ import {
   TagsObject,
   DataNetworksUpdateTagsOptionalParams,
   DataNetworksUpdateTagsResponse,
-  DataNetworksListByMobileNetworkResponse,
   DataNetworksListByMobileNetworkNextResponse
 } from "../models";
 
@@ -66,11 +71,15 @@ export class DataNetworksImpl implements DataNetworks {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listByMobileNetworkPagingPage(
           resourceGroupName,
           mobileNetworkName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -79,15 +88,22 @@ export class DataNetworksImpl implements DataNetworks {
   private async *listByMobileNetworkPagingPage(
     resourceGroupName: string,
     mobileNetworkName: string,
-    options?: DataNetworksListByMobileNetworkOptionalParams
+    options?: DataNetworksListByMobileNetworkOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<DataNetwork[]> {
-    let result = await this._listByMobileNetwork(
-      resourceGroupName,
-      mobileNetworkName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: DataNetworksListByMobileNetworkResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listByMobileNetwork(
+        resourceGroupName,
+        mobileNetworkName,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listByMobileNetworkNext(
         resourceGroupName,
@@ -96,7 +112,9 @@ export class DataNetworksImpl implements DataNetworks {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -126,14 +144,14 @@ export class DataNetworksImpl implements DataNetworks {
     mobileNetworkName: string,
     dataNetworkName: string,
     options?: DataNetworksDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -166,15 +184,15 @@ export class DataNetworksImpl implements DataNetworks {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, mobileNetworkName, dataNetworkName, options },
-      deleteOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, mobileNetworkName, dataNetworkName, options },
+      spec: deleteOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "location"
+      resourceLocationConfig: "location"
     });
     await poller.poll();
     return poller;
@@ -222,7 +240,8 @@ export class DataNetworksImpl implements DataNetworks {
   }
 
   /**
-   * Creates or updates a data network.
+   * Creates or updates a data network. Must be created in the same location as its parent mobile
+   * network.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param mobileNetworkName The name of the mobile network.
    * @param dataNetworkName The name of the data network.
@@ -236,8 +255,8 @@ export class DataNetworksImpl implements DataNetworks {
     parameters: DataNetwork,
     options?: DataNetworksCreateOrUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<DataNetworksCreateOrUpdateResponse>,
+    SimplePollerLike<
+      OperationState<DataNetworksCreateOrUpdateResponse>,
       DataNetworksCreateOrUpdateResponse
     >
   > {
@@ -247,7 +266,7 @@ export class DataNetworksImpl implements DataNetworks {
     ): Promise<DataNetworksCreateOrUpdateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -280,28 +299,32 @@ export class DataNetworksImpl implements DataNetworks {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
         resourceGroupName,
         mobileNetworkName,
         dataNetworkName,
         parameters,
         options
       },
-      createOrUpdateOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: createOrUpdateOperationSpec
+    });
+    const poller = await createHttpPoller<
+      DataNetworksCreateOrUpdateResponse,
+      OperationState<DataNetworksCreateOrUpdateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
   }
 
   /**
-   * Creates or updates a data network.
+   * Creates or updates a data network. Must be created in the same location as its parent mobile
+   * network.
    * @param resourceGroupName The name of the resource group. The name is case insensitive.
    * @param mobileNetworkName The name of the mobile network.
    * @param dataNetworkName The name of the data network.
@@ -530,7 +553,6 @@ const listByMobileNetworkNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,

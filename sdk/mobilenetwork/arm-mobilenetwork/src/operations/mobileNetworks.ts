@@ -6,20 +6,27 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { MobileNetworks } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { MobileNetworkManagementClient } from "../mobileNetworkManagementClient";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   MobileNetwork,
   MobileNetworksListBySubscriptionNextOptionalParams,
   MobileNetworksListBySubscriptionOptionalParams,
+  MobileNetworksListBySubscriptionResponse,
   MobileNetworksListByResourceGroupNextOptionalParams,
   MobileNetworksListByResourceGroupOptionalParams,
+  MobileNetworksListByResourceGroupResponse,
   MobileNetworksDeleteOptionalParams,
   MobileNetworksGetOptionalParams,
   MobileNetworksGetResponse,
@@ -28,10 +35,6 @@ import {
   TagsObject,
   MobileNetworksUpdateTagsOptionalParams,
   MobileNetworksUpdateTagsResponse,
-  MobileNetworksListBySubscriptionResponse,
-  MobileNetworksListByResourceGroupResponse,
-  MobileNetworksListSimIdsOptionalParams,
-  MobileNetworksListSimIdsResponse,
   MobileNetworksListBySubscriptionNextResponse,
   MobileNetworksListByResourceGroupNextResponse
 } from "../models";
@@ -64,22 +67,34 @@ export class MobileNetworksImpl implements MobileNetworks {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listBySubscriptionPagingPage(options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listBySubscriptionPagingPage(options, settings);
       }
     };
   }
 
   private async *listBySubscriptionPagingPage(
-    options?: MobileNetworksListBySubscriptionOptionalParams
+    options?: MobileNetworksListBySubscriptionOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<MobileNetwork[]> {
-    let result = await this._listBySubscription(options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: MobileNetworksListBySubscriptionResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listBySubscription(options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listBySubscriptionNext(continuationToken, options);
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -108,19 +123,33 @@ export class MobileNetworksImpl implements MobileNetworks {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listByResourceGroupPagingPage(resourceGroupName, options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listByResourceGroupPagingPage(
+          resourceGroupName,
+          options,
+          settings
+        );
       }
     };
   }
 
   private async *listByResourceGroupPagingPage(
     resourceGroupName: string,
-    options?: MobileNetworksListByResourceGroupOptionalParams
+    options?: MobileNetworksListByResourceGroupOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<MobileNetwork[]> {
-    let result = await this._listByResourceGroup(resourceGroupName, options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: MobileNetworksListByResourceGroupResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listByResourceGroup(resourceGroupName, options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listByResourceGroupNext(
         resourceGroupName,
@@ -128,7 +157,9 @@ export class MobileNetworksImpl implements MobileNetworks {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -154,14 +185,14 @@ export class MobileNetworksImpl implements MobileNetworks {
     resourceGroupName: string,
     mobileNetworkName: string,
     options?: MobileNetworksDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -194,15 +225,15 @@ export class MobileNetworksImpl implements MobileNetworks {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, mobileNetworkName, options },
-      deleteOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, mobileNetworkName, options },
+      spec: deleteOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "location"
+      resourceLocationConfig: "location"
     });
     await poller.poll();
     return poller;
@@ -257,8 +288,8 @@ export class MobileNetworksImpl implements MobileNetworks {
     parameters: MobileNetwork,
     options?: MobileNetworksCreateOrUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<MobileNetworksCreateOrUpdateResponse>,
+    SimplePollerLike<
+      OperationState<MobileNetworksCreateOrUpdateResponse>,
       MobileNetworksCreateOrUpdateResponse
     >
   > {
@@ -268,7 +299,7 @@ export class MobileNetworksImpl implements MobileNetworks {
     ): Promise<MobileNetworksCreateOrUpdateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -301,15 +332,18 @@ export class MobileNetworksImpl implements MobileNetworks {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, mobileNetworkName, parameters, options },
-      createOrUpdateOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, mobileNetworkName, parameters, options },
+      spec: createOrUpdateOperationSpec
+    });
+    const poller = await createHttpPoller<
+      MobileNetworksCreateOrUpdateResponse,
+      OperationState<MobileNetworksCreateOrUpdateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "azure-async-operation"
+      resourceLocationConfig: "azure-async-operation"
     });
     await poller.poll();
     return poller;
@@ -382,94 +416,6 @@ export class MobileNetworksImpl implements MobileNetworks {
       { resourceGroupName, options },
       listByResourceGroupOperationSpec
     );
-  }
-
-  /**
-   * Lists the IDs of all provisioned SIMs in a mobile network
-   * @param resourceGroupName The name of the resource group. The name is case insensitive.
-   * @param mobileNetworkName The name of the mobile network.
-   * @param options The options parameters.
-   */
-  async beginListSimIds(
-    resourceGroupName: string,
-    mobileNetworkName: string,
-    options?: MobileNetworksListSimIdsOptionalParams
-  ): Promise<
-    PollerLike<
-      PollOperationState<MobileNetworksListSimIdsResponse>,
-      MobileNetworksListSimIdsResponse
-    >
-  > {
-    const directSendOperation = async (
-      args: coreClient.OperationArguments,
-      spec: coreClient.OperationSpec
-    ): Promise<MobileNetworksListSimIdsResponse> => {
-      return this.client.sendOperationRequest(args, spec);
-    };
-    const sendOperation = async (
-      args: coreClient.OperationArguments,
-      spec: coreClient.OperationSpec
-    ) => {
-      let currentRawResponse:
-        | coreClient.FullOperationResponse
-        | undefined = undefined;
-      const providedCallback = args.options?.onResponse;
-      const callback: coreClient.RawResponseCallback = (
-        rawResponse: coreClient.FullOperationResponse,
-        flatResponse: unknown
-      ) => {
-        currentRawResponse = rawResponse;
-        providedCallback?.(rawResponse, flatResponse);
-      };
-      const updatedArgs = {
-        ...args,
-        options: {
-          ...args.options,
-          onResponse: callback
-        }
-      };
-      const flatResponse = await directSendOperation(updatedArgs, spec);
-      return {
-        flatResponse,
-        rawResponse: {
-          statusCode: currentRawResponse!.status,
-          body: currentRawResponse!.parsedBody,
-          headers: currentRawResponse!.headers.toJSON()
-        }
-      };
-    };
-
-    const lro = new LroImpl(
-      sendOperation,
-      { resourceGroupName, mobileNetworkName, options },
-      listSimIdsOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
-      intervalInMs: options?.updateIntervalInMs,
-      lroResourceLocationConfig: "location"
-    });
-    await poller.poll();
-    return poller;
-  }
-
-  /**
-   * Lists the IDs of all provisioned SIMs in a mobile network
-   * @param resourceGroupName The name of the resource group. The name is case insensitive.
-   * @param mobileNetworkName The name of the mobile network.
-   * @param options The options parameters.
-   */
-  async beginListSimIdsAndWait(
-    resourceGroupName: string,
-    mobileNetworkName: string,
-    options?: MobileNetworksListSimIdsOptionalParams
-  ): Promise<MobileNetworksListSimIdsResponse> {
-    const poller = await this.beginListSimIds(
-      resourceGroupName,
-      mobileNetworkName,
-      options
-    );
-    return poller.pollUntilDone();
   }
 
   /**
@@ -647,37 +593,6 @@ const listByResourceGroupOperationSpec: coreClient.OperationSpec = {
   headerParameters: [Parameters.accept],
   serializer
 };
-const listSimIdsOperationSpec: coreClient.OperationSpec = {
-  path:
-    "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MobileNetwork/mobileNetworks/{mobileNetworkName}/listSimIds",
-  httpMethod: "POST",
-  responses: {
-    200: {
-      bodyMapper: Mappers.SimIdListResult
-    },
-    201: {
-      bodyMapper: Mappers.SimIdListResult
-    },
-    202: {
-      bodyMapper: Mappers.SimIdListResult
-    },
-    204: {
-      bodyMapper: Mappers.SimIdListResult
-    },
-    default: {
-      bodyMapper: Mappers.ErrorResponse
-    }
-  },
-  queryParameters: [Parameters.apiVersion],
-  urlParameters: [
-    Parameters.$host,
-    Parameters.subscriptionId,
-    Parameters.resourceGroupName,
-    Parameters.mobileNetworkName
-  ],
-  headerParameters: [Parameters.accept],
-  serializer
-};
 const listBySubscriptionNextOperationSpec: coreClient.OperationSpec = {
   path: "{nextLink}",
   httpMethod: "GET",
@@ -689,7 +604,6 @@ const listBySubscriptionNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,
@@ -709,7 +623,6 @@ const listByResourceGroupNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorResponse
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.subscriptionId,

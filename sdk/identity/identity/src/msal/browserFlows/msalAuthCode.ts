@@ -3,18 +3,19 @@
 
 import * as msalBrowser from "@azure/msal-browser";
 import { MsalBrowser, MsalBrowserFlowOptions } from "./msalBrowserCommon";
-import { defaultLoggerCallback, msalToPublic, publicToMsal } from "../utils";
+import { defaultLoggerCallback, msalToPublic, publicToMsal, getMSALLogLevel } from "../utils";
 import { AccessToken } from "@azure/core-auth";
 import { AuthenticationRecord } from "../types";
 import { AuthenticationRequiredError } from "../../errors";
 import { CredentialFlowGetTokenOptions } from "../credentials";
+import { getLogLevel } from "@azure/logger";
 
 // We keep a copy of the redirect hash.
 const redirectHash = self.location.hash;
 
 /**
  * Uses MSAL Browser 2.X for browser authentication,
- * which uses the [Auth Code Flow](https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-auth-code-flow).
+ * which uses the [Auth Code Flow](https://learn.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-auth-code-flow).
  * @internal
  */
 export class MSALAuthCode extends MsalBrowser {
@@ -38,6 +39,8 @@ export class MSALAuthCode extends MsalBrowser {
     this.msalConfig.system = {
       loggerOptions: {
         loggerCallback: defaultLoggerCallback(this.logger, "Browser"),
+        logLevel: getMSALLogLevel(getLogLevel()),
+        piiLoggingEnabled: options.loggingOptions?.enableUnsafeSupportLogging,
       },
     };
 

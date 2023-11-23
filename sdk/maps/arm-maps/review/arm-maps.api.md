@@ -110,6 +110,7 @@ export class AzureMapsManagementClient extends coreClient.ServiceClient {
     // (undocumented)
     $host: string;
     constructor(credentials: coreAuth.TokenCredential, subscriptionId: string, options?: AzureMapsManagementClientOptionalParams);
+    constructor(credentials: coreAuth.TokenCredential, options?: AzureMapsManagementClientOptionalParams);
     // (undocumented)
     accounts: Accounts;
     // (undocumented)
@@ -119,7 +120,7 @@ export class AzureMapsManagementClient extends coreClient.ServiceClient {
     // (undocumented)
     maps: Maps;
     // (undocumented)
-    subscriptionId: string;
+    subscriptionId?: string;
 }
 
 // @public
@@ -127,12 +128,6 @@ export interface AzureMapsManagementClientOptionalParams extends coreClient.Serv
     $host?: string;
     apiVersion?: string;
     endpoint?: string;
-}
-
-// @public (undocumented)
-export interface Components1Jq1T4ISchemasManagedserviceidentityPropertiesUserassignedidentitiesAdditionalproperties {
-    readonly clientId?: string;
-    readonly principalId?: string;
 }
 
 // @public
@@ -149,10 +144,10 @@ export interface CorsRules {
 export type CreatedByType = string;
 
 // @public
-export type Creator = TrackedResource & {
+export interface Creator extends TrackedResource {
     properties: CreatorProperties;
     readonly systemData?: SystemData;
-};
+}
 
 // @public
 export interface CreatorList {
@@ -224,6 +219,19 @@ export interface CreatorUpdateParameters {
 }
 
 // @public
+export interface CustomerManagedKeyEncryption {
+    keyEncryptionKeyIdentity?: CustomerManagedKeyEncryptionKeyIdentity;
+    keyEncryptionKeyUrl?: string;
+}
+
+// @public
+export interface CustomerManagedKeyEncryptionKeyIdentity {
+    delegatedIdentityClientId?: string;
+    identityType?: IdentityType;
+    userAssignedIdentityResourceId?: string;
+}
+
+// @public
 export interface Dimension {
     displayName?: string;
     internalMetricName?: string;
@@ -231,6 +239,12 @@ export interface Dimension {
     name?: string;
     sourceMdmNamespace?: string;
     toBeExportedToShoebox?: boolean;
+}
+
+// @public
+export interface Encryption {
+    customerManagedKeyEncryption?: CustomerManagedKeyEncryption;
+    infrastructureEncryption?: InfrastructureEncryption;
 }
 
 // @public
@@ -254,6 +268,15 @@ export interface ErrorResponse {
 }
 
 // @public
+export function getContinuationToken(page: unknown): string | undefined;
+
+// @public
+export type IdentityType = string;
+
+// @public
+export type InfrastructureEncryption = string;
+
+// @public
 type KeyType_2 = string;
 export { KeyType_2 as KeyType }
 
@@ -262,47 +285,56 @@ export type Kind = string;
 
 // @public
 export enum KnownCreatedByType {
-    // (undocumented)
     Application = "Application",
-    // (undocumented)
     Key = "Key",
-    // (undocumented)
     ManagedIdentity = "ManagedIdentity",
-    // (undocumented)
     User = "User"
 }
 
 // @public
+export enum KnownIdentityType {
+    DelegatedResourceIdentity = "delegatedResourceIdentity",
+    SystemAssignedIdentity = "systemAssignedIdentity",
+    UserAssignedIdentity = "userAssignedIdentity"
+}
+
+// @public
+export enum KnownInfrastructureEncryption {
+    Disabled = "disabled",
+    Enabled = "enabled"
+}
+
+// @public
 export enum KnownKeyType {
-    // (undocumented)
     Primary = "primary",
-    // (undocumented)
     Secondary = "secondary"
 }
 
 // @public
 export enum KnownKind {
-    // (undocumented)
     Gen1 = "Gen1",
-    // (undocumented)
     Gen2 = "Gen2"
 }
 
 // @public
+export enum KnownManagedServiceIdentityType {
+    None = "None",
+    SystemAssigned = "SystemAssigned",
+    SystemAssignedUserAssigned = "SystemAssigned, UserAssigned",
+    UserAssigned = "UserAssigned"
+}
+
+// @public
 export enum KnownName {
-    // (undocumented)
     G2 = "G2",
-    // (undocumented)
     S0 = "S0",
-    // (undocumented)
     S1 = "S1"
 }
 
 // @public
 export enum KnownSigningKey {
-    // (undocumented)
+    ManagedIdentity = "managedIdentity",
     PrimaryKey = "primaryKey",
-    // (undocumented)
     SecondaryKey = "secondaryKey"
 }
 
@@ -316,11 +348,14 @@ export interface LinkedResource {
 export interface ManagedServiceIdentity {
     readonly principalId?: string;
     readonly tenantId?: string;
-    type?: ResourceIdentityType;
+    type: ManagedServiceIdentityType;
     userAssignedIdentities?: {
-        [propertyName: string]: Components1Jq1T4ISchemasManagedserviceidentityPropertiesUserassignedidentitiesAdditionalproperties;
+        [propertyName: string]: UserAssignedIdentity;
     };
 }
+
+// @public
+export type ManagedServiceIdentityType = string;
 
 // @public
 export interface Maps {
@@ -329,13 +364,13 @@ export interface Maps {
 }
 
 // @public
-export type MapsAccount = TrackedResource & {
-    sku: Sku;
-    kind?: Kind;
-    readonly systemData?: SystemData;
+export interface MapsAccount extends TrackedResource {
     identity?: ManagedServiceIdentity;
+    kind?: Kind;
     properties?: MapsAccountProperties;
-};
+    sku: Sku;
+    readonly systemData?: SystemData;
+}
 
 // @public
 export interface MapsAccountKeys {
@@ -349,6 +384,7 @@ export interface MapsAccountKeys {
 export interface MapsAccountProperties {
     cors?: CorsRules;
     disableLocalAuth?: boolean;
+    encryption?: Encryption;
     linkedResources?: LinkedResource[];
     readonly provisioningState?: string;
     readonly uniqueId?: string;
@@ -369,6 +405,7 @@ export interface MapsAccountSasToken {
 export interface MapsAccountUpdateParameters {
     cors?: CorsRules;
     disableLocalAuth?: boolean;
+    encryption?: Encryption;
     identity?: ManagedServiceIdentity;
     kind?: Kind;
     linkedResources?: LinkedResource[];
@@ -428,9 +465,12 @@ export interface MetricSpecification {
     displayName?: string;
     fillGapWithZero?: boolean;
     internalMetricName?: string;
+    lockAggregationType?: string;
     name?: string;
     resourceIdDimensionNameOverride?: string;
     sourceMdmAccount?: string;
+    sourceMdmNamespace?: string;
+    supportedAggregationTypes?: string;
     unit?: string;
 }
 
@@ -462,9 +502,6 @@ export interface Resource {
 }
 
 // @public
-export type ResourceIdentityType = "SystemAssigned" | "UserAssigned" | "SystemAssigned, UserAssigned" | "None";
-
-// @public
 export interface ServiceSpecification {
     metricSpecifications?: MetricSpecification[];
 }
@@ -489,12 +526,18 @@ export interface SystemData {
 }
 
 // @public
-export type TrackedResource = Resource & {
+export interface TrackedResource extends Resource {
+    location: string;
     tags?: {
         [propertyName: string]: string;
     };
-    location: string;
-};
+}
+
+// @public
+export interface UserAssignedIdentity {
+    readonly clientId?: string;
+    readonly principalId?: string;
+}
 
 // (No @packageDocumentation comment for this package)
 

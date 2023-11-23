@@ -6,26 +6,35 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import { PagedAsyncIterableIterator } from "@azure/core-paging";
+import { PagedAsyncIterableIterator, PageSettings } from "@azure/core-paging";
+import { setContinuationToken } from "../pagingHelper";
 import { IotDpsResource } from "../operationsInterfaces";
 import * as coreClient from "@azure/core-client";
 import * as Mappers from "../models/mappers";
 import * as Parameters from "../models/parameters";
 import { IotDpsClient } from "../iotDpsClient";
-import { PollerLike, PollOperationState, LroEngine } from "@azure/core-lro";
-import { LroImpl } from "../lroImpl";
+import {
+  SimplePollerLike,
+  OperationState,
+  createHttpPoller
+} from "@azure/core-lro";
+import { createLroSpec } from "../lroImpl";
 import {
   ProvisioningServiceDescription,
   IotDpsResourceListBySubscriptionNextOptionalParams,
   IotDpsResourceListBySubscriptionOptionalParams,
+  IotDpsResourceListBySubscriptionResponse,
   IotDpsResourceListByResourceGroupNextOptionalParams,
   IotDpsResourceListByResourceGroupOptionalParams,
+  IotDpsResourceListByResourceGroupResponse,
   IotDpsSkuDefinition,
   IotDpsResourceListValidSkusNextOptionalParams,
   IotDpsResourceListValidSkusOptionalParams,
+  IotDpsResourceListValidSkusResponse,
   SharedAccessSignatureAuthorizationRuleAccessRightsDescription,
   IotDpsResourceListKeysNextOptionalParams,
   IotDpsResourceListKeysOptionalParams,
+  IotDpsResourceListKeysResponse,
   IotDpsResourceGetOptionalParams,
   IotDpsResourceGetResponse,
   IotDpsResourceCreateOrUpdateOptionalParams,
@@ -34,15 +43,11 @@ import {
   IotDpsResourceUpdateOptionalParams,
   IotDpsResourceUpdateResponse,
   IotDpsResourceDeleteOptionalParams,
-  IotDpsResourceListBySubscriptionResponse,
-  IotDpsResourceListByResourceGroupResponse,
   IotDpsResourceGetOperationResultOptionalParams,
   IotDpsResourceGetOperationResultResponse,
-  IotDpsResourceListValidSkusResponse,
   OperationInputs,
   IotDpsResourceCheckProvisioningServiceNameAvailabilityOptionalParams,
   IotDpsResourceCheckProvisioningServiceNameAvailabilityResponse,
-  IotDpsResourceListKeysResponse,
   IotDpsResourceListKeysForKeyNameOptionalParams,
   IotDpsResourceListKeysForKeyNameResponse,
   IotDpsResourceListPrivateLinkResourcesOptionalParams,
@@ -92,22 +97,34 @@ export class IotDpsResourceImpl implements IotDpsResource {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listBySubscriptionPagingPage(options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listBySubscriptionPagingPage(options, settings);
       }
     };
   }
 
   private async *listBySubscriptionPagingPage(
-    options?: IotDpsResourceListBySubscriptionOptionalParams
+    options?: IotDpsResourceListBySubscriptionOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<ProvisioningServiceDescription[]> {
-    let result = await this._listBySubscription(options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: IotDpsResourceListBySubscriptionResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listBySubscription(options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listBySubscriptionNext(continuationToken, options);
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -136,19 +153,33 @@ export class IotDpsResourceImpl implements IotDpsResource {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
-        return this.listByResourceGroupPagingPage(resourceGroupName, options);
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
+        return this.listByResourceGroupPagingPage(
+          resourceGroupName,
+          options,
+          settings
+        );
       }
     };
   }
 
   private async *listByResourceGroupPagingPage(
     resourceGroupName: string,
-    options?: IotDpsResourceListByResourceGroupOptionalParams
+    options?: IotDpsResourceListByResourceGroupOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<ProvisioningServiceDescription[]> {
-    let result = await this._listByResourceGroup(resourceGroupName, options);
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: IotDpsResourceListByResourceGroupResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listByResourceGroup(resourceGroupName, options);
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listByResourceGroupNext(
         resourceGroupName,
@@ -156,7 +187,9 @@ export class IotDpsResourceImpl implements IotDpsResource {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -195,11 +228,15 @@ export class IotDpsResourceImpl implements IotDpsResource {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listValidSkusPagingPage(
           provisioningServiceName,
           resourceGroupName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -208,15 +245,22 @@ export class IotDpsResourceImpl implements IotDpsResource {
   private async *listValidSkusPagingPage(
     provisioningServiceName: string,
     resourceGroupName: string,
-    options?: IotDpsResourceListValidSkusOptionalParams
+    options?: IotDpsResourceListValidSkusOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<IotDpsSkuDefinition[]> {
-    let result = await this._listValidSkus(
-      provisioningServiceName,
-      resourceGroupName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: IotDpsResourceListValidSkusResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listValidSkus(
+        provisioningServiceName,
+        resourceGroupName,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listValidSkusNext(
         provisioningServiceName,
@@ -225,7 +269,9 @@ export class IotDpsResourceImpl implements IotDpsResource {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -268,11 +314,15 @@ export class IotDpsResourceImpl implements IotDpsResource {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: () => {
+      byPage: (settings?: PageSettings) => {
+        if (settings?.maxPageSize) {
+          throw new Error("maxPageSize is not supported by this operation.");
+        }
         return this.listKeysPagingPage(
           provisioningServiceName,
           resourceGroupName,
-          options
+          options,
+          settings
         );
       }
     };
@@ -281,17 +331,24 @@ export class IotDpsResourceImpl implements IotDpsResource {
   private async *listKeysPagingPage(
     provisioningServiceName: string,
     resourceGroupName: string,
-    options?: IotDpsResourceListKeysOptionalParams
+    options?: IotDpsResourceListKeysOptionalParams,
+    settings?: PageSettings
   ): AsyncIterableIterator<
     SharedAccessSignatureAuthorizationRuleAccessRightsDescription[]
   > {
-    let result = await this._listKeys(
-      provisioningServiceName,
-      resourceGroupName,
-      options
-    );
-    yield result.value || [];
-    let continuationToken = result.nextLink;
+    let result: IotDpsResourceListKeysResponse;
+    let continuationToken = settings?.continuationToken;
+    if (!continuationToken) {
+      result = await this._listKeys(
+        provisioningServiceName,
+        resourceGroupName,
+        options
+      );
+      let page = result.value || [];
+      continuationToken = result.nextLink;
+      setContinuationToken(page, continuationToken);
+      yield page;
+    }
     while (continuationToken) {
       result = await this._listKeysNext(
         provisioningServiceName,
@@ -300,7 +357,9 @@ export class IotDpsResourceImpl implements IotDpsResource {
         options
       );
       continuationToken = result.nextLink;
-      yield result.value || [];
+      let page = result.value || [];
+      setContinuationToken(page, continuationToken);
+      yield page;
     }
   }
 
@@ -322,17 +381,17 @@ export class IotDpsResourceImpl implements IotDpsResource {
 
   /**
    * Get the metadata of the provisioning service without SAS keys.
-   * @param provisioningServiceName Name of the provisioning service to retrieve.
    * @param resourceGroupName Resource group name.
+   * @param provisioningServiceName Name of the provisioning service to retrieve.
    * @param options The options parameters.
    */
   get(
-    provisioningServiceName: string,
     resourceGroupName: string,
+    provisioningServiceName: string,
     options?: IotDpsResourceGetOptionalParams
   ): Promise<IotDpsResourceGetResponse> {
     return this.client.sendOperationRequest(
-      { provisioningServiceName, resourceGroupName, options },
+      { resourceGroupName, provisioningServiceName, options },
       getOperationSpec
     );
   }
@@ -352,8 +411,8 @@ export class IotDpsResourceImpl implements IotDpsResource {
     iotDpsDescription: ProvisioningServiceDescription,
     options?: IotDpsResourceCreateOrUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<IotDpsResourceCreateOrUpdateResponse>,
+    SimplePollerLike<
+      OperationState<IotDpsResourceCreateOrUpdateResponse>,
       IotDpsResourceCreateOrUpdateResponse
     >
   > {
@@ -363,7 +422,7 @@ export class IotDpsResourceImpl implements IotDpsResource {
     ): Promise<IotDpsResourceCreateOrUpdateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -396,18 +455,21 @@ export class IotDpsResourceImpl implements IotDpsResource {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
         resourceGroupName,
         provisioningServiceName,
         iotDpsDescription,
         options
       },
-      createOrUpdateOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: createOrUpdateOperationSpec
+    });
+    const poller = await createHttpPoller<
+      IotDpsResourceCreateOrUpdateResponse,
+      OperationState<IotDpsResourceCreateOrUpdateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -452,8 +514,8 @@ export class IotDpsResourceImpl implements IotDpsResource {
     provisioningServiceTags: TagsResource,
     options?: IotDpsResourceUpdateOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<IotDpsResourceUpdateResponse>,
+    SimplePollerLike<
+      OperationState<IotDpsResourceUpdateResponse>,
       IotDpsResourceUpdateResponse
     >
   > {
@@ -463,7 +525,7 @@ export class IotDpsResourceImpl implements IotDpsResource {
     ): Promise<IotDpsResourceUpdateResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -496,18 +558,21 @@ export class IotDpsResourceImpl implements IotDpsResource {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
         resourceGroupName,
         provisioningServiceName,
         provisioningServiceTags,
         options
       },
-      updateOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: updateOperationSpec
+    });
+    const poller = await createHttpPoller<
+      IotDpsResourceUpdateResponse,
+      OperationState<IotDpsResourceUpdateResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -539,22 +604,22 @@ export class IotDpsResourceImpl implements IotDpsResource {
 
   /**
    * Deletes the Provisioning Service.
-   * @param provisioningServiceName Name of provisioning service to delete.
    * @param resourceGroupName Resource group identifier.
+   * @param provisioningServiceName Name of provisioning service to delete.
    * @param options The options parameters.
    */
   async beginDelete(
-    provisioningServiceName: string,
     resourceGroupName: string,
+    provisioningServiceName: string,
     options?: IotDpsResourceDeleteOptionalParams
-  ): Promise<PollerLike<PollOperationState<void>, void>> {
+  ): Promise<SimplePollerLike<OperationState<void>, void>> {
     const directSendOperation = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ): Promise<void> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -587,13 +652,13 @@ export class IotDpsResourceImpl implements IotDpsResource {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      { provisioningServiceName, resourceGroupName, options },
-      deleteOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: { resourceGroupName, provisioningServiceName, options },
+      spec: deleteOperationSpec
+    });
+    const poller = await createHttpPoller<void, OperationState<void>>(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -602,18 +667,18 @@ export class IotDpsResourceImpl implements IotDpsResource {
 
   /**
    * Deletes the Provisioning Service.
-   * @param provisioningServiceName Name of provisioning service to delete.
    * @param resourceGroupName Resource group identifier.
+   * @param provisioningServiceName Name of provisioning service to delete.
    * @param options The options parameters.
    */
   async beginDeleteAndWait(
-    provisioningServiceName: string,
     resourceGroupName: string,
+    provisioningServiceName: string,
     options?: IotDpsResourceDeleteOptionalParams
   ): Promise<void> {
     const poller = await this.beginDelete(
-      provisioningServiceName,
       resourceGroupName,
+      provisioningServiceName,
       options
     );
     return poller.pollUntilDone();
@@ -839,8 +904,8 @@ export class IotDpsResourceImpl implements IotDpsResource {
     privateEndpointConnection: PrivateEndpointConnection,
     options?: IotDpsResourceCreateOrUpdatePrivateEndpointConnectionOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<
+    SimplePollerLike<
+      OperationState<
         IotDpsResourceCreateOrUpdatePrivateEndpointConnectionResponse
       >,
       IotDpsResourceCreateOrUpdatePrivateEndpointConnectionResponse
@@ -852,7 +917,7 @@ export class IotDpsResourceImpl implements IotDpsResource {
     ): Promise<IotDpsResourceCreateOrUpdatePrivateEndpointConnectionResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -885,19 +950,24 @@ export class IotDpsResourceImpl implements IotDpsResource {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
         resourceGroupName,
         resourceName,
         privateEndpointConnectionName,
         privateEndpointConnection,
         options
       },
-      createOrUpdatePrivateEndpointConnectionOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: createOrUpdatePrivateEndpointConnectionOperationSpec
+    });
+    const poller = await createHttpPoller<
+      IotDpsResourceCreateOrUpdatePrivateEndpointConnectionResponse,
+      OperationState<
+        IotDpsResourceCreateOrUpdatePrivateEndpointConnectionResponse
+      >
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -942,8 +1012,8 @@ export class IotDpsResourceImpl implements IotDpsResource {
     privateEndpointConnectionName: string,
     options?: IotDpsResourceDeletePrivateEndpointConnectionOptionalParams
   ): Promise<
-    PollerLike<
-      PollOperationState<IotDpsResourceDeletePrivateEndpointConnectionResponse>,
+    SimplePollerLike<
+      OperationState<IotDpsResourceDeletePrivateEndpointConnectionResponse>,
       IotDpsResourceDeletePrivateEndpointConnectionResponse
     >
   > {
@@ -953,7 +1023,7 @@ export class IotDpsResourceImpl implements IotDpsResource {
     ): Promise<IotDpsResourceDeletePrivateEndpointConnectionResponse> => {
       return this.client.sendOperationRequest(args, spec);
     };
-    const sendOperation = async (
+    const sendOperationFn = async (
       args: coreClient.OperationArguments,
       spec: coreClient.OperationSpec
     ) => {
@@ -986,18 +1056,21 @@ export class IotDpsResourceImpl implements IotDpsResource {
       };
     };
 
-    const lro = new LroImpl(
-      sendOperation,
-      {
+    const lro = createLroSpec({
+      sendOperationFn,
+      args: {
         resourceGroupName,
         resourceName,
         privateEndpointConnectionName,
         options
       },
-      deletePrivateEndpointConnectionOperationSpec
-    );
-    const poller = new LroEngine(lro, {
-      resumeFrom: options?.resumeFrom,
+      spec: deletePrivateEndpointConnectionOperationSpec
+    });
+    const poller = await createHttpPoller<
+      IotDpsResourceDeletePrivateEndpointConnectionResponse,
+      OperationState<IotDpsResourceDeletePrivateEndpointConnectionResponse>
+    >(lro, {
+      restoreFrom: options?.resumeFrom,
       intervalInMs: options?.updateIntervalInMs
     });
     await poller.poll();
@@ -1529,7 +1602,6 @@ const listBySubscriptionNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorDetails
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.nextLink,
@@ -1549,7 +1621,6 @@ const listByResourceGroupNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorDetails
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.nextLink,
@@ -1570,7 +1641,6 @@ const listValidSkusNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorDetails
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.nextLink,
@@ -1592,7 +1662,6 @@ const listKeysNextOperationSpec: coreClient.OperationSpec = {
       bodyMapper: Mappers.ErrorDetails
     }
   },
-  queryParameters: [Parameters.apiVersion],
   urlParameters: [
     Parameters.$host,
     Parameters.nextLink,
